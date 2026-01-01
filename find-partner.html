@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Find Partner - FASTSync</title>
+    <link rel="stylesheet" href="partner.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="logo">FASTSync</div>
+        <div class="nav-links">
+            <a href="index.html">Home</a>
+            <a href="find-partner.html" class="active">Find Partner</a>
+            <a href="#" id="profileBtn">My Profile</a>
+            <a href="#" id="logoutBtn">Logout</a>
+        </div>
+    </nav>
+
+    <div class="container">
+        <!-- Add Your Profile Section -->
+        <section class="add-profile-section">
+            <h1>Create Your Partner Profile</h1>
+            <p class="subtitle">Fill in your information to find the perfect project partner</p>
+            
+            <form id="profileForm" class="profile-form">
+                <div class="form-grid">
+                    <div class="input-group">
+                        <label for="fullName">Full Name *</label>
+                        <input type="text" id="fullName" name="fullName" placeholder="John Doe" required>
+                    </div>
+
+                    <div class="input-group">
+                        <label for="email">Email *</label>
+                        <input type="email" id="email" name="email" placeholder="john.doe@nu.edu.pk" required>
+                    </div>
+
+                    <div class="input-group">
+                        <label for="phone">Phone Number (WhatsApp) *</label>
+                        <input type="tel" id="phone" name="phone" placeholder="+92 300 1234567" required>
+                    </div>
+
+                    <div class="input-group">
+                        <label for="rollNumber">Roll Number *</label>
+                        <input type="text" id="rollNumber" name="rollNumber" placeholder="21K-1234" required>
+                    </div>
+
+                    <div class="input-group">
+                        <label for="semester">Semester *</label>
+                        <select id="semester" name="semester" required>
+                            <option value="">Select Semester</option>
+                            <option value="1">1st Semester</option>
+                            <option value="2">2nd Semester</option>
+                            <option value="3">3rd Semester</option>
+                            <option value="4">4th Semester</option>
+                            <option value="5">5th Semester</option>
+                            <option value="6">6th Semester</option>
+                            <option value="7">7th Semester</option>
+                            <option value="8">8th Semester</option>
+                        </select>
+                    </div>
+
+                    <div class="input-group">
+                        <label for="session">Session *</label>
+                        <select id="session" name="session" required>
+                            <option value="">Select Session</option>
+                            <option value="Fall 2024">Fall 2024</option>
+                            <option value="Spring 2025">Spring 2025</option>
+                            <option value="Fall 2025">Fall 2025</option>
+                            <option value="Spring 2026">Spring 2026</option>
+                        </select>
+                    </div>
+
+                    <div class="input-group">
+                        <label for="course">Course *</label>
+                        <select id="course" name="course" required>
+                            <option value="">Select Course</option>
+                            <option value="Data Structures">Data Structures</option>
+                            <option value="Database Systems">Database Systems</option>
+                            <option value="Web Development">Web Development</option>
+                            <option value="Software Engineering">Software Engineering</option>
+                            <option value="Computer Networks">Computer Networks</option>
+                            <option value="Operating Systems">Operating Systems</option>
+                            <option value="Artificial Intelligence">Artificial Intelligence</option>
+                            <option value="Machine Learning">Machine Learning</option>
+                            <option value="Mobile App Development">Mobile App Development</option>
+                            <option value="Computer Graphics">Computer Graphics</option>
+                        </select>
+                    </div>
+
+                    <div class="input-group full-width">
+                        <label for="skills">Your Skills (comma separated)</label>
+                        <input type="text" id="skills" name="skills" placeholder="Python, JavaScript, React, Node.js">
+                    </div>
+
+                    <div class="input-group full-width">
+                        <label for="bio">About You</label>
+                        <textarea id="bio" name="bio" rows="3" placeholder="Tell potential partners about yourself, your interests, and what you're looking for in a partner..."></textarea>
+                    </div>
+
+                    <div class="input-group full-width">
+                        <label for="availability">Availability Status *</label>
+                        <select id="availability" name="availability" required>
+                            <option value="available">Available for Partner</option>
+                            <option value="found">Already Found Partner</option>
+                        </select>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn-submit">Add My Profile</button>
+            </form>
+        </section>
+
+        <!-- Filter Section -->
+        <section class="filter-section">
+            <h2>Find Partners</h2>
+            <div class="filter-controls">
+                <select id="filterSession" class="filter-select">
+                    <option value="">All Sessions</option>
+                    <option value="Fall 2024">Fall 2024</option>
+                    <option value="Spring 2025">Spring 2025</option>
+                    <option value="Fall 2025">Fall 2025</option>
+                    <option value="Spring 2026">Spring 2026</option>
+                </select>
+
+                <select id="filterCourse" class="filter-select">
+                    <option value="">All Courses</option>
+                    <option value="Data Structures">Data Structures</option>
+                    <option value="Database Systems">Database Systems</option>
+                    <option value="Web Development">Web Development</option>
+                    <option value="Software Engineering">Software Engineering</option>
+                    <option value="Computer Networks">Computer Networks</option>
+                    <option value="Operating Systems">Operating Systems</option>
+                    <option value="Artificial Intelligence">Artificial Intelligence</option>
+                    <option value="Machine Learning">Machine Learning</option>
+                    <option value="Mobile App Development">Mobile App Development</option>
+                    <option value="Computer Graphics">Computer Graphics</option>
+                </select>
+
+                <select id="filterAvailability" class="filter-select">
+                    <option value="">All Status</option>
+                    <option value="available">Available Only</option>
+                    <option value="found">Already Partnered</option>
+                </select>
+
+                <button id="resetFilters" class="btn-reset">Reset Filters</button>
+            </div>
+        </section>
+
+        <!-- Partners Display Section -->
+        <section class="partners-section">
+            <div class="partners-header">
+                <h2>Available Partners</h2>
+                <p class="partners-count">Showing <span id="partnersCount">0</span> students</p>
+            </div>
+            
+            <div id="partnersGrid" class="partners-grid">
+                <!-- Partners will be dynamically added here -->
+            </div>
+
+            <div id="noResults" class="no-results" style="display: none;">
+                <div class="no-results-icon">🔍</div>
+                <h3>No Partners Found</h3>
+                <p>Try adjusting your filters or be the first to add your profile!</p>
+            </div>
+        </section>
+    </div>
+
+    <!-- Message Modal -->
+    <div id="messageModal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal">&times;</span>
+            <h2>Send Message</h2>
+            <p class="modal-subtitle">Contact <span id="partnerNameModal"></span></p>
+            
+            <form id="messageForm">
+                <div class="input-group">
+                    <label for="senderName">Your Name *</label>
+                    <input type="text" id="senderName" placeholder="Your full name" required>
+                </div>
+                
+                <div class="input-group">
+                    <label for="senderEmail">Your Email *</label>
+                    <input type="email" id="senderEmail" placeholder="your.email@nu.edu.pk" required>
+                </div>
+                
+                <div class="input-group">
+                    <label for="messageText">Message *</label>
+                    <textarea id="messageText" rows="5" placeholder="Hi! I found your profile on FASTSync and would like to partner up for our project..." required></textarea>
+                </div>
+                
+                <button type="submit" class="btn-send-message">Send Message via Email</button>
+            </form>
+            
+            <div class="contact-options">
+                <p class="options-title">Or contact via:</p>
+                <div class="contact-buttons">
+                    <button id="whatsappBtn" class="btn-whatsapp">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/>
+                        </svg>
+                        WhatsApp
+                    </button>
+                    <button id="callBtn" class="btn-call">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
+                        </svg>
+                        Call Now
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="partner.js"></script>
+</body>
+</html>
