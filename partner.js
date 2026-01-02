@@ -1,4 +1,4 @@
-// Simple version with Edit feature
+// Simple version with Full Profile Card and Edit feature
 let partners = [];
 
 // Load partners from localStorage
@@ -28,18 +28,15 @@ if (!isLoggedIn) {
     window.location.href = 'login.html';
 }
 
+// Display user name - FIXED: Added null check to prevent crash on line 36
 const userName = localStorage.getItem('userName');
 const userEmail = localStorage.getItem('userEmail');
-
-// --- SAFETY CHECKED ELEMENT SELECTIONS ---
-
-// Display user name
 const myProfileLink = document.getElementById('myProfileLink');
 if (myProfileLink && userName) {
     myProfileLink.textContent = userName;
 }
 
-// Logout
+// Logout Button - FIXED: Added null check
 const logoutBtn = document.getElementById('logoutBtn');
 if (logoutBtn) {
     logoutBtn.addEventListener('click', function(e) {
@@ -53,7 +50,7 @@ if (logoutBtn) {
     });
 }
 
-// My Profile Link navigation
+// My Profile Link - FIXED: Added null checks
 if (myProfileLink) {
     myProfileLink.addEventListener('click', function(e) {
         e.preventDefault();
@@ -74,46 +71,41 @@ if (profileForm) {
     profileForm.addEventListener('submit', function(e) {
         e.preventDefault();
         
-        const profileIdEl = document.getElementById('profileId');
-        const profileId = profileIdEl ? profileIdEl.value : '';
+        const profileIdVal = document.getElementById('profileId')?.value;
 
         const formData = {
-            id: profileId ? parseInt(profileId) : Date.now(),
-            fullName: document.getElementById('fullName')?.value.trim() || '',
-            email: document.getElementById('email')?.value.trim() || '',
-            phone: document.getElementById('phone')?.value.trim() || '',
-            rollNumber: document.getElementById('rollNumber')?.value.trim() || '',
-            semester: document.getElementById('semester')?.value || '',
-            session: document.getElementById('session')?.value || '',
-            course: document.getElementById('course')?.value || '',
-            skills: document.getElementById('skills')?.value.trim() || '',
-            bio: document.getElementById('bio')?.value.trim() || '',
-            availability: document.getElementById('availability')?.value || 'available',
+            id: profileIdVal ? parseInt(profileIdVal) : Date.now(),
+            fullName: document.getElementById('fullName').value.trim(),
+            email: document.getElementById('email').value.trim(),
+            phone: document.getElementById('phone').value.trim(),
+            rollNumber: document.getElementById('rollNumber').value.trim(),
+            semester: document.getElementById('semester').value,
+            session: document.getElementById('session').value,
+            course: document.getElementById('course').value,
+            skills: document.getElementById('skills').value.trim(),
+            bio: document.getElementById('bio').value.trim(),
+            availability: document.getElementById('availability').value,
             dateAdded: new Date().toISOString()
         };
 
-        // Validation
-        if (!formData.fullName || !formData.email) {
-            alert('❌ Please enter at least your Name and Email');
-            return;
-        }
-
-        if (profileId) {
-            const index = partners.findIndex(p => p.id === parseInt(profileId));
+        if (profileIdVal) {
+            // UPDATE EXISTING PROFILE
+            const index = partners.findIndex(p => p.id === parseInt(profileIdVal));
             if (index !== -1) {
                 partners[index] = formData;
                 savePartners();
-                alert('✅ Profile updated!');
+                alert('✅ Profile UPDATED successfully!');
             }
         } else {
+            // ADD NEW PROFILE
             const existingProfile = partners.find(p => p.email === userEmail);
             if (existingProfile) {
-                alert('⚠️ Profile already exists. Use Edit instead.');
+                alert('⚠️ You already have a profile! Please edit your existing one.');
                 return;
             }
             partners.push(formData);
             savePartners();
-            alert('✅ Profile added!');
+            alert('✅ Profile ADDED successfully!');
         }
         
         resetForm();
@@ -121,19 +113,16 @@ if (profileForm) {
     });
 }
 
-// Display Partners Function
+// Display Partners Function - UPDATED: Shows all info from the image
 function displayPartners(filteredPartners = null) {
     const partnersGrid = document.getElementById('partnersGrid');
     const noResults = document.getElementById('noResults');
     const partnersCount = document.getElementById('partnersCount');
 
-    const dataToDisplay = filteredPartners || partners;
-
-    if (partnersCount) {
-        partnersCount.textContent = dataToDisplay.length;
-    }
-
     if (!partnersGrid) return;
+
+    const dataToDisplay = filteredPartners || partners;
+    if (partnersCount) partnersCount.textContent = dataToDisplay.length;
 
     if (dataToDisplay.length === 0) {
         partnersGrid.style.display = 'none';
@@ -151,74 +140,116 @@ function displayPartners(filteredPartners = null) {
         
         const statusClass = partner.availability === 'available' ? 'available' : 'found';
         const statusText = partner.availability === 'available' ? '✓ Available' : '✗ Partnered';
+
         const skillsArray = partner.skills ? partner.skills.split(',').map(s => s.trim()).filter(s => s) : [];
-        
         const skillsHTML = skillsArray.length > 0 ? 
-            `<div class="partner-skills"><div class="skills-list">
-                ${skillsArray.map(skill => `<span class="skill-tag">${skill}</span>`).join('')}
-            </div></div>` : '';
+            `<div class="partner-skills">
+                <div class="skills-list">
+                    ${skillsArray.map(skill => `<span class="skill-tag">${skill}</span>`).join('')}
+                </div>
+            </div>` : '';
 
         const isMyProfile = partner.email === userEmail;
-        const actionHTML = isMyProfile ? 
-            `<button class="btn-edit" onclick="editProfile(${partner.id})">✏️ Edit</button>` : 
-            `<button class="btn-contact" onclick="openMessageModal('${partner.email}', '${partner.fullName}', '${partner.phone}')">📧 Contact</button>`;
+        
+        // Show EDIT button for you, CONTACT button for others
+        const profileActionsHTML = isMyProfile ? 
+            `<div class="profile-actions">
+                <button class="btn-edit" onclick="editProfile(${partner.id})">✏️ Edit Profile</button>
+            </div>` : 
+            `<div class="partner-contact">
+                <button class="btn-contact" onclick="openMessageModal('${partner.email}', '${partner.fullName}', '${partner.phone}')">
+                    📧 Contact ${partner.fullName.split(' ')[0]}
+                </button>
+            </div>`;
 
+        // FULL TEMPLATE matching your image
         card.innerHTML = `
             <span class="status-badge ${statusClass}">${statusText}</span>
-            <div class="partner-header"><div class="partner-name">${partner.fullName}</div></div>
-            <div class="partner-info">
-                <p><strong>Course:</strong> ${partner.course}</p>
-                <p><strong>Semester:</strong> ${partner.semester}</p>
+            <div class="partner-header">
+                <div class="partner-name">${partner.fullName}</div>
+                <div class="partner-roll" style="color: #a855f7;">${partner.rollNumber}</div>
             </div>
+
+            <div class="partner-info">
+                <div class="info-item"><span class="info-label">Email:</span> <span>${partner.email}</span></div>
+                <div class="info-item"><span class="info-label">Phone:</span> <span>${partner.phone}</span></div>
+                <div class="info-item"><span class="info-label">Semester:</span> <span>${partner.semester}${getOrdinal(partner.semester)}</span></div>
+                <div class="info-item"><span class="info-label">Session:</span> <span>${partner.session}</span></div>
+                <div class="info-item"><span class="info-label">Course:</span> <span>${partner.course}</span></div>
+            </div>
+
             ${skillsHTML}
-            <div class="profile-actions">${actionHTML}</div>
+            ${partner.bio ? `<div class="partner-bio" style="margin-top: 10px; opacity: 0.8;">${partner.bio}</div>` : ''}
+
+            ${profileActionsHTML}
         `;
+
         partnersGrid.appendChild(card);
     });
 }
 
-// Edit and Reset Logic - FIXED WITH NULL CHECKS
+function getOrdinal(n) {
+    const s = ['th', 'st', 'nd', 'rd'];
+    const v = n % 100;
+    return s[(v - 20) % 10] || s[v] || s[0];
+}
+
+// ✏️ EDIT PROFILE FUNCTION
 window.editProfile = function(profileId) {
     const profile = partners.find(p => p.id === profileId);
     if (!profile) return;
 
+    const profileSection = document.getElementById('profileSection');
+    if (profileSection) profileSection.scrollIntoView({ behavior: 'smooth' });
+
+    // FIXED: Added null checks for all form elements
+    const setVal = (id, val) => {
+        const el = document.getElementById(id);
+        if (el) el.value = val || '';
+    };
+
     const title = document.getElementById('formTitle');
     if (title) title.textContent = '✏️ Edit Your Profile';
-
-    const idField = document.getElementById('profileId');
-    if (idField) idField.value = profile.id;
-
-    // Set values only if fields exist
-    const fields = ['fullName', 'email', 'phone', 'rollNumber', 'semester', 'session', 'course', 'skills', 'bio', 'availability'];
-    fields.forEach(f => {
-        const el = document.getElementById(f);
-        if (el) el.value = profile[f] || '';
-    });
-
-    const btn = document.getElementById('submitBtn');
-    if (btn) btn.textContent = '💾 Update Profile';
     
-    const cancel = document.getElementById('cancelBtn');
-    if (cancel) cancel.style.display = 'block';
+    setVal('profileId', profile.id);
+    setVal('fullName', profile.fullName);
+    setVal('email', profile.email);
+    setVal('phone', profile.phone);
+    setVal('rollNumber', profile.rollNumber);
+    setVal('semester', profile.semester);
+    setVal('session', profile.session);
+    setVal('course', profile.course);
+    setVal('skills', profile.skills);
+    setVal('bio', profile.bio);
+    setVal('availability', profile.availability);
 
-    const section = document.getElementById('profileSection');
-    if (section) section.scrollIntoView({ behavior: 'smooth' });
+    const submitBtn = document.getElementById('submitBtn');
+    if (submitBtn) submitBtn.textContent = '💾 Update Profile';
+    
+    const cancelBtn = document.getElementById('cancelBtn');
+    if (cancelBtn) cancelBtn.style.display = 'block';
 };
 
+// Reset Form Function - FIXED: Added null checks for line 231 crash
 function resetForm() {
     if (profileForm) profileForm.reset();
     
-    const idField = document.getElementById('profileId');
-    if (idField) idField.value = '';
+    const elements = {
+        'profileId': '',
+        'formTitle': 'Create Your Partner Profile',
+        'submitBtn': 'Add My Profile'
+    };
 
-    const title = document.getElementById('formTitle');
-    if (title) title.textContent = 'Create Your Partner Profile';
+    for (const [id, value] of Object.entries(elements)) {
+        const el = document.getElementById(id);
+        if (el) {
+            if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') el.value = value;
+            else el.textContent = value;
+        }
+    }
 
-    const btn = document.getElementById('submitBtn');
-    if (btn) btn.textContent = 'Add My Profile';
-
-    const cancel = document.getElementById('cancelBtn');
-    if (cancel) cancel.style.display = 'none';
+    const cancelBtn = document.getElementById('cancelBtn');
+    if (cancelBtn) cancelBtn.style.display = 'none';
     
     const emailField = document.getElementById('email');
     if (emailField && userEmail) emailField.value = userEmail;
