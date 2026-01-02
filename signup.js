@@ -20,7 +20,6 @@ class Particle {
     update() {
         this.x += this.vx;
         this.y += this.vy;
-
         if (this.x < 0 || this.x > canvas.width) this.vx *= -1;
         if (this.y < 0 || this.y > canvas.height) this.vy *= -1;
     }
@@ -43,7 +42,6 @@ function connectParticles() {
             const dx = particles[i].x - particles[j].x;
             const dy = particles[i].y - particles[j].y;
             const distance = Math.sqrt(dx * dx + dy * dy);
-
             if (distance < maxDistance) {
                 ctx.beginPath();
                 ctx.strokeStyle = `rgba(102, 126, 234, ${1 - distance / maxDistance})`;
@@ -58,16 +56,10 @@ function connectParticles() {
 
 function animate() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    
-    particles.forEach(particle => {
-        particle.update();
-        particle.draw();
-    });
-    
+    particles.forEach(p => { p.update(); p.draw(); });
     connectParticles();
     requestAnimationFrame(animate);
 }
-
 animate();
 
 window.addEventListener('resize', () => {
@@ -75,137 +67,47 @@ window.addEventListener('resize', () => {
     canvas.height = window.innerHeight;
 });
 
-// --- UPDATED DATABASE HELPERS ---
-// Using 'fastsync_users' to match your Login.js logic
-function getUsers() {
-    return JSON.parse(localStorage.getItem('fastsync_users')) || [];
-}
-
-function saveUsers(users) {
-    localStorage.setItem('fastsync_users', JSON.stringify(users));
-}
-
-// Sign Up Form Handler
+// --- CORE LOGIC ---
 const signupForm = document.getElementById('signupForm');
 
 signupForm.addEventListener('submit', function(e) {
     e.preventDefault();
     
-    // Get form values
+    // 1. Get and Clean Values
     const fullName = document.getElementById('fullName').value.trim();
     const email = document.getElementById('email').value.trim().toLowerCase();
-    const password = document.getElementById('password').value;
-    const confirmPassword = document.getElementById('confirmPassword').value;
-    const rollNumber = document.getElementById('rollNumber').value.trim();
-    const department = document.getElementById('department').value;
+    const password = document.getElementById('password').value.trim();
+    const confirmPassword = document.getElementById('confirmPassword').value.trim();
     const termsAccepted = document.getElementById('terms').checked;
 
-    // 1. Validations
-    if (!termsAccepted) {
-        alert('Please accept the Terms & Conditions to continue');
-        return;
-    }
+    // 2. Validation
+    if (!termsAccepted) { alert('Please accept terms'); return; }
+    if (password !== confirmPassword) { alert('Passwords do not match!'); return; }
+    if (password.length < 6) { alert('Password too short!'); return; }
 
-    if (!email.includes('@')) {
-        alert('Please enter a valid email address');
-        return;
-    }
-
-    if (password !== confirmPassword) {
-        alert('Passwords do not match!');
-        document.getElementById('confirmPassword').focus();
-        return;
-    }
-
-    if (password.length < 6) {
-        alert('Password must be at least 6 characters long');
-        return;
-    }
-
-    // 2. Check for Duplicate Email
-    const users = getUsers();
-    const existingUser = users.find(user => user.email === email);
+    // 3. Save to "Database"
+    let users = JSON.parse(localStorage.getItem('fastsync_users')) || [];
     
-    if (existingUser) {
-        alert('❌ This email is already registered. Please login instead.');
+    if (users.some(u => u.email === email)) {
+        alert('❌ This email is already registered!');
         return;
     }
 
-    // 3. Create and Save New User
-    // Note: 'name' key is used to match login.js expected data
     const newUser = {
         id: Date.now(),
-        name: fullName, 
+        name: fullName, // Saved as 'name' to match Login
         email: email,
-        password: password, 
-        rollNumber: rollNumber,
-        department: department,
+        password: password,
         createdAt: new Date().toISOString()
     };
 
     users.push(newUser);
-    saveUsers(users);
+    localStorage.setItem('fastsync_users', JSON.stringify(users));
 
-    // 4. UI Loading State
-    const submitBtn = signupForm.querySelector('.btn-signup');
-    submitBtn.textContent = 'Creating Account...';
-    submitBtn.disabled = true;
-
-    // 5. Success and Auto-Login
-    setTimeout(() => {
-        // Log the user in immediately after signup
-        localStorage.setItem('isLoggedIn', 'true');
-        localStorage.setItem('userName', fullName);
-        localStorage.setItem('userEmail', email);
-        
-        alert('✓ Account created successfully! Welcome to FASTSync!');
-        window.location.href = 'find-partner.html';
-    }, 1500);
-});
-
-// Google Sign Up Handler (Simulated)
-const googleSignupBtn = document.getElementById('googleSignup');
-if (googleSignupBtn) {
-    googleSignupBtn.addEventListener('click', function() {
-        this.innerHTML = '<span>Connecting to Google...</span>';
-        this.disabled = true;
-        
-        setTimeout(() => {
-            const googleUser = {
-                id: Date.now(),
-                name: 'Google User',
-                email: 'user@nu.edu.pk',
-                rollNumber: 'N/A',
-                department: 'N/A',
-                loginMethod: 'google',
-                createdAt: new Date().toISOString()
-            };
-            
-            const users = getUsers();
-            const existingUser = users.find(u => u.email === googleUser.email);
-            
-            if (!existingUser) {
-                users.push(googleUser);
-                saveUsers(users);
-            }
-            
-            localStorage.setItem('isLoggedIn', 'true');
-            localStorage.setItem('userName', googleUser.name);
-            localStorage.setItem('userEmail', googleUser.email);
-            
-            window.location.href = 'find-partner.html';
-        }, 2000);
-    });
-}
-
-// Real-time password match validation UI
-document.getElementById('confirmPassword').addEventListener('input', function() {
-    const password = document.getElementById('password').value;
-    const confirmPassword = this.value;
-    
-    if (confirmPassword && password !== confirmPassword) {
-        this.style.borderColor = '#ef4444';
-    } else {
-        this.style.borderColor = 'rgba(138, 43, 226, 0.3)';
-    }
+    // 4. Redirect
+    alert('✅ Account created! Redirecting...');
+    localStorage.setItem('isLoggedIn', 'true');
+    localStorage.setItem('userName', newUser.name);
+    localStorage.setItem('userEmail', newUser.email);
+    window.location.href = 'find-partner.html';
 });
