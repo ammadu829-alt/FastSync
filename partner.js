@@ -60,10 +60,20 @@ document.getElementById('myProfileLink').addEventListener('click', function(e) {
 
 // Profile Form Submission
 const profileForm = document.getElementById('profileForm');
+
+if (!profileForm) {
+    console.error('❌ Profile form not found!');
+} else {
+    console.log('✅ Profile form found');
+}
+
 profileForm.addEventListener('submit', function(e) {
     e.preventDefault();
+    
+    console.log('========== FORM SUBMISSION START ==========');
 
     const profileId = document.getElementById('profileId').value;
+    console.log('Profile ID:', profileId);
 
     const formData = {
         id: profileId ? parseInt(profileId) : Date.now(),
@@ -80,38 +90,81 @@ profileForm.addEventListener('submit', function(e) {
         dateAdded: new Date().toISOString()
     };
 
+    console.log('📝 Form Data:', formData);
+    console.log('Full Name:', formData.fullName);
+    console.log('Email:', formData.email);
+    console.log('Phone:', formData.phone);
+    console.log('Roll Number:', formData.rollNumber);
+
     // Validation
-    if (!formData.fullName || !formData.email || !formData.phone || !formData.rollNumber) {
-        alert('❌ Please fill in all required fields (Name, Email, Phone, Roll Number)');
+    if (!formData.fullName) {
+        console.log('❌ Full Name is empty');
+        alert('❌ Please enter your Full Name');
+        return;
+    }
+    
+    if (!formData.email) {
+        console.log('❌ Email is empty');
+        alert('❌ Please enter your Email');
+        return;
+    }
+    
+    if (!formData.phone) {
+        console.log('❌ Phone is empty');
+        alert('❌ Please enter your Phone Number');
+        return;
+    }
+    
+    if (!formData.rollNumber) {
+        console.log('❌ Roll Number is empty');
+        alert('❌ Please enter your Roll Number');
         return;
     }
 
+    console.log('✅ All validations passed!');
+
     if (profileId) {
         // UPDATE EXISTING PROFILE
+        console.log('📝 Updating existing profile...');
         const index = partners.findIndex(p => p.id === parseInt(profileId));
         if (index !== -1) {
             partners[index] = formData;
             savePartners();
+            console.log('✅ Profile UPDATED!');
             alert('✅ Your profile has been UPDATED successfully!');
-            console.log('Profile updated:', formData);
+        } else {
+            console.log('❌ Profile not found for update');
         }
     } else {
         // ADD NEW PROFILE
+        console.log('➕ Adding new profile...');
+        console.log('Current user email:', userEmail);
+        
         const existingProfile = partners.find(p => p.email === userEmail);
         if (existingProfile) {
+            console.log('⚠️ User already has a profile:', existingProfile);
             alert('⚠️ You already have a profile! Scroll down to find it and click Edit.');
             return;
         }
         
+        console.log('✅ No existing profile found, adding new one...');
         partners.push(formData);
+        console.log('✅ Profile added to array');
+        console.log('📊 Total profiles in array:', partners.length);
+        
         savePartners();
+        console.log('✅ Saved to localStorage');
+        
         alert('✅ Your profile has been ADDED successfully!');
-        console.log('Profile added:', formData);
-        console.log('Total profiles:', partners.length);
     }
     
+    console.log('🔄 Resetting form...');
     resetForm();
+    
+    console.log('🖼️ Displaying profiles...');
     displayPartners();
+    
+    console.log('========== FORM SUBMISSION END ==========');
 });
 
 // Display Partners Function
