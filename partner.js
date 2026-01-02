@@ -2,9 +2,8 @@
 const firebaseConfig = {
     apiKey: "YOUR_ACTUAL_API_KEY",
     authDomain: "fastsync.firebaseapp.com",
-    // FIX: Note the colon ":" and NO "const" here. 
-    // REPLACE THIS URL with the one from your Firebase Console!
-    databaseURL: "https://fastsync-8b20e-default-rtdb.firebaseio.com/",
+    // Paste your real URL here to fix the console warning!
+    databaseURL: "https://your-project-id-default-rtdb.firebaseio.com/", 
     projectId: "fastsync",
     storageBucket: "fastsync.appspot.com",
     messagingSenderId: "123456789",
@@ -28,10 +27,10 @@ function init() {
         return;
     }
 
-    // Connect to the Cloud Database
+    // Connect to Cloud and Listen for Changes
     database.ref('profiles').on('value', (snapshot) => {
         const data = snapshot.val();
-        // Convert the cloud data into a list we can show
+        // We store the original ID from Firebase so we can edit it later
         partners = data ? Object.entries(data).map(([id, val]) => ({...val, id})) : [];
         displayPartners();
     });
@@ -41,7 +40,7 @@ function init() {
     }
 }
 
-// 4. Show the Cards (Like Ammad's Card)
+// 4. Show the Cards (Design matches Ammad's card)
 function displayPartners() {
     const grid = document.getElementById('partnersGrid');
     if (!grid) return;
@@ -50,18 +49,17 @@ function displayPartners() {
     grid.innerHTML = '';
 
     partners.forEach(p => {
-        const isMine = p.email === userEmail; // Check if this is YOUR card
+        const isMine = p.email === userEmail; 
         const card = document.createElement('div');
         card.className = 'partner-card';
 
-        // Matching the design in your screenshot
         card.innerHTML = `
             <span class="status-badge ${p.availability === 'available' ? 'available' : 'found'}">
                 ${p.availability === 'available' ? '✓ Available' : '✗ Partnered'}
             </span>
             <div class="partner-header">
                 <div class="partner-name">${p.fullName}</div>
-                <div class="partner-roll" style="color: #a855f7;">${p.rollNumber}</div>
+                <div class="partner-roll" style="color: #a855f7; font-weight:bold;">${p.rollNumber}</div>
             </div>
             <div class="partner-info">
                 <div class="info-item"><span class="info-label">Email:</span> <span>${p.email}</span></div>
@@ -75,10 +73,10 @@ function displayPartners() {
             <div class="profile-actions" style="margin-top: 15px;">
                 ${isMine ? 
                     `<div style="display: flex; gap: 10px;">
-                        <button class="btn-submit" onclick="editProfile('${p.id}')" style="flex:1;">✏️ Edit</button>
+                        <button class="btn-submit" onclick="editProfile('${p.id}')" style="flex:1;">✏️ Edit My Profile</button>
                         <button class="btn-submit" onclick="deleteProfile('${p.id}')" style="flex:1; background: #ef4444;">🗑️ Delete</button>
                     </div>` : 
-                    `<button class="btn-submit" onclick="contactPartner('${p.fullName}')" style="width:100%; background: #6366f1;">📧 Contact</button>`
+                    `<button class="btn-submit" onclick="alert('Opening Contact...') style="width:100%; background: #6366f1;">📧 Contact</button>`
                 }
             </div>
         `;
@@ -86,7 +84,34 @@ function displayPartners() {
     });
 }
 
-// 5. Delete Logic
+// 5. ENABLED: The Edit Function
+window.editProfile = function(id) {
+    // Find the profile data in our list
+    const p = partners.find(item => item.id === id);
+    if (!p) return;
+
+    // 1. Fill the hidden ID field (so we update the SAME card, not make a new one)
+    document.getElementById('profileId').value = p.id;
+
+    // 2. Fill all form inputs
+    document.getElementById('fullName').value = p.fullName || '';
+    document.getElementById('email').value = p.email || '';
+    document.getElementById('phone').value = p.phone || '';
+    document.getElementById('rollNumber').value = p.rollNumber || '';
+    document.getElementById('semester').value = p.semester || '';
+    document.getElementById('session').value = p.session || '';
+    document.getElementById('course').value = p.course || '';
+    document.getElementById('availability').value = p.availability || 'available';
+    document.getElementById('bio').value = p.bio || '';
+
+    // 3. Change button text to show we are editing
+    document.getElementById('submitBtn').textContent = "Update My Profile";
+
+    // 4. Scroll smoothly back to the form
+    document.getElementById('profileSection').scrollIntoView({ behavior: 'smooth' });
+};
+
+// 6. Delete Logic
 window.deleteProfile = function(id) {
     if (confirm("Remove your profile from the list?")) {
         database.ref('profiles/' + id).remove()
@@ -95,12 +120,15 @@ window.deleteProfile = function(id) {
     }
 };
 
-// 6. Form Submission (Add or Update)
+// 7. Form Submission (Handles both ADD and EDIT)
 const profileForm = document.getElementById('profileForm');
 if (profileForm) {
     profileForm.addEventListener('submit', function(e) {
         e.preventDefault();
-        const id = document.getElementById('profileId').value || Date.now().toString();
+        
+        // Use existing ID if editing, otherwise create a new one
+        const existingId = document.getElementById('profileId').value;
+        const id = existingId || Date.now().toString();
         
         const profileData = {
             fullName: document.getElementById('fullName').value,
@@ -114,11 +142,13 @@ if (profileForm) {
             bio: document.getElementById('bio').value
         };
 
+        // Save to Cloud
         database.ref('profiles/' + id).set(profileData)
             .then(() => {
-                alert("Success! Your profile is now live.");
+                alert(existingId ? "✅ Profile Updated!" : "✅ Profile Created!");
                 profileForm.reset();
                 document.getElementById('profileId').value = '';
+                document.getElementById('submitBtn').textContent = "Add My Profile";
             });
     });
 }
