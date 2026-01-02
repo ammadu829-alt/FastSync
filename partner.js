@@ -1,9 +1,9 @@
 // 1. Firebase Configuration
 const firebaseConfig = {
-    apiKey: "YOUR_ACTUAL_API_KEY",
+    apiKey: "YOUR_API_KEY",
     authDomain: "fastsync.firebaseapp.com",
-    // Paste your real URL here to fix the console warning!
-    databaseURL: "https://fastsync-8b20e-default-rtdb.firebaseio.com/", 
+    // FIX: Use a colon (:) and no "const" inside this object
+    databaseURL: "https://your-project-id-default-rtdb.firebaseio.com/", 
     projectId: "fastsync",
     storageBucket: "fastsync.appspot.com",
     messagingSenderId: "123456789",
@@ -27,29 +27,31 @@ function init() {
         return;
     }
 
-    // Connect to Cloud and Listen for Changes
+    // Pull data from the Cloud and listen for changes
     database.ref('profiles').on('value', (snapshot) => {
         const data = snapshot.val();
-        // We store the original ID from Firebase so we can edit it later
+        // Convert Firebase object into an array with IDs
         partners = data ? Object.entries(data).map(([id, val]) => ({...val, id})) : [];
         displayPartners();
     });
 
-    if (document.getElementById('profileBtn') && userName) {
-        document.getElementById('profileBtn').textContent = userName;
-    }
+    const profileBtn = document.getElementById('profileBtn');
+    if (profileBtn && userName) profileBtn.textContent = userName;
 }
 
-// 4. Show the Cards (Design matches Ammad's card)
+// 4. Display Cards (Matches design in image_df442b.png)
 function displayPartners() {
     const grid = document.getElementById('partnersGrid');
-    if (!grid) return;
+    const countText = document.getElementById('partnersCount');
+    
+    // FIX: This check prevents the "Cannot set properties of null" error
+    if (!grid) return; 
 
-    document.getElementById('partnersCount').textContent = partners.length;
+    if (countText) countText.textContent = partners.length;
     grid.innerHTML = '';
 
     partners.forEach(p => {
-        const isMine = p.email === userEmail; 
+        const isMine = p.email === userEmail; // Security: Check if this card belongs to you
         const card = document.createElement('div');
         card.className = 'partner-card';
 
@@ -59,16 +61,14 @@ function displayPartners() {
             </span>
             <div class="partner-header">
                 <div class="partner-name">${p.fullName}</div>
-                <div class="partner-roll" style="color: #a855f7; font-weight:bold;">${p.rollNumber}</div>
+                <div class="partner-roll" style="color: #a855f7; font-weight: bold;">${p.rollNumber}</div>
             </div>
             <div class="partner-info">
                 <div class="info-item"><span class="info-label">Email:</span> <span>${p.email}</span></div>
                 <div class="info-item"><span class="info-label">Phone:</span> <span>${p.phone}</span></div>
-                <div class="info-item"><span class="info-label">Semester:</span> <span>${p.semester}</span></div>
-                <div class="info-item"><span class="info-label">Session:</span> <span>${p.session}</span></div>
                 <div class="info-item"><span class="info-label">Course:</span> <span>${p.course}</span></div>
             </div>
-            <p class="partner-bio" style="margin-top: 10px; font-size: 0.9em;">${p.bio || ''}</p>
+            <p class="partner-bio" style="margin-top: 10px; font-size: 0.9em; opacity: 0.8;">${p.bio || ''}</p>
             
             <div class="profile-actions" style="margin-top: 15px;">
                 ${isMine ? 
@@ -76,7 +76,7 @@ function displayPartners() {
                         <button class="btn-submit" onclick="editProfile('${p.id}')" style="flex:1;">✏️ Edit My Profile</button>
                         <button class="btn-submit" onclick="deleteProfile('${p.id}')" style="flex:1; background: #ef4444;">🗑️ Delete</button>
                     </div>` : 
-                    `<button class="btn-submit" onclick="alert('Opening Contact...') style="width:100%; background: #6366f1;">📧 Contact</button>`
+                    `<button class="btn-submit" onclick="alert('Contacting ${p.fullName}...')" style="width:100%; background: #6366f1;">📧 Contact</button>`
                 }
             </div>
         `;
@@ -86,48 +86,40 @@ function displayPartners() {
 
 // 5. ENABLED: The Edit Function
 window.editProfile = function(id) {
-    // Find the profile data in our list
     const p = partners.find(item => item.id === id);
     if (!p) return;
 
-    // 1. Fill the hidden ID field (so we update the SAME card, not make a new one)
-    document.getElementById('profileId').value = p.id;
+    // Scroll to form and fill the hidden ID field
+    const formSection = document.getElementById('profileSection') || document.querySelector('.add-profile-section');
+    if (formSection) formSection.scrollIntoView({ behavior: 'smooth' });
 
-    // 2. Fill all form inputs
-    document.getElementById('fullName').value = p.fullName || '';
-    document.getElementById('email').value = p.email || '';
-    document.getElementById('phone').value = p.phone || '';
-    document.getElementById('rollNumber').value = p.rollNumber || '';
-    document.getElementById('semester').value = p.semester || '';
-    document.getElementById('session').value = p.session || '';
-    document.getElementById('course').value = p.course || '';
-    document.getElementById('availability').value = p.availability || 'available';
-    document.getElementById('bio').value = p.bio || '';
+    if (document.getElementById('profileId')) document.getElementById('profileId').value = p.id;
 
-    // 3. Change button text to show we are editing
-    document.getElementById('submitBtn').textContent = "Update My Profile";
+    // Fill the form fields
+    const fields = ['fullName', 'email', 'phone', 'rollNumber', 'semester', 'session', 'course', 'availability', 'bio'];
+    fields.forEach(f => {
+        const input = document.getElementById(f);
+        if (input) input.value = p[f] || '';
+    });
 
-    // 4. Scroll smoothly back to the form
-    document.getElementById('profileSection').scrollIntoView({ behavior: 'smooth' });
+    if (document.getElementById('submitBtn')) document.getElementById('submitBtn').textContent = "Update My Profile";
 };
 
-// 6. Delete Logic
+// 6. The Delete Function
 window.deleteProfile = function(id) {
-    if (confirm("Remove your profile from the list?")) {
+    if (confirm("Are you sure you want to delete your profile?")) {
         database.ref('profiles/' + id).remove()
-            .then(() => alert("Profile removed successfully."))
-            .catch(err => alert("Error: " + err.message));
+            .then(() => alert("✅ Profile deleted!"))
+            .catch(err => alert("❌ Error: " + err.message));
     }
 };
 
-// 7. Form Submission (Handles both ADD and EDIT)
+// 7. Handle Form Submission (Add or Update)
 const profileForm = document.getElementById('profileForm');
 if (profileForm) {
     profileForm.addEventListener('submit', function(e) {
         e.preventDefault();
-        
-        // Use existing ID if editing, otherwise create a new one
-        const existingId = document.getElementById('profileId').value;
+        const existingId = document.getElementById('profileId') ? document.getElementById('profileId').value : '';
         const id = existingId || Date.now().toString();
         
         const profileData = {
@@ -142,16 +134,13 @@ if (profileForm) {
             bio: document.getElementById('bio').value
         };
 
-        // Save to Cloud
-        database.ref('profiles/' + id).set(profileData)
-            .then(() => {
-                alert(existingId ? "✅ Profile Updated!" : "✅ Profile Created!");
-                profileForm.reset();
-                document.getElementById('profileId').value = '';
-                document.getElementById('submitBtn').textContent = "Add My Profile";
-            });
+        database.ref('profiles/' + id).set(profileData).then(() => {
+            alert(existingId ? "✅ Profile Updated!" : "✅ Profile Added!");
+            profileForm.reset();
+            if (document.getElementById('profileId')) document.getElementById('profileId').value = '';
+            if (document.getElementById('submitBtn')) document.getElementById('submitBtn').textContent = "Add My Profile";
+        });
     });
 }
 
 init();
-
