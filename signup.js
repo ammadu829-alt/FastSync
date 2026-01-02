@@ -20,6 +20,7 @@ class Particle {
     update() {
         this.x += this.vx;
         this.y += this.vy;
+
         if (this.x < 0 || this.x > canvas.width) this.vx *= -1;
         if (this.y < 0 || this.y > canvas.height) this.vy *= -1;
     }
@@ -42,6 +43,7 @@ function connectParticles() {
             const dx = particles[i].x - particles[j].x;
             const dy = particles[i].y - particles[j].y;
             const distance = Math.sqrt(dx * dx + dy * dy);
+
             if (distance < maxDistance) {
                 ctx.beginPath();
                 ctx.strokeStyle = `rgba(102, 126, 234, ${1 - distance / maxDistance})`;
@@ -56,10 +58,16 @@ function connectParticles() {
 
 function animate() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    particles.forEach(p => { p.update(); p.draw(); });
+    
+    particles.forEach(particle => {
+        particle.update();
+        particle.draw();
+    });
+    
     connectParticles();
     requestAnimationFrame(animate);
 }
+
 animate();
 
 window.addEventListener('resize', () => {
@@ -67,47 +75,56 @@ window.addEventListener('resize', () => {
     canvas.height = window.innerHeight;
 });
 
-// --- CORE LOGIC ---
+// --- SIGN UP LOGIC ---
 const signupForm = document.getElementById('signupForm');
 
-signupForm.addEventListener('submit', function(e) {
-    e.preventDefault();
-    
-    // 1. Get and Clean Values
-    const fullName = document.getElementById('fullName').value.trim();
-    const email = document.getElementById('email').value.trim().toLowerCase();
-    const password = document.getElementById('password').value.trim();
-    const confirmPassword = document.getElementById('confirmPassword').value.trim();
-    const termsAccepted = document.getElementById('terms').checked;
+if (signupForm) {
+    signupForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const fullName = document.getElementById('fullName').value.trim();
+        const email = document.getElementById('email').value.trim().toLowerCase();
+        const password = document.getElementById('password').value.trim();
+        const confirmPassword = document.getElementById('confirmPassword').value.trim();
+        const termsAccepted = document.getElementById('terms').checked;
 
-    // 2. Validation
-    if (!termsAccepted) { alert('Please accept terms'); return; }
-    if (password !== confirmPassword) { alert('Passwords do not match!'); return; }
-    if (password.length < 6) { alert('Password too short!'); return; }
+        if (!termsAccepted) {
+            alert('Please accept the Terms & Conditions');
+            return;
+        }
 
-    // 3. Save to "Database"
-    let users = JSON.parse(localStorage.getItem('fastsync_users')) || [];
-    
-    if (users.some(u => u.email === email)) {
-        alert('❌ This email is already registered!');
-        return;
-    }
+        if (password !== confirmPassword) {
+            alert('Passwords do not match!');
+            return;
+        }
 
-    const newUser = {
-        id: Date.now(),
-        name: fullName, // Saved as 'name' to match Login
-        email: email,
-        password: password,
-        createdAt: new Date().toISOString()
-    };
+        // Get existing users using the shared key
+        let users = JSON.parse(localStorage.getItem('fastsync_users')) || [];
 
-    users.push(newUser);
-    localStorage.setItem('fastsync_users', JSON.stringify(users));
+        // Check for duplicate
+        if (users.some(u => u.email === email)) {
+            alert('❌ This email is already registered.');
+            return;
+        }
 
-    // 4. Redirect
-    alert('✅ Account created! Redirecting...');
-    localStorage.setItem('isLoggedIn', 'true');
-    localStorage.setItem('userName', newUser.name);
-    localStorage.setItem('userEmail', newUser.email);
-    window.location.href = 'find-partner.html';
-});
+        // Create new user object
+        const newUser = {
+            id: Date.now(),
+            name: fullName, // Saved as 'name' to match login.js
+            email: email,
+            password: password
+        };
+
+        users.push(newUser);
+        localStorage.setItem('fastsync_users', JSON.stringify(users));
+
+        const submitBtn = signupForm.querySelector('.btn-signup');
+        submitBtn.textContent = 'Creating Account...';
+        submitBtn.disabled = true;
+
+        setTimeout(() => {
+            alert('✅ Account created successfully!');
+            window.location.href = 'login.html';
+        }, 1500);
+    });
+}
