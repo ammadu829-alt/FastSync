@@ -2,7 +2,12 @@
 const firebaseConfig = {
   apiKey: "YOUR_API_KEY",
   authDomain: "fastsync.firebaseapp.com",
-  databaseURL: "https://fastsync.firebaseio.com",
+  databaseURL: const firebaseConfig = {
+  // ... other keys ...
+  databaseURL: "https://fastsync-8b20e-default-rtdb.firebaseio.com/
+:
+null", // This fixes the error in image_dfbc88.png
+};
   projectId: "fastsync",
   storageBucket: "fastsync.appspot.com",
   messagingSenderId: "12345",
@@ -171,3 +176,4 @@ if (profileForm) {
 }
 
 init();
+
