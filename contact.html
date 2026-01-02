@@ -26,15 +26,15 @@
                 <p class="subtitle">Have a question or query? We're here to help!</p>
             </div>
             
-            <form id="contactForm" class="contact-form">
+            <form id="contactForm" action="https://formspree.io/f/YOUR_FORMSPREE_ID" method="POST" class="contact-form">
                 <div class="input-group">
                     <label for="userName">Your Name *</label>
-                    <input type="text" id="userName" name="userName" placeholder="John Doe" required>
+                    <input type="text" id="userName" name="name" placeholder="John Doe" required>
                 </div>
 
                 <div class="input-group">
                     <label for="userEmail">Your Email *</label>
-                    <input type="email" id="userEmail" name="userEmail" placeholder="your.email@nu.edu.pk" required>
+                    <input type="email" id="userEmail" name="email" placeholder="your.email@nu.edu.pk" required>
                 </div>
 
                 <div class="input-group">
@@ -47,7 +47,8 @@
                     <textarea id="message" name="message" rows="6" placeholder="Write your query or message here..." required></textarea>
                 </div>
                 
-                <button type="submit" class="btn-submit">Send Message</button>
+                <button type="submit" class="btn-submit" id="submitBtn">Send Message</button>
+                <p id="formStatus" style="margin-top: 10px; text-align: center; display: none;"></p>
             </form>
 
             <div class="contact-info">
