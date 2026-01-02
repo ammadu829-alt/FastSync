@@ -79,7 +79,7 @@ window.addEventListener('resize', () => {
 // Contact Form Handler
 const contactForm = document.getElementById('contactForm');
 
-contactForm.addEventListener('submit', function(e) {
+contactForm.addEventListener('submit', async function(e) {
     e.preventDefault();
     
     const userName = document.getElementById('userName').value.trim();
@@ -104,54 +104,51 @@ contactForm.addEventListener('submit', function(e) {
     const originalText = submitBtn.textContent;
     submitBtn.textContent = 'Sending...';
     submitBtn.disabled = true;
-    
-    // Prepare email content
-    const adminEmail = 'ammadu829@gmail.com';
-    const emailSubject = subject ? `FASTSync Query: ${subject}` : 'FASTSync Query';
-    
-    const emailBody = `
-New Query from FASTSync Contact Form
-=====================================
 
-From: ${userName}
-Email: ${userEmail}
-Subject: ${subject || 'No subject'}
+    // Use FormData for Formspree
+    const formData = new FormData(contactForm);
 
-Message:
-${message}
+    try {
+        // Send data to Formspree endpoint
+        const response = await fetch(contactForm.action, {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'Accept': 'application/json'
+            }
+        });
 
-=====================================
-Sent via FASTSync Contact Form
-    `.trim();
-    
-    // Method 1: Open default email client (Works immediately)
-    const mailtoLink = `mailto:${adminEmail}?subject=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(emailBody)}`;
-    window.location.href = mailtoLink;
-    
-    // Save query to localStorage (for admin tracking)
-    saveQuery({
-        id: Date.now(),
-        userName: userName,
-        userEmail: userEmail,
-        subject: subject,
-        message: message,
-        date: new Date().toISOString()
-    });
-    
-    // Reset form after short delay
-    setTimeout(() => {
-        submitBtn.textContent = '✓ Message Sent!';
-        submitBtn.style.background = 'rgba(34, 197, 94, 0.8)';
-        
-        setTimeout(() => {
-            contactForm.reset();
-            submitBtn.textContent = originalText;
-            submitBtn.style.background = '';
-            submitBtn.disabled = false;
+        if (response.ok) {
+            // Save query to localStorage (for admin tracking)
+            saveQuery({
+                id: Date.now(),
+                userName: userName,
+                userEmail: userEmail,
+                subject: subject,
+                message: message,
+                date: new Date().toISOString()
+            });
+
+            // UI feedback
+            submitBtn.textContent = '✓ Message Sent!';
+            submitBtn.style.background = 'rgba(34, 197, 94, 0.8)';
             
-            alert('✓ Your message has been sent! We will get back to you soon.');
-        }, 2000);
-    }, 1000);
+            setTimeout(() => {
+                contactForm.reset();
+                submitBtn.textContent = originalText;
+                submitBtn.style.background = '';
+                submitBtn.disabled = false;
+                alert('✓ Your message has been sent successfully! We will get back to you soon.');
+            }, 2000);
+
+        } else {
+            throw new Error('Formspree submission failed');
+        }
+    } catch (error) {
+        alert('❌ Sorry, there was an error sending your message. Please try again later.');
+        submitBtn.textContent = originalText;
+        submitBtn.disabled = false;
+    }
 });
 
 // Save queries to localStorage for tracking
