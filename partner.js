@@ -1,4 +1,4 @@
-// Simple version with Full Profile Card and Edit feature
+// Simple version with Edit feature
 let partners = [];
 
 // Load partners from localStorage
@@ -28,15 +28,16 @@ if (!isLoggedIn) {
     window.location.href = 'login.html';
 }
 
-// Display user name - FIXED: Added null check to prevent crash on line 36
+// Display user name
 const userName = localStorage.getItem('userName');
 const userEmail = localStorage.getItem('userEmail');
 const myProfileLink = document.getElementById('myProfileLink');
-if (myProfileLink && userName) {
+// FIX: Added null check for line 36 to prevent crash
+if (userName && myProfileLink) {
     myProfileLink.textContent = userName;
 }
 
-// Logout Button - FIXED: Added null check
+// Logout
 const logoutBtn = document.getElementById('logoutBtn');
 if (logoutBtn) {
     logoutBtn.addEventListener('click', function(e) {
@@ -50,7 +51,7 @@ if (logoutBtn) {
     });
 }
 
-// My Profile Link - FIXED: Added null checks
+// My Profile Link
 if (myProfileLink) {
     myProfileLink.addEventListener('click', function(e) {
         e.preventDefault();
@@ -71,10 +72,11 @@ if (profileForm) {
     profileForm.addEventListener('submit', function(e) {
         e.preventDefault();
         
-        const profileIdVal = document.getElementById('profileId')?.value;
+        const profileIdInput = document.getElementById('profileId');
+        const profileId = profileIdInput ? profileIdInput.value : '';
 
         const formData = {
-            id: profileIdVal ? parseInt(profileIdVal) : Date.now(),
+            id: profileId ? parseInt(profileId) : Date.now(),
             fullName: document.getElementById('fullName').value.trim(),
             email: document.getElementById('email').value.trim(),
             phone: document.getElementById('phone').value.trim(),
@@ -88,24 +90,29 @@ if (profileForm) {
             dateAdded: new Date().toISOString()
         };
 
-        if (profileIdVal) {
-            // UPDATE EXISTING PROFILE
-            const index = partners.findIndex(p => p.id === parseInt(profileIdVal));
+        // Validation
+        if (!formData.fullName || !formData.email || !formData.phone || !formData.rollNumber) {
+            alert('❌ Please fill in all required fields');
+            return;
+        }
+
+        if (profileId) {
+            const index = partners.findIndex(p => p.id === parseInt(profileId));
             if (index !== -1) {
                 partners[index] = formData;
                 savePartners();
-                alert('✅ Profile UPDATED successfully!');
+                alert('✅ Your profile has been UPDATED successfully!');
             }
         } else {
-            // ADD NEW PROFILE
             const existingProfile = partners.find(p => p.email === userEmail);
             if (existingProfile) {
-                alert('⚠️ You already have a profile! Please edit your existing one.');
+                alert('⚠️ You already have a profile! Scroll down to find it and click Edit.');
                 return;
             }
+            
             partners.push(formData);
             savePartners();
-            alert('✅ Profile ADDED successfully!');
+            alert('✅ Your profile has been ADDED successfully!');
         }
         
         resetForm();
@@ -113,7 +120,7 @@ if (profileForm) {
     });
 }
 
-// Display Partners Function - UPDATED: Shows all info from the image
+// Display Partners Function - Updated to show ALL info
 function displayPartners(filteredPartners = null) {
     const partnersGrid = document.getElementById('partnersGrid');
     const noResults = document.getElementById('noResults');
@@ -122,6 +129,7 @@ function displayPartners(filteredPartners = null) {
     if (!partnersGrid) return;
 
     const dataToDisplay = filteredPartners || partners;
+
     if (partnersCount) partnersCount.textContent = dataToDisplay.length;
 
     if (dataToDisplay.length === 0) {
@@ -151,10 +159,11 @@ function displayPartners(filteredPartners = null) {
 
         const isMyProfile = partner.email === userEmail;
         
-        // Show EDIT button for you, CONTACT button for others
         const profileActionsHTML = isMyProfile ? 
             `<div class="profile-actions">
-                <button class="btn-edit" onclick="editProfile(${partner.id})">✏️ Edit Profile</button>
+                <button class="btn-edit" onclick="editProfile(${partner.id})">
+                    ✏️ Edit Profile
+                </button>
             </div>` : 
             `<div class="partner-contact">
                 <button class="btn-contact" onclick="openMessageModal('${partner.email}', '${partner.fullName}', '${partner.phone}')">
@@ -162,9 +171,10 @@ function displayPartners(filteredPartners = null) {
                 </button>
             </div>`;
 
-        // FULL TEMPLATE matching your image
+        // Updated card HTML to show all details as requested
         card.innerHTML = `
             <span class="status-badge ${statusClass}">${statusText}</span>
+            
             <div class="partner-header">
                 <div class="partner-name">${partner.fullName}</div>
                 <div class="partner-roll" style="color: #a855f7;">${partner.rollNumber}</div>
@@ -179,7 +189,7 @@ function displayPartners(filteredPartners = null) {
             </div>
 
             ${skillsHTML}
-            ${partner.bio ? `<div class="partner-bio" style="margin-top: 10px; opacity: 0.8;">${partner.bio}</div>` : ''}
+            ${partner.bio ? `<div class="partner-bio" style="margin-top:10px; opacity:0.8;">${partner.bio}</div>` : ''}
 
             ${profileActionsHTML}
         `;
@@ -194,23 +204,24 @@ function getOrdinal(n) {
     return s[(v - 20) % 10] || s[v] || s[0];
 }
 
-// ✏️ EDIT PROFILE FUNCTION
+// ✏️ EDIT PROFILE FUNCTION (FIXED)
 window.editProfile = function(profileId) {
-    const profile = partners.find(p => p.id === profileId);
+    const profile = partners.find(p => p.id === parseInt(profileId));
     if (!profile) return;
 
-    const profileSection = document.getElementById('profileSection');
-    if (profileSection) profileSection.scrollIntoView({ behavior: 'smooth' });
+    // FIX: Null checks for Edit mode UI elements
+    const section = document.getElementById('profileSection');
+    if (section) section.scrollIntoView({ behavior: 'smooth' });
 
-    // FIXED: Added null checks for all form elements
+    const title = document.getElementById('formTitle');
+    if (title) title.textContent = '✏️ Edit Your Profile';
+    
+    // Helper to safely set values
     const setVal = (id, val) => {
         const el = document.getElementById(id);
         if (el) el.value = val || '';
     };
 
-    const title = document.getElementById('formTitle');
-    if (title) title.textContent = '✏️ Edit Your Profile';
-    
     setVal('profileId', profile.id);
     setVal('fullName', profile.fullName);
     setVal('email', profile.email);
@@ -228,25 +239,20 @@ window.editProfile = function(profileId) {
     
     const cancelBtn = document.getElementById('cancelBtn');
     if (cancelBtn) cancelBtn.style.display = 'block';
-};
+}
 
-// Reset Form Function - FIXED: Added null checks for line 231 crash
+// Reset Form Function (FIXED: Added null check for line 231 crash)
 function resetForm() {
     if (profileForm) profileForm.reset();
     
-    const elements = {
-        'profileId': '',
-        'formTitle': 'Create Your Partner Profile',
-        'submitBtn': 'Add My Profile'
-    };
+    const profileIdInput = document.getElementById('profileId');
+    if (profileIdInput) profileIdInput.value = '';
 
-    for (const [id, value] of Object.entries(elements)) {
-        const el = document.getElementById(id);
-        if (el) {
-            if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') el.value = value;
-            else el.textContent = value;
-        }
-    }
+    const title = document.getElementById('formTitle');
+    if (title) title.textContent = 'Create Your Partner Profile';
+
+    const submitBtn = document.getElementById('submitBtn');
+    if (submitBtn) submitBtn.textContent = 'Add My Profile';
 
     const cancelBtn = document.getElementById('cancelBtn');
     if (cancelBtn) cancelBtn.style.display = 'none';
@@ -254,6 +260,16 @@ function resetForm() {
     const emailField = document.getElementById('email');
     if (emailField && userEmail) emailField.value = userEmail;
 }
+
+const cancelBtn = document.getElementById('cancelBtn');
+if (cancelBtn) {
+    cancelBtn.addEventListener('click', function() {
+        resetForm();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+}
+
+// Modal and Filters logic omitted for brevity but should remain exactly as they were
 
 // Initial Run
 displayPartners();
