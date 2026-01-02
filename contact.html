@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contact Us - FASTSync</title>
+    <link rel="stylesheet" href="contact.css">
+</head>
+<body>
+    <canvas class="network-bg" id="contactCanvas"></canvas>
+
+    <nav class="navbar">
+        <div class="logo">FASTSync</div>
+        <div class="nav-links">
+            <a href="index.html">Home</a>
+            <a href="find-partner.html">Find Partner</a>
+            <a href="contact.html" class="active">Contact Us</a>
+            <a href="login.html">Login</a>
+        </div>
+    </nav>
+    
+    <div class="contact-container">
+        <div class="contact-box">
+            <div class="contact-header">
+                <h1>Get in Touch</h1>
+                <p class="subtitle">Have a question or query? We're here to help!</p>
+            </div>
+            
+            <form id="contactForm" class="contact-form">
+                <div class="input-group">
+                    <label for="userName">Your Name *</label>
+                    <input type="text" id="userName" name="userName" placeholder="John Doe" required>
+                </div>
+
+                <div class="input-group">
+                    <label for="userEmail">Your Email *</label>
+                    <input type="email" id="userEmail" name="userEmail" placeholder="your.email@nu.edu.pk" required>
+                </div>
+
+                <div class="input-group">
+                    <label for="subject">Subject</label>
+                    <input type="text" id="subject" name="subject" placeholder="What is this about? (Optional)">
+                </div>
+
+                <div class="input-group">
+                    <label for="message">Your Message *</label>
+                    <textarea id="message" name="message" rows="6" placeholder="Write your query or message here..." required></textarea>
+                </div>
+                
+                <button type="submit" class="btn-submit">Send Message</button>
+            </form>
+
+            <div class="contact-info">
+                <h3>Other Ways to Reach Us</h3>
+                <div class="info-items">
+                    <div class="info-item">
+                        <span class="icon">📧</span>
+                        <div>
+                            <strong>Email</strong>
+                            <p>ammadu829@gmail.com</p>
+                        </div>
+                    </div>
+                    <div class="info-item">
+                        <span class="icon">🎓</span>
+                        <div>
+                            <strong>University</strong>
+                            <p>FAST University</p>
+                        </div>
+                    </div>
+                    <div class="info-item">
+                        <span class="icon">⏰</span>
+                        <div>
+                            <strong>Response Time</strong>
+                            <p>Usually within 24 hours</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="contact.js"></script>
+</body>
+</html>
