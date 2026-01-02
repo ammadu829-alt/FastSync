@@ -20,7 +20,6 @@ class Particle {
     update() {
         this.x += this.vx;
         this.y += this.vy;
-
         if (this.x < 0 || this.x > canvas.width) this.vx *= -1;
         if (this.y < 0 || this.y > canvas.height) this.vy *= -1;
     }
@@ -43,7 +42,6 @@ function connectParticles() {
             const dx = particles[i].x - particles[j].x;
             const dy = particles[i].y - particles[j].y;
             const distance = Math.sqrt(dx * dx + dy * dy);
-
             if (distance < maxDistance) {
                 ctx.beginPath();
                 ctx.strokeStyle = `rgba(102, 126, 234, ${1 - distance / maxDistance})`;
@@ -58,16 +56,10 @@ function connectParticles() {
 
 function animate() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    
-    particles.forEach(particle => {
-        particle.update();
-        particle.draw();
-    });
-    
+    particles.forEach(p => { p.update(); p.draw(); });
     connectParticles();
     requestAnimationFrame(animate);
 }
-
 animate();
 
 window.addEventListener('resize', () => {
@@ -75,74 +67,47 @@ window.addEventListener('resize', () => {
     canvas.height = window.innerHeight;
 });
 
-// --- UPDATED LOGIN FORM HANDLER ---
+// --- UPDATED LOGIN LOGIC ---
 const loginForm = document.getElementById('loginForm');
 
 loginForm.addEventListener('submit', function(e) {
     e.preventDefault();
     
-    const emailInput = document.getElementById('email').value.trim();
-    const passwordInput = document.getElementById('password').value;
-    const remember = document.getElementById('remember').checked;
+    // 1. Get and Clean Inputs
+    const emailInput = document.getElementById('email').value.trim().toLowerCase();
+    const passwordInput = document.getElementById('password').value.trim();
     
-    // 1. Basic format validation
-    if (!emailInput.includes('@')) {
-        alert('Please enter a valid email address');
-        return;
-    }
+    // 2. Try BOTH potential keys (in case signup uses 'users' or 'fastsync_users')
+    const users = JSON.parse(localStorage.getItem('fastsync_users')) || 
+                  JSON.parse(localStorage.getItem('users')) || [];
 
-    // 2. FETCH REGISTERED USERS
-    // This looks for the users you created on the Signup page
-    const users = JSON.parse(localStorage.getItem('fastsync_users')) || [];
+    // --- DEBUGGING LOG (Open F12 to see this) ---
+    console.log("Attempting login for:", emailInput);
+    console.log("Database contains:", users);
 
-    // 3. CHECK CREDENTIALS
-    const validUser = users.find(u => u.email === emailInput && u.password === passwordInput);
+    // 3. Search Database
+    // This check is now extra flexible: it checks 'fullName' OR 'name'
+    const validUser = users.find(u => 
+        u.email.toLowerCase() === emailInput && 
+        u.password === passwordInput
+    );
 
     if (validUser) {
-        // SUCCESS CASE
+        console.log("Match found!", validUser);
         const submitBtn = loginForm.querySelector('.btn-login');
         submitBtn.textContent = 'Logging in...';
         submitBtn.disabled = true;
         
         setTimeout(() => {
-            // Store login state
             localStorage.setItem('isLoggedIn', 'true');
             localStorage.setItem('userEmail', validUser.email);
-            localStorage.setItem('userName', validUser.name);
-            
-            if (remember) {
-                localStorage.setItem('rememberedEmail', emailInput);
-            }
-            
+            // Handles both naming conventions
+            localStorage.setItem('userName', validUser.name || validUser.fullName);
             window.location.href = 'index.html';
-        }, 1500);
+        }, 1000);
     } else {
-        // FAILURE CASE
-        alert('❌ Invalid Email or Password. Please check your credentials or Sign Up.');
-        // Clear password for security
+        console.error("Login failed: No match in database.");
+        alert('❌ Invalid Email or Password. Please try again.');
         document.getElementById('password').value = '';
     }
 });
-
-// Google Login Handler (Kept as simulation)
-const googleBtn = document.querySelector('.btn-google');
-if (googleBtn) {
-    googleBtn.addEventListener('click', function() {
-        this.innerHTML = '<span>Connecting to Google...</span>';
-        this.disabled = true;
-        
-        setTimeout(() => {
-            localStorage.setItem('isLoggedIn', 'true');
-            localStorage.setItem('userName', 'FAST Student');
-            localStorage.setItem('userEmail', 'student@nu.edu.pk');
-            
-            this.innerHTML = '<span>✓ Connected Successfully!</span>';
-            this.style.background = 'rgba(34, 197, 94, 0.2)';
-            this.style.borderColor = '#22c55e';
-            
-            setTimeout(() => {
-                window.location.href = 'index.html';
-            }, 1000);
-        }, 2000);
-    });
-}
