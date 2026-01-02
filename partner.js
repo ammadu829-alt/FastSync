@@ -1,5 +1,26 @@
-// Store partners data (in a real app, this would be in a database)
-let partners = JSON.parse(localStorage.getItem('partners')) || [];
+// Simple version with Edit & Delete features
+let partners = [];
+
+// Load partners from localStorage
+function loadPartners() {
+    const stored = localStorage.getItem('fastsync_partners');
+    if (stored) {
+        try {
+            partners = JSON.parse(stored);
+        } catch (e) {
+            partners = [];
+        }
+    }
+    return partners;
+}
+
+// Save partners to localStorage
+function savePartners() {
+    localStorage.setItem('fastsync_partners', JSON.stringify(partners));
+}
+
+// Initialize
+partners = loadPartners();
 
 // Check if user is logged in
 const isLoggedIn = localStorage.getItem('isLoggedIn');
@@ -7,20 +28,34 @@ if (!isLoggedIn) {
     window.location.href = 'login.html';
 }
 
-// Display user name in profile
+// Display user name
 const userName = localStorage.getItem('userName');
-const profileBtn = document.getElementById('profileBtn');
+const userEmail = localStorage.getItem('userEmail');
+const myProfileLink = document.getElementById('myProfileLink');
 if (userName) {
-    profileBtn.textContent = userName;
+    myProfileLink.textContent = userName;
 }
 
-// Logout functionality
+// Logout
 document.getElementById('logoutBtn').addEventListener('click', function(e) {
     e.preventDefault();
-    localStorage.removeItem('isLoggedIn');
-    localStorage.removeItem('userName');
-    localStorage.removeItem('userEmail');
-    window.location.href = 'login.html';
+    if (confirm('Are you sure you want to logout?')) {
+        localStorage.removeItem('isLoggedIn');
+        localStorage.removeItem('userName');
+        localStorage.removeItem('userEmail');
+        window.location.href = 'login.html';
+    }
+});
+
+// My Profile Link
+document.getElementById('myProfileLink').addEventListener('click', function(e) {
+    e.preventDefault();
+    const myProfile = partners.find(p => p.email === userEmail);
+    if (myProfile) {
+        editProfile(myProfile.id);
+    } else {
+        document.getElementById('profileSection').scrollIntoView({ behavior: 'smooth' });
+    }
 });
 
 // Profile Form Submission
@@ -28,34 +63,54 @@ const profileForm = document.getElementById('profileForm');
 profileForm.addEventListener('submit', function(e) {
     e.preventDefault();
 
+    const profileId = document.getElementById('profileId').value;
+
     const formData = {
-        id: Date.now(),
-        fullName: document.getElementById('fullName').value,
-        email: document.getElementById('email').value,
-        phone: document.getElementById('phone').value,
-        rollNumber: document.getElementById('rollNumber').value,
+        id: profileId ? parseInt(profileId) : Date.now(),
+        fullName: document.getElementById('fullName').value.trim(),
+        email: document.getElementById('email').value.trim(),
+        phone: document.getElementById('phone').value.trim(),
+        rollNumber: document.getElementById('rollNumber').value.trim(),
         semester: document.getElementById('semester').value,
         session: document.getElementById('session').value,
         course: document.getElementById('course').value,
-        skills: document.getElementById('skills').value,
-        bio: document.getElementById('bio').value,
+        skills: document.getElementById('skills').value.trim(),
+        bio: document.getElementById('bio').value.trim(),
         availability: document.getElementById('availability').value,
         dateAdded: new Date().toISOString()
     };
 
-    // Add to partners array
-    partners.push(formData);
+    // Validation
+    if (!formData.fullName || !formData.email || !formData.phone || !formData.rollNumber) {
+        alert('❌ Please fill in all required fields (Name, Email, Phone, Roll Number)');
+        return;
+    }
+
+    if (profileId) {
+        // UPDATE EXISTING PROFILE
+        const index = partners.findIndex(p => p.id === parseInt(profileId));
+        if (index !== -1) {
+            partners[index] = formData;
+            savePartners();
+            alert('✅ Your profile has been UPDATED successfully!');
+            console.log('Profile updated:', formData);
+        }
+    } else {
+        // ADD NEW PROFILE
+        const existingProfile = partners.find(p => p.email === userEmail);
+        if (existingProfile) {
+            alert('⚠️ You already have a profile! Scroll down to find it and click Edit.');
+            return;
+        }
+        
+        partners.push(formData);
+        savePartners();
+        alert('✅ Your profile has been ADDED successfully!');
+        console.log('Profile added:', formData);
+        console.log('Total profiles:', partners.length);
+    }
     
-    // Save to localStorage
-    localStorage.setItem('partners', JSON.stringify(partners));
-
-    // Show success message
-    alert('✓ Your profile has been added successfully!');
-
-    // Reset form
-    profileForm.reset();
-
-    // Refresh display
+    resetForm();
     displayPartners();
 });
 
@@ -98,6 +153,25 @@ function displayPartners(filteredPartners = null) {
         const bioHTML = partner.bio ? 
             `<div class="partner-bio">${partner.bio}</div>` : '';
 
+        // Check if this is YOUR profile
+        const isMyProfile = partner.email === userEmail;
+        
+        // Show EDIT & DELETE buttons ONLY for YOUR profile
+        const profileActionsHTML = isMyProfile ? 
+            `<div class="profile-actions">
+                <button class="btn-edit" onclick="editProfile(${partner.id})">
+                    ✏️ Edit Profile
+                </button>
+                <button class="btn-delete" onclick="deleteProfile(${partner.id})">
+                    🗑️ Delete Profile
+                </button>
+            </div>` : 
+            `<div class="partner-contact">
+                <button class="btn-contact" onclick="openMessageModal('${partner.email}', '${partner.fullName}', '${partner.phone}')">
+                    📧 Contact ${partner.fullName.split(' ')[0]}
+                </button>
+            </div>`;
+
         card.innerHTML = `
             <span class="status-badge ${statusClass}">${statusText}</span>
             
@@ -132,37 +206,122 @@ function displayPartners(filteredPartners = null) {
             ${skillsHTML}
             ${bioHTML}
 
-            <div class="partner-contact">
-                <button class="btn-contact" onclick="openMessageModal('${partner.email}', '${partner.fullName}', '${partner.phone}')">
-                    📧 Contact ${partner.fullName.split(' ')[0]}
-                </button>
-            </div>
+            ${profileActionsHTML}
         `;
 
         partnersGrid.appendChild(card);
     });
 }
 
-// Helper function to get ordinal suffix
+// Helper function
 function getOrdinal(n) {
     const s = ['th', 'st', 'nd', 'rd'];
     const v = n % 100;
     return s[(v - 20) % 10] || s[v] || s[0];
 }
 
-// Contact Partner Function - Old (kept for backward compatibility)
-function contactPartner(email, name) {
-    const subject = encodeURIComponent(`Project Partner Request - FASTSync`);
-    const body = encodeURIComponent(`Hi ${name},\n\nI found your profile on FASTSync and would like to discuss partnering for our project.\n\nLooking forward to connecting!\n\nBest regards`);
-    window.location.href = `mailto:${email}?subject=${subject}&body=${body}`;
+// ✏️ EDIT PROFILE FUNCTION (GLOBAL)
+window.editProfile = function(profileId) {
+    const profile = partners.find(p => p.id === profileId);
+    if (!profile) {
+        alert('❌ Profile not found!');
+        return;
+    }
+
+    // Check if user owns this profile
+    if (profile.email !== userEmail) {
+        alert('❌ You can only edit your own profile!');
+        return;
+    }
+
+    console.log('Editing profile:', profile);
+
+    // Scroll to form
+    document.getElementById('profileSection').scrollIntoView({ behavior: 'smooth' });
+
+    // Update form title
+    document.getElementById('formTitle').textContent = '✏️ Edit Your Profile';
+    document.getElementById('formSubtitle').textContent = 'Update your information to keep your profile current';
+    
+    // Fill form with existing data
+    document.getElementById('profileId').value = profile.id;
+    document.getElementById('fullName').value = profile.fullName;
+    document.getElementById('email').value = profile.email;
+    document.getElementById('phone').value = profile.phone;
+    document.getElementById('rollNumber').value = profile.rollNumber;
+    document.getElementById('semester').value = profile.semester;
+    document.getElementById('session').value = profile.session;
+    document.getElementById('course').value = profile.course;
+    document.getElementById('skills').value = profile.skills || '';
+    document.getElementById('bio').value = profile.bio || '';
+    document.getElementById('availability').value = profile.availability;
+
+    // Update button text
+    document.getElementById('submitBtn').textContent = '💾 Update Profile';
+    document.getElementById('cancelBtn').style.display = 'block';
+
+    console.log('✅ Form populated with profile data');
 }
 
-// New Enhanced Contact System with Modal
+// 🗑️ DELETE PROFILE FUNCTION (GLOBAL)
+window.deleteProfile = function(profileId) {
+    const profile = partners.find(p => p.id === profileId);
+    
+    if (!profile) {
+        alert('❌ Profile not found!');
+        return;
+    }
+
+    // Check if user owns this profile
+    if (profile.email !== userEmail) {
+        alert('❌ You can only delete your own profile!');
+        return;
+    }
+
+    // Confirm deletion
+    if (confirm('⚠️ Are you sure you want to DELETE your profile?\n\nThis action CANNOT be undone!')) {
+        const index = partners.findIndex(p => p.id === profileId);
+        if (index !== -1) {
+            const deletedProfile = partners[index];
+            partners.splice(index, 1);
+            savePartners();
+            alert('✅ Your profile has been DELETED successfully!');
+            console.log('Profile deleted:', deletedProfile);
+            console.log('Remaining profiles:', partners.length);
+            displayPartners();
+        }
+    } else {
+        console.log('Delete cancelled by user');
+    }
+}
+
+// Reset Form Function
+function resetForm() {
+    profileForm.reset();
+    document.getElementById('profileId').value = '';
+    document.getElementById('formTitle').textContent = 'Create Your Partner Profile';
+    document.getElementById('formSubtitle').textContent = 'Fill in your information to find the perfect project partner';
+    document.getElementById('submitBtn').textContent = 'Add My Profile';
+    document.getElementById('cancelBtn').style.display = 'none';
+    
+    if (userEmail) {
+        document.getElementById('email').value = userEmail;
+    }
+}
+
+// Cancel Edit Button
+document.getElementById('cancelBtn').addEventListener('click', function() {
+    console.log('Edit cancelled');
+    resetForm();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+});
+
+// Contact Functions (GLOBAL)
 let currentPartnerEmail = '';
 let currentPartnerPhone = '';
 let currentPartnerName = '';
 
-function openMessageModal(email, name, phone) {
+window.openMessageModal = function(email, name, phone) {
     currentPartnerEmail = email;
     currentPartnerPhone = phone;
     currentPartnerName = name;
@@ -170,16 +329,11 @@ function openMessageModal(email, name, phone) {
     document.getElementById('partnerNameModal').textContent = name;
     document.getElementById('messageModal').style.display = 'block';
     
-    // Pre-fill sender info if available
-    const userName = localStorage.getItem('userName');
-    const userEmail = localStorage.getItem('userEmail');
     if (userName) document.getElementById('senderName').value = userName;
     if (userEmail) document.getElementById('senderEmail').value = userEmail;
 }
 
-// Close modal
-const closeModal = document.querySelector('.close-modal');
-closeModal.onclick = function() {
+document.querySelector('.close-modal').onclick = function() {
     document.getElementById('messageModal').style.display = 'none';
 }
 
@@ -190,7 +344,6 @@ window.onclick = function(event) {
     }
 }
 
-// Send Message via Email
 document.getElementById('messageForm').addEventListener('submit', function(e) {
     e.preventDefault();
     
@@ -199,52 +352,38 @@ document.getElementById('messageForm').addEventListener('submit', function(e) {
     const message = document.getElementById('messageText').value;
     
     const subject = encodeURIComponent(`Project Partner Request from ${senderName} - FASTSync`);
-    const body = encodeURIComponent(`Hi ${currentPartnerName},\n\n${message}\n\n---\nFrom: ${senderName}\nEmail: ${senderEmail}\n\nSent via FASTSync Partner Finder`);
+    const body = encodeURIComponent(`Hi ${currentPartnerName},\n\n${message}\n\n---\nFrom: ${senderName}\nEmail: ${senderEmail}\n\nSent via FASTSync`);
     
     window.location.href = `mailto:${currentPartnerEmail}?subject=${subject}&body=${body}`;
-    
     document.getElementById('messageModal').style.display = 'none';
 });
 
-// WhatsApp Contact
 document.getElementById('whatsappBtn').addEventListener('click', function() {
-    const message = document.getElementById('messageText').value || `Hi ${currentPartnerName}! I found your profile on FASTSync and would like to partner up for our project.`;
-    
-    // Remove any non-digit characters from phone
+    const message = document.getElementById('messageText').value || `Hi ${currentPartnerName}! I found your profile on FASTSync.`;
     const cleanPhone = currentPartnerPhone.replace(/\D/g, '');
-    
-    const whatsappURL = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(message)}`;
-    window.open(whatsappURL, '_blank');
+    window.open(`https://wa.me/${cleanPhone}?text=${encodeURIComponent(message)}`, '_blank');
 });
 
-// Call Partner
 document.getElementById('callBtn').addEventListener('click', function() {
     window.location.href = `tel:${currentPartnerPhone}`;
 });
 
-// Filter Functionality
+// Filters
 const filterSession = document.getElementById('filterSession');
 const filterCourse = document.getElementById('filterCourse');
 const filterAvailability = document.getElementById('filterAvailability');
-const resetFilters = document.getElementById('resetFilters');
 
 function applyFilters() {
-    const sessionValue = filterSession.value;
-    const courseValue = filterCourse.value;
-    const availabilityValue = filterAvailability.value;
-
     let filtered = partners;
 
-    if (sessionValue) {
-        filtered = filtered.filter(p => p.session === sessionValue);
+    if (filterSession.value) {
+        filtered = filtered.filter(p => p.session === filterSession.value);
     }
-
-    if (courseValue) {
-        filtered = filtered.filter(p => p.course === courseValue);
+    if (filterCourse.value) {
+        filtered = filtered.filter(p => p.course === filterCourse.value);
     }
-
-    if (availabilityValue) {
-        filtered = filtered.filter(p => p.availability === availabilityValue);
+    if (filterAvailability.value) {
+        filtered = filtered.filter(p => p.availability === filterAvailability.value);
     }
 
     displayPartners(filtered);
@@ -254,18 +393,19 @@ filterSession.addEventListener('change', applyFilters);
 filterCourse.addEventListener('change', applyFilters);
 filterAvailability.addEventListener('change', applyFilters);
 
-resetFilters.addEventListener('click', function() {
+document.getElementById('resetFilters').addEventListener('click', function() {
     filterSession.value = '';
     filterCourse.value = '';
     filterAvailability.value = '';
     displayPartners();
 });
 
-// Auto-fill email from logged in user
-const userEmail = localStorage.getItem('userEmail');
+// Initialize
 if (userEmail) {
     document.getElementById('email').value = userEmail;
 }
 
-// Initial display
 displayPartners();
+
+console.log('✅ FASTSync loaded! Total profiles:', partners.length);
+console.log('👤 Logged in as:', userEmail);
