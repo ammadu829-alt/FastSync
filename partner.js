@@ -3,7 +3,7 @@ const firebaseConfig = {
     apiKey: "YOUR_API_KEY",
     authDomain: "fastsync.firebaseapp.com",
     // FIX: Use a colon (:) and no "const" inside this object
-    databaseURL: "https://your-project-id-default-rtdb.firebaseio.com/", 
+    databaseURL: "https://fastsync-8b20e-default-rtdb.firebaseio.com/", 
     projectId: "fastsync",
     storageBucket: "fastsync.appspot.com",
     messagingSenderId: "123456789",
@@ -144,3 +144,4 @@ if (profileForm) {
 }
 
 init();
+
