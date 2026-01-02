@@ -1,13 +1,14 @@
 // 1. Firebase Configuration
 const firebaseConfig = {
-  apiKey: "YOUR_ACTUAL_API_KEY",
-  authDomain: "fastsync.firebaseapp.com",
-  // FIX: Do NOT use the word 'const' here. Use a colon :
-  databaseURL: "https://your-project-id-default-rtdb.firebaseio.com/", 
-  projectId: "fastsync",
-  storageBucket: "fastsync.appspot.com",
-  messagingSenderId: "12345",
-  appId: "1:12345:web:6789"
+    apiKey: "YOUR_ACTUAL_API_KEY",
+    authDomain: "fastsync.firebaseapp.com",
+    // FIX: Note the colon ":" and NO "const" here. 
+    // REPLACE THIS URL with the one from your Firebase Console!
+    databaseURL: "https://fastsync-8b20e-default-rtdb.firebaseio.com/",
+    projectId: "fastsync",
+    storageBucket: "fastsync.appspot.com",
+    messagingSenderId: "123456789",
+    appId: "1:123456789:web:abcdef12345"
 };
 
 // 2. Initialize Firebase
@@ -20,62 +21,64 @@ let partners = [];
 const userEmail = localStorage.getItem('userEmail');
 const userName = localStorage.getItem('userName');
 
+// 3. Start the App
 function init() {
     if (!localStorage.getItem('isLoggedIn')) {
         window.location.href = 'login.html';
         return;
     }
 
-    // Pull data from Cloud
+    // Connect to the Cloud Database
     database.ref('profiles').on('value', (snapshot) => {
         const data = snapshot.val();
-        partners = data ? Object.values(data) : [];
+        // Convert the cloud data into a list we can show
+        partners = data ? Object.entries(data).map(([id, val]) => ({...val, id})) : [];
         displayPartners();
     });
 
-    const profileBtn = document.getElementById('profileBtn');
-    if (profileBtn && userName) profileBtn.textContent = userName;
-
-    const emailInput = document.getElementById('email');
-    if (emailInput && userEmail) emailInput.value = userEmail;
+    if (document.getElementById('profileBtn') && userName) {
+        document.getElementById('profileBtn').textContent = userName;
+    }
 }
 
-function displayPartners(filteredData = null) {
+// 4. Show the Cards (Like Ammad's Card)
+function displayPartners() {
     const grid = document.getElementById('partnersGrid');
     if (!grid) return;
 
-    const data = filteredData || partners;
-    document.getElementById('partnersCount').textContent = data.length;
+    document.getElementById('partnersCount').textContent = partners.length;
     grid.innerHTML = '';
 
-    data.forEach(p => {
-        const isMine = p.email === userEmail; // Security: Check if card belongs to you
+    partners.forEach(p => {
+        const isMine = p.email === userEmail; // Check if this is YOUR card
         const card = document.createElement('div');
         card.className = 'partner-card';
 
-        // Same design as Ammad's card
+        // Matching the design in your screenshot
         card.innerHTML = `
             <span class="status-badge ${p.availability === 'available' ? 'available' : 'found'}">
                 ${p.availability === 'available' ? '✓ Available' : '✗ Partnered'}
             </span>
             <div class="partner-header">
                 <div class="partner-name">${p.fullName}</div>
-                <div class="partner-roll" style="color: #a855f7; font-weight: bold;">${p.rollNumber}</div>
+                <div class="partner-roll" style="color: #a855f7;">${p.rollNumber}</div>
             </div>
             <div class="partner-info">
                 <div class="info-item"><span class="info-label">Email:</span> <span>${p.email}</span></div>
                 <div class="info-item"><span class="info-label">Phone:</span> <span>${p.phone}</span></div>
+                <div class="info-item"><span class="info-label">Semester:</span> <span>${p.semester}</span></div>
+                <div class="info-item"><span class="info-label">Session:</span> <span>${p.session}</span></div>
                 <div class="info-item"><span class="info-label">Course:</span> <span>${p.course}</span></div>
             </div>
-            <p class="partner-bio" style="font-size: 0.9em; margin-top: 10px; opacity: 0.8;">${p.bio || ''}</p>
+            <p class="partner-bio" style="margin-top: 10px; font-size: 0.9em;">${p.bio || ''}</p>
             
             <div class="profile-actions" style="margin-top: 15px;">
                 ${isMine ? 
                     `<div style="display: flex; gap: 10px;">
-                        <button class="btn-submit" onclick="editProfile('${p.id}')" style="flex:1; padding: 8px;">✏️ Edit</button>
-                        <button class="btn-submit" onclick="deleteProfile('${p.id}')" style="flex:1; padding: 8px; background: #ef4444;">🗑️ Delete</button>
+                        <button class="btn-submit" onclick="editProfile('${p.id}')" style="flex:1;">✏️ Edit</button>
+                        <button class="btn-submit" onclick="deleteProfile('${p.id}')" style="flex:1; background: #ef4444;">🗑️ Delete</button>
                     </div>` : 
-                    `<button class="btn-submit" onclick="alert('Contacting ${p.fullName}')" style="width:100%; padding: 8px; background: #6366f1;">📧 Contact</button>`
+                    `<button class="btn-submit" onclick="contactPartner('${p.fullName}')" style="width:100%; background: #6366f1;">📧 Contact</button>`
                 }
             </div>
         `;
@@ -83,31 +86,23 @@ function displayPartners(filteredData = null) {
     });
 }
 
-// Function to Delete Profile from Cloud
+// 5. Delete Logic
 window.deleteProfile = function(id) {
-    if (confirm("Are you sure? This will remove your card for everyone.")) {
+    if (confirm("Remove your profile from the list?")) {
         database.ref('profiles/' + id).remove()
-            .then(() => alert("✅ Profile deleted!"))
-            .catch((err) => alert("❌ Error: " + err.message));
+            .then(() => alert("Profile removed successfully."))
+            .catch(err => alert("Error: " + err.message));
     }
 };
 
-window.editProfile = function(id) {
-    const p = partners.find(item => item.id == id);
-    if (!p) return;
-    document.getElementById('profileId').value = p.id;
-    document.getElementById('fullName').value = p.fullName;
-    document.getElementById('bio').value = p.bio;
-    document.querySelector('.add-profile-section').scrollIntoView({ behavior: 'smooth' });
-};
-
+// 6. Form Submission (Add or Update)
 const profileForm = document.getElementById('profileForm');
 if (profileForm) {
     profileForm.addEventListener('submit', function(e) {
         e.preventDefault();
         const id = document.getElementById('profileId').value || Date.now().toString();
-        const formData = {
-            id: id,
+        
+        const profileData = {
             fullName: document.getElementById('fullName').value,
             email: document.getElementById('email').value,
             phone: document.getElementById('phone').value,
@@ -119,10 +114,11 @@ if (profileForm) {
             bio: document.getElementById('bio').value
         };
 
-        database.ref('profiles/' + id).set(formData)
+        database.ref('profiles/' + id).set(profileData)
             .then(() => {
-                alert('✅ Profile Updated!');
+                alert("Success! Your profile is now live.");
                 profileForm.reset();
+                document.getElementById('profileId').value = '';
             });
     });
 }
