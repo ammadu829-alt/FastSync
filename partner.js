@@ -28,35 +28,41 @@ if (!isLoggedIn) {
     window.location.href = 'login.html';
 }
 
-// Display user name
+// Display user name - FIXED WITH NULL CHECK
 const userName = localStorage.getItem('userName');
 const userEmail = localStorage.getItem('userEmail');
 const myProfileLink = document.getElementById('myProfileLink');
-if (userName) {
+if (userName && myProfileLink) { // Added check for myProfileLink
     myProfileLink.textContent = userName;
 }
 
-// Logout
-document.getElementById('logoutBtn').addEventListener('click', function(e) {
-    e.preventDefault();
-    if (confirm('Are you sure you want to logout?')) {
-        localStorage.removeItem('isLoggedIn');
-        localStorage.removeItem('userName');
-        localStorage.removeItem('userEmail');
-        window.location.href = 'login.html';
-    }
-});
+// Logout - FIXED WITH NULL CHECK
+const logoutBtn = document.getElementById('logoutBtn');
+if (logoutBtn) {
+    logoutBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+        if (confirm('Are you sure you want to logout?')) {
+            localStorage.removeItem('isLoggedIn');
+            localStorage.removeItem('userName');
+            localStorage.removeItem('userEmail');
+            window.location.href = 'login.html';
+        }
+    });
+}
 
-// My Profile Link
-document.getElementById('myProfileLink').addEventListener('click', function(e) {
-    e.preventDefault();
-    const myProfile = partners.find(p => p.email === userEmail);
-    if (myProfile) {
-        editProfile(myProfile.id);
-    } else {
-        document.getElementById('profileSection').scrollIntoView({ behavior: 'smooth' });
-    }
-});
+// My Profile Link - FIXED WITH NULL CHECK
+if (myProfileLink) {
+    myProfileLink.addEventListener('click', function(e) {
+        e.preventDefault();
+        const myProfile = partners.find(p => p.email === userEmail);
+        if (myProfile) {
+            editProfile(myProfile.id);
+        } else {
+            const profileSection = document.getElementById('profileSection');
+            if (profileSection) profileSection.scrollIntoView({ behavior: 'smooth' });
+        }
+    });
+}
 
 // Profile Form Submission
 const profileForm = document.getElementById('profileForm');
@@ -64,81 +70,58 @@ const profileForm = document.getElementById('profileForm');
 if (!profileForm) {
     console.error('❌ Profile form not found!');
 } else {
-    console.log('✅ Profile form found');
-}
+    profileForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const profileIdElement = document.getElementById('profileId');
+        const profileId = profileIdElement ? profileIdElement.value : '';
 
-profileForm.addEventListener('submit', function(e) {
-    e.preventDefault();
-    
-    console.log('========== FORM SUBMISSION START ==========');
+        const formData = {
+            id: profileId ? parseInt(profileId) : Date.now(),
+            fullName: document.getElementById('fullName').value.trim(),
+            email: document.getElementById('email').value.trim(),
+            phone: document.getElementById('phone').value.trim(),
+            rollNumber: document.getElementById('rollNumber').value.trim(),
+            semester: document.getElementById('semester').value,
+            session: document.getElementById('session').value,
+            course: document.getElementById('course').value,
+            skills: document.getElementById('skills').value.trim(),
+            bio: document.getElementById('bio').value.trim(),
+            availability: document.getElementById('availability').value,
+            dateAdded: new Date().toISOString()
+        };
 
-    const profileId = document.getElementById('profileId').value;
-    console.log('Profile ID:', profileId);
-
-    const formData = {
-        id: profileId ? parseInt(profileId) : Date.now(),
-        fullName: document.getElementById('fullName').value.trim(),
-        email: document.getElementById('email').value.trim(),
-        phone: document.getElementById('phone').value.trim(),
-        rollNumber: document.getElementById('rollNumber').value.trim(),
-        semester: document.getElementById('semester').value,
-        session: document.getElementById('session').value,
-        course: document.getElementById('course').value,
-        skills: document.getElementById('skills').value.trim(),
-        bio: document.getElementById('bio').value.trim(),
-        availability: document.getElementById('availability').value,
-        dateAdded: new Date().toISOString()
-    };
-
-    console.log('📝 Form Data:', formData);
-
-    // Validation
-    if (!formData.fullName) {
-        alert('❌ Please enter your Full Name');
-        return;
-    }
-    
-    if (!formData.email) {
-        alert('❌ Please enter your Email');
-        return;
-    }
-    
-    if (!formData.phone) {
-        alert('❌ Please enter your Phone Number');
-        return;
-    }
-    
-    if (!formData.rollNumber) {
-        alert('❌ Please enter your Roll Number');
-        return;
-    }
-
-    if (profileId) {
-        // UPDATE EXISTING PROFILE
-        const index = partners.findIndex(p => p.id === parseInt(profileId));
-        if (index !== -1) {
-            partners[index] = formData;
-            savePartners();
-            alert('✅ Your profile has been UPDATED successfully!');
-        }
-    } else {
-        // ADD NEW PROFILE
-        const existingProfile = partners.find(p => p.email === userEmail);
-        if (existingProfile) {
-            alert('⚠️ You already have a profile! Scroll down to find it and click Edit.');
+        // Validation
+        if (!formData.fullName || !formData.email || !formData.phone || !formData.rollNumber) {
+            alert('❌ Please fill in all required fields');
             return;
         }
-        
-        partners.push(formData);
-        savePartners();
-        alert('✅ Your profile has been ADDED successfully!');
-    }
-    
-    resetForm();
-    displayPartners();
-});
 
-// Display Partners Function
+        if (profileId) {
+            const index = partners.findIndex(p => p.id === parseInt(profileId));
+            if (index !== -1) {
+                partners[index] = formData;
+                savePartners();
+                alert('✅ Your profile has been UPDATED successfully!');
+            }
+        } else {
+            const existingProfile = partners.find(p => p.email === userEmail);
+            if (existingProfile) {
+                alert('⚠️ You already have a profile! Scroll down to find it and click Edit.');
+                return;
+            }
+            
+            partners.push(formData);
+            savePartners();
+            alert('✅ Your profile has been ADDED successfully!');
+        }
+        
+        resetForm();
+        displayPartners();
+    });
+}
+
+// Display Partners Function - FIXED WITH NULL CHECKS
 function displayPartners(filteredPartners = null) {
     const partnersGrid = document.getElementById('partnersGrid');
     const noResults = document.getElementById('noResults');
@@ -146,7 +129,9 @@ function displayPartners(filteredPartners = null) {
 
     const dataToDisplay = filteredPartners || partners;
 
-    partnersCount.textContent = dataToDisplay.length;
+    if (partnersCount) partnersCount.textContent = dataToDisplay.length;
+
+    if (!partnersGrid || !noResults) return;
 
     if (dataToDisplay.length === 0) {
         partnersGrid.style.display = 'none';
@@ -174,18 +159,12 @@ function displayPartners(filteredPartners = null) {
                 </div>
             </div>` : '';
 
-        const bioHTML = partner.bio ? 
-            `<div class="partner-bio">${partner.bio}</div>` : '';
-
-        // Check if this is YOUR profile
+        const bioHTML = partner.bio ? `<div class="partner-bio">${partner.bio}</div>` : '';
         const isMyProfile = partner.email === userEmail;
         
-        // Show EDIT button ONLY for YOUR profile (Delete removed)
         const profileActionsHTML = isMyProfile ? 
             `<div class="profile-actions">
-                <button class="btn-edit" onclick="editProfile(${partner.id})">
-                    ✏️ Edit Profile
-                </button>
+                <button class="btn-edit" onclick="editProfile(${partner.id})">✏️ Edit Profile</button>
             </div>` : 
             `<div class="partner-contact">
                 <button class="btn-contact" onclick="openMessageModal('${partner.email}', '${partner.fullName}', '${partner.phone}')">
@@ -195,70 +174,39 @@ function displayPartners(filteredPartners = null) {
 
         card.innerHTML = `
             <span class="status-badge ${statusClass}">${statusText}</span>
-            
             <div class="partner-header">
                 <div class="partner-name">${partner.fullName}</div>
                 <div class="partner-roll">${partner.rollNumber}</div>
             </div>
-
             <div class="partner-info">
-                <div class="info-item">
-                    <span class="info-label">Email:</span>
-                    <span>${partner.email}</span>
-                </div>
-                <div class="info-item">
-                    <span class="info-label">Phone:</span>
-                    <span>${partner.phone}</span>
-                </div>
-                <div class="info-item">
-                    <span class="info-label">Semester:</span>
-                    <span>${partner.semester}${getOrdinal(partner.semester)}</span>
-                </div>
-                <div class="info-item">
-                    <span class="info-label">Session:</span>
-                    <span>${partner.session}</span>
-                </div>
-                <div class="info-item">
-                    <span class="info-label">Course:</span>
-                    <span>${partner.course}</span>
-                </div>
+                <div class="info-item"><span class="info-label">Email:</span> <span>${partner.email}</span></div>
+                <div class="info-item"><span class="info-label">Phone:</span> <span>${partner.phone}</span></div>
+                <div class="info-item"><span class="info-label">Semester:</span> <span>${partner.semester}${getOrdinal(partner.semester)}</span></div>
+                <div class="info-item"><span class="info-label">Session:</span> <span>${partner.session}</span></div>
+                <div class="info-item"><span class="info-label">Course:</span> <span>${partner.course}</span></div>
             </div>
-
             ${skillsHTML}
             ${bioHTML}
-
             ${profileActionsHTML}
         `;
-
         partnersGrid.appendChild(card);
     });
 }
 
-// Helper function
 function getOrdinal(n) {
     const s = ['th', 'st', 'nd', 'rd'];
     const v = n % 100;
     return s[(v - 20) % 10] || s[v] || s[0];
 }
 
-// ✏️ EDIT PROFILE FUNCTION (GLOBAL)
 window.editProfile = function(profileId) {
     const profile = partners.find(p => p.id === profileId);
-    if (!profile) {
-        alert('❌ Profile not found!');
-        return;
-    }
+    if (!profile) return;
 
-    if (profile.email !== userEmail) {
-        alert('❌ You can only edit your own profile!');
-        return;
-    }
-
-    document.getElementById('profileSection').scrollIntoView({ behavior: 'smooth' });
+    const profileSection = document.getElementById('profileSection');
+    if (profileSection) profileSection.scrollIntoView({ behavior: 'smooth' });
 
     document.getElementById('formTitle').textContent = '✏️ Edit Your Profile';
-    document.getElementById('formSubtitle').textContent = 'Update your information to keep your profile current';
-    
     document.getElementById('profileId').value = profile.id;
     document.getElementById('fullName').value = profile.fullName;
     document.getElementById('email').value = profile.email;
@@ -272,116 +220,70 @@ window.editProfile = function(profileId) {
     document.getElementById('availability').value = profile.availability;
 
     document.getElementById('submitBtn').textContent = '💾 Update Profile';
-    document.getElementById('cancelBtn').style.display = 'block';
+    const cancelBtn = document.getElementById('cancelBtn');
+    if (cancelBtn) cancelBtn.style.display = 'block';
 }
 
-// Reset Form Function
 function resetForm() {
-    profileForm.reset();
-    document.getElementById('profileId').value = '';
+    if (profileForm) profileForm.reset();
+    const profileId = document.getElementById('profileId');
+    if (profileId) profileId.value = '';
     document.getElementById('formTitle').textContent = 'Create Your Partner Profile';
-    document.getElementById('formSubtitle').textContent = 'Fill in your information to find the perfect project partner';
     document.getElementById('submitBtn').textContent = 'Add My Profile';
-    document.getElementById('cancelBtn').style.display = 'none';
+    const cancelBtn = document.getElementById('cancelBtn');
+    if (cancelBtn) cancelBtn.style.display = 'none';
     
     if (userEmail) {
         document.getElementById('email').value = userEmail;
     }
 }
 
-// Cancel Edit Button
-document.getElementById('cancelBtn').addEventListener('click', function() {
-    resetForm();
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-});
-
-// Contact Functions (GLOBAL)
-let currentPartnerEmail = '';
-let currentPartnerPhone = '';
-let currentPartnerName = '';
-
-window.openMessageModal = function(email, name, phone) {
-    currentPartnerEmail = email;
-    currentPartnerPhone = phone;
-    currentPartnerName = name;
-    
-    document.getElementById('partnerNameModal').textContent = name;
-    document.getElementById('messageModal').style.display = 'block';
-    
-    if (userName) document.getElementById('senderName').value = userName;
-    if (userEmail) document.getElementById('senderEmail').value = userEmail;
+const cancelBtn = document.getElementById('cancelBtn');
+if (cancelBtn) {
+    cancelBtn.addEventListener('click', function() {
+        resetForm();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
 }
 
-document.querySelector('.close-modal').onclick = function() {
-    document.getElementById('messageModal').style.display = 'none';
-}
-
-window.onclick = function(event) {
-    const modal = document.getElementById('messageModal');
-    if (event.target == modal) {
-        modal.style.display = 'none';
-    }
-}
-
-document.getElementById('messageForm').addEventListener('submit', function(e) {
-    e.preventDefault();
-    
-    const senderName = document.getElementById('senderName').value;
-    const senderEmail = document.getElementById('senderEmail').value;
-    const message = document.getElementById('messageText').value;
-    
-    const subject = encodeURIComponent(`Project Partner Request from ${senderName} - FASTSync`);
-    const body = encodeURIComponent(`Hi ${currentPartnerName},\n\n${message}\n\n---\nFrom: ${senderName}\nEmail: ${senderEmail}\n\nSent via FASTSync`);
-    
-    window.location.href = `mailto:${currentPartnerEmail}?subject=${subject}&body=${body}`;
-    document.getElementById('messageModal').style.display = 'none';
-});
-
-document.getElementById('whatsappBtn').addEventListener('click', function() {
-    const message = document.getElementById('messageText').value || `Hi ${currentPartnerName}! I found your profile on FASTSync.`;
-    const cleanPhone = currentPartnerPhone.replace(/\D/g, '');
-    window.open(`https://wa.me/${cleanPhone}?text=${encodeURIComponent(message)}`, '_blank');
-});
-
-document.getElementById('callBtn').addEventListener('click', function() {
-    window.location.href = `tel:${currentPartnerPhone}`;
-});
-
-// Filters
+// Filters - FIXED WITH NULL CHECKS
 const filterSession = document.getElementById('filterSession');
 const filterCourse = document.getElementById('filterCourse');
 const filterAvailability = document.getElementById('filterAvailability');
 
 function applyFilters() {
     let filtered = partners;
-
-    if (filterSession.value) {
-        filtered = filtered.filter(p => p.session === filterSession.value);
-    }
-    if (filterCourse.value) {
-        filtered = filtered.filter(p => p.course === filterCourse.value);
-    }
-    if (filterAvailability.value) {
-        filtered = filtered.filter(p => p.availability === filterAvailability.value);
-    }
-
+    if (filterSession && filterSession.value) filtered = filtered.filter(p => p.session === filterSession.value);
+    if (filterCourse && filterCourse.value) filtered = filtered.filter(p => p.course === filterCourse.value);
+    if (filterAvailability && filterAvailability.value) filtered = filtered.filter(p => p.availability === filterAvailability.value);
     displayPartners(filtered);
 }
 
-filterSession.addEventListener('change', applyFilters);
-filterCourse.addEventListener('change', applyFilters);
-filterAvailability.addEventListener('change', applyFilters);
+if (filterSession) filterSession.addEventListener('change', applyFilters);
+if (filterCourse) filterCourse.addEventListener('change', applyFilters);
+if (filterAvailability) filterAvailability.addEventListener('change', applyFilters);
 
-document.getElementById('resetFilters').addEventListener('click', function() {
-    filterSession.value = '';
-    filterCourse.value = '';
-    filterAvailability.value = '';
-    displayPartners();
-});
-
-// Initialize
-if (userEmail) {
-    document.getElementById('email').value = userEmail;
+const resetFilters = document.getElementById('resetFilters');
+if (resetFilters) {
+    resetFilters.addEventListener('click', function() {
+        if (filterSession) filterSession.value = '';
+        if (filterCourse) filterCourse.value = '';
+        if (filterAvailability) filterAvailability.value = '';
+        displayPartners();
+    });
 }
 
+// Modal Logic
+window.openMessageModal = function(email, name, phone) {
+    const modal = document.getElementById('messageModal');
+    if (modal) {
+        document.getElementById('partnerNameModal').textContent = name;
+        modal.style.display = 'block';
+    }
+}
+
+// Initial Run
+if (userEmail && document.getElementById('email')) {
+    document.getElementById('email').value = userEmail;
+}
 displayPartners();
