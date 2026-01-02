@@ -75,88 +75,74 @@ window.addEventListener('resize', () => {
     canvas.height = window.innerHeight;
 });
 
-// Login Form Handler
+// --- UPDATED LOGIN FORM HANDLER ---
 const loginForm = document.getElementById('loginForm');
 
 loginForm.addEventListener('submit', function(e) {
     e.preventDefault();
     
-    const email = document.getElementById('email').value;
-    const password = document.getElementById('password').value;
+    const emailInput = document.getElementById('email').value.trim();
+    const passwordInput = document.getElementById('password').value;
     const remember = document.getElementById('remember').checked;
     
-    // Validate email format
-    if (!email.includes('@')) {
+    // 1. Basic format validation
+    if (!emailInput.includes('@')) {
         alert('Please enter a valid email address');
         return;
     }
-    
-    // Here you would normally send data to your backend
-    // For now, we'll just simulate a successful login
-    
-    if (email && password) {
-        // Show loading state
+
+    // 2. FETCH REGISTERED USERS
+    // This looks for the users you created on the Signup page
+    const users = JSON.parse(localStorage.getItem('fastsync_users')) || [];
+
+    // 3. CHECK CREDENTIALS
+    const validUser = users.find(u => u.email === emailInput && u.password === passwordInput);
+
+    if (validUser) {
+        // SUCCESS CASE
         const submitBtn = loginForm.querySelector('.btn-login');
-        const originalText = submitBtn.textContent;
         submitBtn.textContent = 'Logging in...';
         submitBtn.disabled = true;
         
-        // Simulate API call
         setTimeout(() => {
-            // Store login state (in a real app, you'd use tokens)
+            // Store login state
+            localStorage.setItem('isLoggedIn', 'true');
+            localStorage.setItem('userEmail', validUser.email);
+            localStorage.setItem('userName', validUser.name);
+            
             if (remember) {
-                localStorage.setItem('userEmail', email);
+                localStorage.setItem('rememberedEmail', emailInput);
             }
             
-            // Store user info
-            localStorage.setItem('isLoggedIn', 'true');
-            localStorage.setItem('userName', email.split('@')[0]);
-            
-            // Redirect to main page
             window.location.href = 'index.html';
         }, 1500);
+    } else {
+        // FAILURE CASE
+        alert('❌ Invalid Email or Password. Please check your credentials or Sign Up.');
+        // Clear password for security
+        document.getElementById('password').value = '';
     }
 });
 
-// Google Login Handler
+// Google Login Handler (Kept as simulation)
 const googleBtn = document.querySelector('.btn-google');
-
-googleBtn.addEventListener('click', function() {
-    // Show loading state
-    const originalText = this.innerHTML;
-    this.innerHTML = '<span>Connecting to Google...</span>';
-    this.disabled = true;
-    
-    // Simulate Google OAuth flow
-    setTimeout(() => {
-        // In a real application, you would:
-        // 1. Redirect to Google OAuth URL
-        // 2. Get authorization code
-        // 3. Exchange for access token
-        // 4. Get user info from Google
+if (googleBtn) {
+    googleBtn.addEventListener('click', function() {
+        this.innerHTML = '<span>Connecting to Google...</span>';
+        this.disabled = true;
         
-        // For demo purposes, we'll simulate a successful Google login
-        const googleUser = {
-            email: 'student@nu.edu.pk',
-            name: 'FAST Student',
-            picture: 'https://via.placeholder.com/150'
-        };
-        
-        // Store user info
-        localStorage.setItem('isLoggedIn', 'true');
-        localStorage.setItem('userName', googleUser.name);
-        localStorage.setItem('userEmail', googleUser.email);
-        localStorage.setItem('loginMethod', 'google');
-        
-        // Show success message
-        this.innerHTML = '<span>✓ Connected Successfully!</span>';
-        this.style.background = 'rgba(34, 197, 94, 0.2)';
-        this.style.borderColor = '#22c55e';
-        
-        // Redirect to main page after short delay
         setTimeout(() => {
-            window.location.href = 'index.html';
-        }, 1000);
-        
-    }, 2000);
-});
+            localStorage.setItem('isLoggedIn', 'true');
+            localStorage.setItem('userName', 'FAST Student');
+            localStorage.setItem('userEmail', 'student@nu.edu.pk');
+            
+            this.innerHTML = '<span>✓ Connected Successfully!</span>';
+            this.style.background = 'rgba(34, 197, 94, 0.2)';
+            this.style.borderColor = '#22c55e';
+            
+            setTimeout(() => {
+                window.location.href = 'index.html';
+            }, 1000);
+        }, 2000);
+    });
+}
