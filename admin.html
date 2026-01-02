@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - FASTSync</title>
+    <link rel="stylesheet" href="admin.css">
+</head>
+<body>
+    <canvas class="network-bg" id="adminCanvas"></canvas>
+
+    <nav class="navbar">
+        <div class="logo">FASTSync Admin</div>
+        <div class="nav-links">
+            <a href="index.html">Home</a>
+            <a href="admin.html" class="active">Dashboard</a>
+            <a href="#" id="adminLogout">Logout</a>
+        </div>
+    </nav>
+    
+    <div class="admin-container">
+        <div class="dashboard-header">
+            <h1>👤 User Management Dashboard</h1>
+            <p class="subtitle">View all registered users and their information</p>
+        </div>
+
+        <!-- Statistics Cards -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon">👥</div>
+                <div class="stat-info">
+                    <h3 id="totalUsers">0</h3>
+                    <p>Total Users</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">📧</div>
+                <div class="stat-info">
+                    <h3 id="totalEmails">0</h3>
+                    <p>Registered Emails</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">🎓</div>
+                <div class="stat-info">
+                    <h3 id="totalDepartments">0</h3>
+                    <p>Departments</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">📅</div>
+                <div class="stat-info">
+                    <h3 id="newToday">0</h3>
+                    <p>New Today</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Search and Filter -->
+        <div class="controls-section">
+            <input type="text" id="searchInput" placeholder="🔍 Search by name, email, or roll number..." class="search-box">
+            <button id="refreshBtn" class="btn-refresh">🔄 Refresh</button>
+            <button id="exportBtn" class="btn-export">📥 Export CSV</button>
+        </div>
+
+        <!-- Users Table -->
+        <div class="table-container">
+            <table class="users-table">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Full Name</th>
+                        <th>Email</th>
+                        <th>Password</th>
+                        <th>Roll Number</th>
+                        <th>Department</th>
+                        <th>Registered On</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="usersTableBody">
+                    <!-- Users will be added here dynamically -->
+                </tbody>
+            </table>
+        </div>
+
+        <!-- No Users Message -->
+        <div id="noUsers" class="no-users" style="display: none;">
+            <div class="no-users-icon">📭</div>
+            <h3>No Users Found</h3>
+            <p>No users have signed up yet, or no users match your search.</p>
+        </div>
+    </div>
+
+    <!-- View Details Modal -->
+    <div id="detailsModal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal">&times;</span>
+            <h2>User Details</h2>
+            <div id="userDetailsContent"></div>
+        </div>
+    </div>
+
+    <script src="admin.js"></script>
+</body>
+</html>
