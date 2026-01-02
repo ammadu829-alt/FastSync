@@ -20,7 +20,6 @@ class Particle {
     update() {
         this.x += this.vx;
         this.y += this.vy;
-
         if (this.x < 0 || this.x > canvas.width) this.vx *= -1;
         if (this.y < 0 || this.y > canvas.height) this.vy *= -1;
     }
@@ -43,7 +42,6 @@ function connectParticles() {
             const dx = particles[i].x - particles[j].x;
             const dy = particles[i].y - particles[j].y;
             const distance = Math.sqrt(dx * dx + dy * dy);
-
             if (distance < maxDistance) {
                 ctx.beginPath();
                 ctx.strokeStyle = `rgba(102, 126, 234, ${1 - distance / maxDistance})`;
@@ -58,16 +56,13 @@ function connectParticles() {
 
 function animate() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    
     particles.forEach(particle => {
         particle.update();
         particle.draw();
     });
-    
     connectParticles();
     requestAnimationFrame(animate);
 }
-
 animate();
 
 window.addEventListener('resize', () => {
@@ -81,36 +76,25 @@ const signupForm = document.getElementById('signupForm');
 if (signupForm) {
     signupForm.addEventListener('submit', function(e) {
         e.preventDefault();
-        
         const fullName = document.getElementById('fullName').value.trim();
         const email = document.getElementById('email').value.trim().toLowerCase();
         const password = document.getElementById('password').value.trim();
         const confirmPassword = document.getElementById('confirmPassword').value.trim();
         const termsAccepted = document.getElementById('terms').checked;
 
-        if (!termsAccepted) {
-            alert('Please accept the Terms & Conditions');
-            return;
-        }
+        if (!termsAccepted) { alert('Please accept the Terms & Conditions'); return; }
+        if (password !== confirmPassword) { alert('Passwords do not match!'); return; }
+        if (password.length < 6) { alert('Password must be at least 6 characters long'); return; }
 
-        if (password !== confirmPassword) {
-            alert('Passwords do not match!');
-            return;
-        }
-
-        // Get existing users using the shared key
         let users = JSON.parse(localStorage.getItem('fastsync_users')) || [];
-
-        // Check for duplicate
         if (users.some(u => u.email === email)) {
             alert('❌ This email is already registered.');
             return;
         }
 
-        // Create new user object
         const newUser = {
             id: Date.now(),
-            name: fullName, // Saved as 'name' to match login.js
+            name: fullName,
             email: email,
             password: password
         };
@@ -126,5 +110,43 @@ if (signupForm) {
             alert('✅ Account created successfully!');
             window.location.href = 'login.html';
         }, 1500);
+    });
+}
+
+// --- NEW GOOGLE SIGNUP LOGIC ---
+function handleGoogleResponse(response) {
+    // This decodes the Google data (for a real app, you'd send 'response.credential' to a backend)
+    // For this project, we simulate the "Account Chosen" action
+    const googleUser = {
+        id: Date.now(),
+        name: "Google User", 
+        email: "student@nu.edu.pk",
+        loginMethod: 'google'
+    };
+
+    let users = JSON.parse(localStorage.getItem('fastsync_users')) || [];
+    if (!users.some(u => u.email === googleUser.email)) {
+        users.push(googleUser);
+        localStorage.setItem('fastsync_users', JSON.stringify(users));
+    }
+
+    localStorage.setItem('isLoggedIn', 'true');
+    localStorage.setItem('userName', googleUser.name);
+    localStorage.setItem('userEmail', googleUser.email);
+    window.location.href = 'find-partner.html';
+}
+
+window.onload = function () {
+    google.accounts.id.initialize({
+        client_id: "YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com", // You can replace this with a real ID later
+        callback: handleGoogleResponse
+    });
+};
+
+const googleSignupBtn = document.getElementById('googleSignup');
+if (googleSignupBtn) {
+    googleSignupBtn.addEventListener('click', function() {
+        // This opens the real Google Account Switcher
+        google.accounts.id.prompt(); 
     });
 }
