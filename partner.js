@@ -1,4 +1,4 @@
-// Simple version with Edit & Delete features
+// Simple version with Edit feature
 let partners = [];
 
 // Load partners from localStorage
@@ -91,80 +91,51 @@ profileForm.addEventListener('submit', function(e) {
     };
 
     console.log('📝 Form Data:', formData);
-    console.log('Full Name:', formData.fullName);
-    console.log('Email:', formData.email);
-    console.log('Phone:', formData.phone);
-    console.log('Roll Number:', formData.rollNumber);
 
     // Validation
     if (!formData.fullName) {
-        console.log('❌ Full Name is empty');
         alert('❌ Please enter your Full Name');
         return;
     }
     
     if (!formData.email) {
-        console.log('❌ Email is empty');
         alert('❌ Please enter your Email');
         return;
     }
     
     if (!formData.phone) {
-        console.log('❌ Phone is empty');
         alert('❌ Please enter your Phone Number');
         return;
     }
     
     if (!formData.rollNumber) {
-        console.log('❌ Roll Number is empty');
         alert('❌ Please enter your Roll Number');
         return;
     }
 
-    console.log('✅ All validations passed!');
-
     if (profileId) {
         // UPDATE EXISTING PROFILE
-        console.log('📝 Updating existing profile...');
         const index = partners.findIndex(p => p.id === parseInt(profileId));
         if (index !== -1) {
             partners[index] = formData;
             savePartners();
-            console.log('✅ Profile UPDATED!');
             alert('✅ Your profile has been UPDATED successfully!');
-        } else {
-            console.log('❌ Profile not found for update');
         }
     } else {
         // ADD NEW PROFILE
-        console.log('➕ Adding new profile...');
-        console.log('Current user email:', userEmail);
-        
         const existingProfile = partners.find(p => p.email === userEmail);
         if (existingProfile) {
-            console.log('⚠️ User already has a profile:', existingProfile);
             alert('⚠️ You already have a profile! Scroll down to find it and click Edit.');
             return;
         }
         
-        console.log('✅ No existing profile found, adding new one...');
         partners.push(formData);
-        console.log('✅ Profile added to array');
-        console.log('📊 Total profiles in array:', partners.length);
-        
         savePartners();
-        console.log('✅ Saved to localStorage');
-        
         alert('✅ Your profile has been ADDED successfully!');
     }
     
-    console.log('🔄 Resetting form...');
     resetForm();
-    
-    console.log('🖼️ Displaying profiles...');
     displayPartners();
-    
-    console.log('========== FORM SUBMISSION END ==========');
 });
 
 // Display Partners Function
@@ -209,14 +180,11 @@ function displayPartners(filteredPartners = null) {
         // Check if this is YOUR profile
         const isMyProfile = partner.email === userEmail;
         
-        // Show EDIT & DELETE buttons ONLY for YOUR profile
+        // Show EDIT button ONLY for YOUR profile (Delete removed)
         const profileActionsHTML = isMyProfile ? 
             `<div class="profile-actions">
                 <button class="btn-edit" onclick="editProfile(${partner.id})">
                     ✏️ Edit Profile
-                </button>
-                <button class="btn-delete" onclick="deleteProfile(${partner.id})">
-                    🗑️ Delete Profile
                 </button>
             </div>` : 
             `<div class="partner-contact">
@@ -281,22 +249,16 @@ window.editProfile = function(profileId) {
         return;
     }
 
-    // Check if user owns this profile
     if (profile.email !== userEmail) {
         alert('❌ You can only edit your own profile!');
         return;
     }
 
-    console.log('Editing profile:', profile);
-
-    // Scroll to form
     document.getElementById('profileSection').scrollIntoView({ behavior: 'smooth' });
 
-    // Update form title
     document.getElementById('formTitle').textContent = '✏️ Edit Your Profile';
     document.getElementById('formSubtitle').textContent = 'Update your information to keep your profile current';
     
-    // Fill form with existing data
     document.getElementById('profileId').value = profile.id;
     document.getElementById('fullName').value = profile.fullName;
     document.getElementById('email').value = profile.email;
@@ -309,43 +271,8 @@ window.editProfile = function(profileId) {
     document.getElementById('bio').value = profile.bio || '';
     document.getElementById('availability').value = profile.availability;
 
-    // Update button text
     document.getElementById('submitBtn').textContent = '💾 Update Profile';
     document.getElementById('cancelBtn').style.display = 'block';
-
-    console.log('✅ Form populated with profile data');
-}
-
-// 🗑️ DELETE PROFILE FUNCTION (GLOBAL)
-window.deleteProfile = function(profileId) {
-    const profile = partners.find(p => p.id === profileId);
-    
-    if (!profile) {
-        alert('❌ Profile not found!');
-        return;
-    }
-
-    // Check if user owns this profile
-    if (profile.email !== userEmail) {
-        alert('❌ You can only delete your own profile!');
-        return;
-    }
-
-    // Confirm deletion
-    if (confirm('⚠️ Are you sure you want to DELETE your profile?\n\nThis action CANNOT be undone!')) {
-        const index = partners.findIndex(p => p.id === profileId);
-        if (index !== -1) {
-            const deletedProfile = partners[index];
-            partners.splice(index, 1);
-            savePartners();
-            alert('✅ Your profile has been DELETED successfully!');
-            console.log('Profile deleted:', deletedProfile);
-            console.log('Remaining profiles:', partners.length);
-            displayPartners();
-        }
-    } else {
-        console.log('Delete cancelled by user');
-    }
 }
 
 // Reset Form Function
@@ -364,7 +291,6 @@ function resetForm() {
 
 // Cancel Edit Button
 document.getElementById('cancelBtn').addEventListener('click', function() {
-    console.log('Edit cancelled');
     resetForm();
     window.scrollTo({ top: 0, behavior: 'smooth' });
 });
@@ -459,6 +385,3 @@ if (userEmail) {
 }
 
 displayPartners();
-
-console.log('✅ FASTSync loaded! Total profiles:', partners.length);
-console.log('👤 Logged in as:', userEmail);
