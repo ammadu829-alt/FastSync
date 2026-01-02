@@ -1,22 +1,47 @@
+// 1. Firebase Configuration (Ensure these match your Firebase Console exactly)
+const firebaseConfig = {
+  apiKey: "YOUR_API_KEY",
+  authDomain: "fastsync.firebaseapp.com",
+  databaseURL: "https://fastsync.firebaseio.com",
+  projectId: "fastsync",
+  storageBucket: "fastsync.appspot.com",
+  messagingSenderId: "12345",
+  appId: "1:12345:web:6789"
+};
+
+// 2. Initialize Firebase
+if (!firebase.apps.length) {
+    firebase.initializeApp(firebaseConfig);
+}
+const database = firebase.database();
+
 let partners = [];
 const userEmail = localStorage.getItem('userEmail');
 const userName = localStorage.getItem('userName');
 
 // Initialize
 function init() {
-    // 1. Check Login
+    // Check Login (Session still uses localStorage for security)
     if (!localStorage.getItem('isLoggedIn')) {
         window.location.href = 'login.html';
         return;
     }
 
-    // 2. Load Data
-    const stored = localStorage.getItem('fastsync_partners');
-    if (stored) {
-        try { partners = JSON.parse(stored); } catch (e) { partners = []; }
-    }
+    // 3. Load Data from Firebase (Replaces local storage to show all users)
+    const profilesRef = database.ref('profiles');
+    profilesRef.on('value', (snapshot) => {
+        const data = snapshot.val();
+        partners = [];
+        if (data) {
+            // Convert Firebase object to array
+            Object.keys(data).forEach(key => {
+                partners.push(data[key]);
+            });
+        }
+        displayPartners(); // Refresh UI automatically when data changes
+    });
 
-    // 3. Setup Navigation (Matching your HTML IDs)
+    // Setup Navigation
     const profileBtn = document.getElementById('profileBtn');
     if (profileBtn) {
         if (userName) profileBtn.textContent = userName;
@@ -36,14 +61,11 @@ function init() {
         });
     }
 
-    // 4. Pre-fill Email
     const emailInput = document.getElementById('email');
     if (emailInput && userEmail) emailInput.value = userEmail;
-
-    displayPartners();
 }
 
-// Display Cards (All fields included)
+// Display Cards (Matching your screenshot design exactly)
 function displayPartners(filteredData = null) {
     const grid = document.getElementById('partnersGrid');
     if (!grid) return;
@@ -59,7 +81,6 @@ function displayPartners(filteredData = null) {
         const card = document.createElement('div');
         card.className = 'partner-card';
 
-        // Matching your screenshot design exactly
         card.innerHTML = `
             <span class="status-badge ${p.availability === 'available' ? 'available' : 'found'}">
                 ${p.availability === 'available' ? '✓ Available' : '✗ Partnered'}
@@ -93,7 +114,6 @@ window.editProfile = function(id) {
     const p = partners.find(item => item.id === id);
     if (!p) return;
 
-    // Fill the form
     document.getElementById('profileId').value = p.id;
     document.getElementById('fullName').value = p.fullName;
     document.getElementById('email').value = p.email;
@@ -106,20 +126,19 @@ window.editProfile = function(id) {
     document.getElementById('bio').value = p.bio;
     document.getElementById('availability').value = p.availability;
 
-    // Update UI
     document.querySelector('.add-profile-section h1').textContent = '✏️ Edit Your Profile';
     document.querySelector('.btn-submit').textContent = 'Update My Profile';
     document.querySelector('.add-profile-section').scrollIntoView({ behavior: 'smooth' });
 };
 
-// Form Submission
+// Form Submission (Saves to Firebase Cloud)
 const profileForm = document.getElementById('profileForm');
 if (profileForm) {
     profileForm.addEventListener('submit', function(e) {
         e.preventDefault();
         
         const idValue = document.getElementById('profileId').value;
-        const id = idValue ? parseInt(idValue) : Date.now();
+        const id = idValue ? idValue : Date.now().toString(); // Firebase IDs work better as strings
 
         const formData = {
             id: id,
@@ -135,33 +154,20 @@ if (profileForm) {
             availability: document.getElementById('availability').value
         };
 
-        const index = partners.findIndex(p => p.id === id);
-        
-        if (index !== -1) {
-            partners[index] = formData;
-            alert('✅ Profile updated successfully!');
-        } else {
-            // Check for duplicate profile by email if it's a new entry
-            if (partners.some(p => p.email === formData.email)) {
-                alert('⚠️ You already have a profile. Use the Edit button on your card.');
-                return;
-            }
-            partners.push(formData);
-            alert('✅ Profile added successfully!');
-        }
-
-        localStorage.setItem('fastsync_partners', JSON.stringify(partners));
-        
-        // Reset Form
-        profileForm.reset();
-        document.getElementById('profileId').value = '';
-        document.querySelector('.add-profile-section h1').textContent = 'Create Your Partner Profile';
-        document.querySelector('.btn-submit').textContent = 'Add My Profile';
-        if (userEmail) document.getElementById('email').value = userEmail;
-        
-        displayPartners();
+        // Save/Update in Firebase Cloud
+        database.ref('profiles/' + id).set(formData)
+            .then(() => {
+                alert('✅ Profile synchronized globally!');
+                profileForm.reset();
+                document.getElementById('profileId').value = '';
+                document.querySelector('.add-profile-section h1').textContent = 'Create Your Partner Profile';
+                document.querySelector('.btn-submit').textContent = 'Add My Profile';
+                if (userEmail) document.getElementById('email').value = userEmail;
+            })
+            .catch((error) => {
+                alert('❌ Error saving to cloud: ' + error.message);
+            });
     });
 }
 
-// Run on page load
 init();
