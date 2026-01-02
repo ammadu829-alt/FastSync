@@ -3,7 +3,7 @@ const firebaseConfig = {
     apiKey: "YOUR_ACTUAL_API_KEY",
     authDomain: "fastsync.firebaseapp.com",
     // Paste your real URL here to fix the console warning!
-    databaseURL: "https://your-project-id-default-rtdb.firebaseio.com/", 
+    databaseURL: "https://fastsync-8b20e-default-rtdb.firebaseio.com/", 
     projectId: "fastsync",
     storageBucket: "fastsync.appspot.com",
     messagingSenderId: "123456789",
@@ -154,3 +154,4 @@ if (profileForm) {
 }
 
 init();
+
