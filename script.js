@@ -1,3 +1,4 @@
+// 1. --- NETWORK ANIMATION LOGIC ---
 const canvas = document.getElementById('networkCanvas');
 const ctx = canvas.getContext('2d');
 
@@ -5,7 +6,7 @@ canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
 
 const particles = [];
-const particleCount = 80;
+const particleCount = 80; // Kept your preferred count
 const maxDistance = 150;
 
 class Particle {
@@ -75,6 +76,7 @@ window.addEventListener('resize', () => {
     canvas.height = window.innerHeight;
 });
 
+// 2. --- SMOOTH SCROLLING ---
 document.querySelectorAll('a[href^="#"]').forEach(anchor => {
     anchor.addEventListener('click', function (e) {
         e.preventDefault();
@@ -87,3 +89,56 @@ document.querySelectorAll('a[href^="#"]').forEach(anchor => {
         }
     });
 });
+
+// 3. --- USER AUTH DISPLAY LOGIC ---
+// This checks if a user is logged in and updates the Navbar
+document.addEventListener('DOMContentLoaded', () => {
+    const userAuthSection = document.getElementById('userAuthSection');
+    const ctaTitle = document.getElementById('cta-title');
+    const ctaBtn = document.getElementById('cta-btn');
+
+    const isLoggedIn = localStorage.getItem('isLoggedIn');
+    const userName = localStorage.getItem('userName');
+
+    if (isLoggedIn === 'true' && userName) {
+        // Replace Login link with greeting and Logout button
+        if (userAuthSection) {
+            userAuthSection.innerHTML = `
+                <span style="color: white; margin-right: 15px; font-weight: 500;">Hi, ${userName}</span>
+                <button onclick="logout()" class="btn-login" style="background: #ff4b2b; color: white; border: none; cursor: pointer; padding: 8px 20px; border-radius: 5px;">Logout</button>
+            `;
+        }
+
+        // Update Hero/CTA text for a personalized feel
+        if(ctaTitle) ctaTitle.textContent = `Welcome Back, ${userName}!`;
+        if(ctaBtn) {
+            ctaBtn.textContent = "Go to Find Partner";
+            ctaBtn.href = "find-partner.html";
+        }
+    }
+});
+
+// 4. --- LOGOUT FUNCTION ---
+// Clears storage to fix the "Array(0)" and "No match" console errors
+window.logout = function() {
+    localStorage.removeItem('isLoggedIn');
+    localStorage.removeItem('userName');
+    localStorage.removeItem('userEmail');
+    
+    alert('Logged out successfully');
+    window.location.href = 'index.html';
+};
+
+// 5. --- GOOGLE INITIALIZATION ---
+// Prevents "Something went wrong" errors by initializing the client
+window.onload = function () {
+    if (typeof google !== 'undefined') {
+        google.accounts.id.initialize({
+            client_id: "777353956350-f8n6n9039600iipisqiaat3p76o59msh.apps.googleusercontent.com",
+            callback: (response) => {
+                // Handle response if you add Google Login to index later
+                console.log("Google response received");
+            }
+        });
+    }
+};
