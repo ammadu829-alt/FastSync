@@ -75,14 +75,14 @@ window.addEventListener('resize', () => {
     canvas.height = window.innerHeight;
 });
 
-// Get existing users from localStorage
+// --- UPDATED DATABASE HELPERS ---
+// Using 'fastsync_users' to match your Login.js logic
 function getUsers() {
-    return JSON.parse(localStorage.getItem('users')) || [];
+    return JSON.parse(localStorage.getItem('fastsync_users')) || [];
 }
 
-// Save users to localStorage
 function saveUsers(users) {
-    localStorage.setItem('users', JSON.stringify(users));
+    localStorage.setItem('fastsync_users', JSON.stringify(users));
 }
 
 // Sign Up Form Handler
@@ -100,120 +100,105 @@ signupForm.addEventListener('submit', function(e) {
     const department = document.getElementById('department').value;
     const termsAccepted = document.getElementById('terms').checked;
 
-    // Validation
+    // 1. Validations
     if (!termsAccepted) {
         alert('Please accept the Terms & Conditions to continue');
         return;
     }
 
-    // Validate email format
     if (!email.includes('@')) {
         alert('Please enter a valid email address');
         return;
     }
 
-    // Check password match
     if (password !== confirmPassword) {
         alert('Passwords do not match!');
         document.getElementById('confirmPassword').focus();
         return;
     }
 
-    // Check password length
     if (password.length < 6) {
         alert('Password must be at least 6 characters long');
         return;
     }
 
-    // Get existing users
+    // 2. Check for Duplicate Email
     const users = getUsers();
-
-    // Check if email already exists
     const existingUser = users.find(user => user.email === email);
+    
     if (existingUser) {
-        alert('This email is already registered. Please login or use a different email.');
+        alert('❌ This email is already registered. Please login instead.');
         return;
     }
 
-    // Create new user
+    // 3. Create and Save New User
+    // Note: 'name' key is used to match login.js expected data
     const newUser = {
         id: Date.now(),
-        fullName: fullName,
+        name: fullName, 
         email: email,
-        password: password, // In production, this should be hashed!
+        password: password, 
         rollNumber: rollNumber,
         department: department,
         createdAt: new Date().toISOString()
     };
 
-    // Add to users array
     users.push(newUser);
     saveUsers(users);
 
-    // Show loading state
+    // 4. UI Loading State
     const submitBtn = signupForm.querySelector('.btn-signup');
-    const originalText = submitBtn.textContent;
     submitBtn.textContent = 'Creating Account...';
     submitBtn.disabled = true;
 
-    // Simulate account creation
+    // 5. Success and Auto-Login
     setTimeout(() => {
-        // Auto login the user
+        // Log the user in immediately after signup
         localStorage.setItem('isLoggedIn', 'true');
         localStorage.setItem('userName', fullName);
         localStorage.setItem('userEmail', email);
         
-        // Show success and redirect
         alert('✓ Account created successfully! Welcome to FASTSync!');
         window.location.href = 'find-partner.html';
     }, 1500);
 });
 
-// Google Sign Up Handler
-document.getElementById('googleSignup').addEventListener('click', function() {
-    const originalText = this.innerHTML;
-    this.innerHTML = '<span>Connecting to Google...</span>';
-    this.disabled = true;
-    
-    setTimeout(() => {
-        // Simulate Google OAuth
-        const googleUser = {
-            id: Date.now(),
-            fullName: 'Google User',
-            email: 'user@nu.edu.pk',
-            rollNumber: 'N/A',
-            department: 'N/A',
-            loginMethod: 'google',
-            createdAt: new Date().toISOString()
-        };
-        
-        // Check if user exists
-        const users = getUsers();
-        const existingUser = users.find(u => u.email === googleUser.email);
-        
-        if (!existingUser) {
-            users.push(googleUser);
-            saveUsers(users);
-        }
-        
-        // Login
-        localStorage.setItem('isLoggedIn', 'true');
-        localStorage.setItem('userName', googleUser.fullName);
-        localStorage.setItem('userEmail', googleUser.email);
-        localStorage.setItem('loginMethod', 'google');
-        
-        this.innerHTML = '<span>✓ Connected Successfully!</span>';
-        this.style.background = 'rgba(34, 197, 94, 0.2)';
-        this.style.borderColor = '#22c55e';
+// Google Sign Up Handler (Simulated)
+const googleSignupBtn = document.getElementById('googleSignup');
+if (googleSignupBtn) {
+    googleSignupBtn.addEventListener('click', function() {
+        this.innerHTML = '<span>Connecting to Google...</span>';
+        this.disabled = true;
         
         setTimeout(() => {
+            const googleUser = {
+                id: Date.now(),
+                name: 'Google User',
+                email: 'user@nu.edu.pk',
+                rollNumber: 'N/A',
+                department: 'N/A',
+                loginMethod: 'google',
+                createdAt: new Date().toISOString()
+            };
+            
+            const users = getUsers();
+            const existingUser = users.find(u => u.email === googleUser.email);
+            
+            if (!existingUser) {
+                users.push(googleUser);
+                saveUsers(users);
+            }
+            
+            localStorage.setItem('isLoggedIn', 'true');
+            localStorage.setItem('userName', googleUser.name);
+            localStorage.setItem('userEmail', googleUser.email);
+            
             window.location.href = 'find-partner.html';
-        }, 1000);
-        
-    }, 2000);
-});
+        }, 2000);
+    });
+}
 
-// Real-time password match validation
+// Real-time password match validation UI
 document.getElementById('confirmPassword').addEventListener('input', function() {
     const password = document.getElementById('password').value;
     const confirmPassword = this.value;
