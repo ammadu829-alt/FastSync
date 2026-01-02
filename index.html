@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>FASTSync - Find Your Perfect Project Partner</title>
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -13,7 +14,9 @@
             <a href="#features">Features</a>
             <a href="find-partner.html">Find Partner</a>
             <a href="#about">About</a>
-            <a href="login.html" class="btn-login" style="text-decoration: none; display: inline-block;">Login</a>
+            <span id="userAuthSection">
+                <a href="login.html" class="btn-login" style="text-decoration: none; display: inline-block;">Login</a>
+            </span>
         </div>
     </nav>
 
@@ -87,9 +90,9 @@
     </section>
 
     <section class="cta-section">
-        <h2>Ready to Find Your Perfect Partner?</h2>
+        <h2 id="cta-title">Ready to Find Your Perfect Partner?</h2>
         <p>Join thousands of FAST students already collaborating on amazing projects</p>
-        <a href="login.html" class="btn btn-primary">Get Started Today</a>
+        <a href="login.html" id="cta-btn" class="btn btn-primary">Get Started Today</a>
     </section>
 
     <footer>
