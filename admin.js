@@ -81,7 +81,15 @@ let allUsers = [];
 
 // Load users from localStorage
 function loadUsers() {
-    const users = JSON.parse(localStorage.getItem('users')) || [];
+    // Try different possible key names
+    let users = JSON.parse(localStorage.getItem('users')) || 
+                JSON.parse(localStorage.getItem('fastsync_users')) || 
+                JSON.parse(localStorage.getItem('registeredUsers')) || [];
+    
+    console.log('📊 Loading users from localStorage...');
+    console.log('Found', users.length, 'users');
+    console.log('User data:', users);
+    
     allUsers = users;
     return users;
 }
