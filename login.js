@@ -20,7 +20,6 @@ class Particle {
     update() {
         this.x += this.vx;
         this.y += this.vy;
-
         if (this.x < 0 || this.x > canvas.width) this.vx *= -1;
         if (this.y < 0 || this.y > canvas.height) this.vy *= -1;
     }
@@ -43,7 +42,6 @@ function connectParticles() {
             const dx = particles[i].x - particles[j].x;
             const dy = particles[i].y - particles[j].y;
             const distance = Math.sqrt(dx * dx + dy * dy);
-
             if (distance < maxDistance) {
                 ctx.beginPath();
                 ctx.strokeStyle = `rgba(102, 126, 234, ${1 - distance / maxDistance})`;
@@ -58,16 +56,13 @@ function connectParticles() {
 
 function animate() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    
     particles.forEach(particle => {
         particle.update();
         particle.draw();
     });
-    
     connectParticles();
     requestAnimationFrame(animate);
 }
-
 animate();
 
 window.addEventListener('resize', () => {
@@ -81,24 +76,17 @@ const loginForm = document.getElementById('loginForm');
 if (loginForm) {
     loginForm.addEventListener('submit', function(e) {
         e.preventDefault();
-        
         const emailInput = document.getElementById('email').value.trim().toLowerCase();
         const passwordInput = document.getElementById('password').value.trim();
         
-        // 1. Fetch from the synchronized key
         const users = JSON.parse(localStorage.getItem('fastsync_users')) || [];
-
-        // 2. Search for the user
-        const validUser = users.find(u => 
-            u.email === emailInput && u.password === passwordInput
-        );
+        const validUser = users.find(u => u.email === emailInput && u.password === passwordInput);
 
         if (validUser) {
             const submitBtn = loginForm.querySelector('.btn-login');
             submitBtn.textContent = 'Logging in...';
             submitBtn.disabled = true;
             
-            // 3. Store login state
             localStorage.setItem('isLoggedIn', 'true');
             localStorage.setItem('userEmail', validUser.email);
             localStorage.setItem('userName', validUser.name);
@@ -107,8 +95,32 @@ if (loginForm) {
                 window.location.href = 'index.html';
             }, 1000);
         } else {
-            alert('❌ Invalid Email or Password. Please try again.');
+            alert('❌ Invalid Email or Password.');
             document.getElementById('password').value = '';
         }
+    });
+}
+
+// --- NEW GOOGLE LOGIN LOGIC ---
+function handleGoogleLogin(response) {
+    // This part triggers after they select a Google account
+    localStorage.setItem('isLoggedIn', 'true');
+    localStorage.setItem('userName', 'FAST Student'); // In real use, you'd get the name from 'response'
+    localStorage.setItem('userEmail', 'student@nu.edu.pk');
+    window.location.href = 'index.html';
+}
+
+window.onload = function () {
+    google.accounts.id.initialize({
+        client_id: "YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com",
+        callback: handleGoogleLogin
+    });
+};
+
+const googleBtn = document.querySelector('.btn-google');
+if (googleBtn) {
+    googleBtn.addEventListener('click', function() {
+        // Triggers the real Google account selector UI
+        google.accounts.id.prompt(); 
     });
 }
