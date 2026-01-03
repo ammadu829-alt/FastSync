@@ -78,6 +78,61 @@ window.addEventListener('resize', () => {
 
 // Admin Dashboard Functions
 let allUsers = [];
+let isAdminLoggedIn = false;
+
+// Admin password - CHANGE THIS TO YOUR OWN!
+const ADMIN_PASSWORD = 'admin123'; // ⚠️ CHANGE THIS!
+
+// Check admin login on page load
+window.addEventListener('DOMContentLoaded', function() {
+    const adminLoginScreen = document.getElementById('adminLoginScreen');
+    const mainDashboard = document.getElementById('mainDashboard');
+    
+    // Check if admin is already logged in (session)
+    const adminSession = sessionStorage.getItem('adminLoggedIn');
+    
+    if (adminSession === 'true') {
+        // Already logged in, show dashboard
+        adminLoginScreen.style.display = 'none';
+        mainDashboard.style.display = 'block';
+        isAdminLoggedIn = true;
+        loadUsers();
+        displayUsers();
+        updateStatistics();
+    } else {
+        // Not logged in, show login screen
+        adminLoginScreen.style.display = 'flex';
+        mainDashboard.style.display = 'none';
+    }
+});
+
+// Admin login form
+document.getElementById('adminLoginForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const enteredPassword = document.getElementById('adminPasswordInput').value;
+    
+    if (enteredPassword === ADMIN_PASSWORD) {
+        // Correct password!
+        sessionStorage.setItem('adminLoggedIn', 'true');
+        isAdminLoggedIn = true;
+        
+        // Hide login, show dashboard
+        document.getElementById('adminLoginScreen').style.display = 'none';
+        document.getElementById('mainDashboard').style.display = 'block';
+        
+        // Load data
+        loadUsers();
+        displayUsers();
+        updateStatistics();
+        
+        alert('✅ Welcome Admin!');
+    } else {
+        // Wrong password
+        alert('❌ Incorrect admin password!');
+        document.getElementById('adminPasswordInput').value = '';
+    }
+});
 
 // Load users from localStorage
 function loadUsers() {
@@ -298,14 +353,17 @@ window.onclick = function(event) {
 document.getElementById('adminLogout').addEventListener('click', function(e) {
     e.preventDefault();
     if (confirm('Are you sure you want to logout?')) {
-        window.location.href = 'index.html';
+        sessionStorage.removeItem('adminLoggedIn');
+        isAdminLoggedIn = false;
+        
+        // Show login screen
+        document.getElementById('adminLoginScreen').style.display = 'flex';
+        document.getElementById('mainDashboard').style.display = 'none';
+        
+        // Clear password field
+        document.getElementById('adminPasswordInput').value = '';
     }
 });
 
-// Initialize dashboard
-loadUsers();
-displayUsers();
-updateStatistics();
-
-console.log('✅ Admin Dashboard loaded!');
-console.log('📊 Total users:', allUsers.length);
+// Initialize dashboard - REMOVED from here, moved to login success
+console.log('✅ Admin Dashboard script loaded!');
