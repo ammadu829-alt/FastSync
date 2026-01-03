@@ -156,6 +156,9 @@ function displayUsers(usersToDisplay = null) {
     const noUsersDiv = document.getElementById('noUsers');
     const tableContainer = document.querySelector('.table-container');
 
+    // Get current logged-in user email
+    const currentUserEmail = localStorage.getItem('userEmail');
+
     if (users.length === 0) {
         tableContainer.style.display = 'none';
         noUsersDiv.style.display = 'block';
@@ -175,6 +178,30 @@ function displayUsers(usersToDisplay = null) {
             day: 'numeric'
         });
 
+        // Check if this is the current user's account
+        const isMyAccount = user.email === currentUserEmail;
+
+        // Determine which buttons to show
+        let actionButtons = '';
+        if (isAdminLoggedIn) {
+            // Admin sees View + Delete for all users
+            actionButtons = `
+                <button class="btn-view" onclick="viewUserDetails(${user.id})">View</button>
+                <button class="btn-delete" onclick="deleteUser(${user.id})">Delete</button>
+            `;
+        } else if (isMyAccount) {
+            // Regular user sees View + Edit for their own account only
+            actionButtons = `
+                <button class="btn-view" onclick="viewUserDetails(${user.id})">View</button>
+                <button class="btn-edit-account" onclick="editMyAccount(${user.id})">Edit My Account</button>
+            `;
+        } else {
+            // Regular user sees only View for other accounts
+            actionButtons = `
+                <button class="btn-view" onclick="viewUserDetails(${user.id})">View</button>
+            `;
+        }
+
         row.innerHTML = `
             <td>${index + 1}</td>
             <td><strong>${user.fullName}</strong></td>
@@ -186,10 +213,7 @@ function displayUsers(usersToDisplay = null) {
             <td>${user.rollNumber || 'N/A'}</td>
             <td>${user.department || 'N/A'}</td>
             <td>${registeredDate}</td>
-            <td>
-                <button class="btn-view" onclick="viewUserDetails(${user.id})">View</button>
-                <button class="btn-delete" onclick="deleteUser(${user.id})">Delete</button>
-            </td>
+            <td>${actionButtons}</td>
         `;
 
         tableBody.appendChild(row);
@@ -255,14 +279,31 @@ window.viewUserDetails = function(userId) {
     modal.style.display = 'block';
 }
 
-// Delete user
+// Delete user - WITH PASSWORD PROTECTION
 window.deleteUser = function(userId) {
+    // Ask for admin password first
+    const adminPassword = prompt('🔒 Enter Admin Password to delete user:');
+    
+    // Set your admin password here
+    const correctPassword = 'admin123'; // ⚠️ CHANGE THIS to your own password!
+    
+    if (!adminPassword) {
+        alert('❌ Password required to delete users!');
+        return;
+    }
+    
+    if (adminPassword !== correctPassword) {
+        alert('❌ Incorrect admin password! Only admin can delete users.');
+        return;
+    }
+    
+    // Password correct, proceed with deletion
     if (confirm('Are you sure you want to delete this user? This action cannot be undone.')) {
         allUsers = allUsers.filter(u => u.id !== userId);
         localStorage.setItem('users', JSON.stringify(allUsers));
         displayUsers();
         updateStatistics();
-        alert('✓ User deleted successfully!');
+        alert('✅ User deleted successfully!');
     }
 }
 
@@ -342,12 +383,81 @@ document.querySelector('.close-modal').onclick = function() {
     document.getElementById('detailsModal').style.display = 'none';
 }
 
+document.querySelector('.close-modal-edit').onclick = function() {
+    document.getElementById('editAccountModal').style.display = 'none';
+}
+
 window.onclick = function(event) {
     const modal = document.getElementById('detailsModal');
+    const editModal = document.getElementById('editAccountModal');
     if (event.target == modal) {
         modal.style.display = 'none';
     }
+    if (event.target == editModal) {
+        editModal.style.display = 'none';
+    }
 }
+
+// Edit My Account Function
+window.editMyAccount = function(userId) {
+    const user = allUsers.find(u => u.id === userId);
+    if (!user) return;
+
+    // Verify this is the current user's account
+    const currentUserEmail = localStorage.getItem('userEmail');
+    if (user.email !== currentUserEmail) {
+        alert('❌ You can only edit your own account!');
+        return;
+    }
+
+    // Open edit modal and fill with current data
+    const modal = document.getElementById('editAccountModal');
+    document.getElementById('editUserId').value = user.id;
+    document.getElementById('editFullName').value = user.fullName;
+    document.getElementById('editEmail').value = user.email;
+    document.getElementById('editPassword').value = user.password;
+    document.getElementById('editRollNumber').value = user.rollNumber || '';
+    document.getElementById('editDepartment').value = user.department || '';
+
+    modal.style.display = 'block';
+}
+
+// Save edited account
+document.getElementById('editAccountForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+
+    const userId = parseInt(document.getElementById('editUserId').value);
+    const userIndex = allUsers.findIndex(u => u.id === userId);
+
+    if (userIndex === -1) {
+        alert('❌ User not found!');
+        return;
+    }
+
+    // Update user data
+    allUsers[userIndex] = {
+        ...allUsers[userIndex],
+        fullName: document.getElementById('editFullName').value.trim(),
+        email: document.getElementById('editEmail').value.trim(),
+        password: document.getElementById('editPassword').value,
+        rollNumber: document.getElementById('editRollNumber').value.trim(),
+        department: document.getElementById('editDepartment').value
+    };
+
+    // Save to localStorage
+    localStorage.setItem('users', JSON.stringify(allUsers));
+
+    // Update localStorage for logged-in user
+    localStorage.setItem('userName', allUsers[userIndex].fullName);
+    localStorage.setItem('userEmail', allUsers[userIndex].email);
+
+    // Close modal and refresh
+    document.getElementById('editAccountModal').style.display = 'none';
+    displayUsers();
+    updateStatistics();
+
+    alert('✅ Your account has been updated successfully!');
+});
 
 // Admin logout
 document.getElementById('adminLogout').addEventListener('click', function(e) {
