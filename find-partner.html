@@ -74,18 +74,8 @@
 
                     <div class="input-group">
                         <label for="course">Course *</label>
-                        <select id="course" name="course" required>
-                            <option value="">Select Course</option>
-                            <option value="Data Structures">Data Structures</option>
-                            <option value="Database Systems">Database Systems</option>
-                            <option value="Web Development">Web Development</option>
-                            <option value="Software Engineering">Software Engineering</option>
-                            <option value="Computer Networks">Computer Networks</option>
-                            <option value="Operating Systems">Operating Systems</option>
-                            <option value="Artificial Intelligence">Artificial Intelligence</option>
-                            <option value="Machine Learning">Machine Learning</option>
-                            <option value="Mobile App Development">Mobile App Development</option>
-                            <option value="Computer Graphics">Computer Graphics</option>
+                        <select id="course" name="course" required disabled>
+                            <option value="">Select Semester First</option>
                         </select>
                     </div>
 
@@ -115,6 +105,18 @@
         <section class="filter-section">
             <h2>Find Partners</h2>
             <div class="filter-controls">
+                <select id="filterSemester" class="filter-select">
+                    <option value="">All Semesters</option>
+                    <option value="1">1st Semester</option>
+                    <option value="2">2nd Semester</option>
+                    <option value="3">3rd Semester</option>
+                    <option value="4">4th Semester</option>
+                    <option value="5">5th Semester</option>
+                    <option value="6">6th Semester</option>
+                    <option value="7">7th Semester</option>
+                    <option value="8">8th Semester</option>
+                </select>
+
                 <select id="filterSession" class="filter-select">
                     <option value="">All Sessions</option>
                     <option value="Fall 2024">Fall 2024</option>
@@ -125,16 +127,6 @@
 
                 <select id="filterCourse" class="filter-select">
                     <option value="">All Courses</option>
-                    <option value="Data Structures">Data Structures</option>
-                    <option value="Database Systems">Database Systems</option>
-                    <option value="Web Development">Web Development</option>
-                    <option value="Software Engineering">Software Engineering</option>
-                    <option value="Computer Networks">Computer Networks</option>
-                    <option value="Operating Systems">Operating Systems</option>
-                    <option value="Artificial Intelligence">Artificial Intelligence</option>
-                    <option value="Machine Learning">Machine Learning</option>
-                    <option value="Mobile App Development">Mobile App Development</option>
-                    <option value="Computer Graphics">Computer Graphics</option>
                 </select>
 
                 <select id="filterAvailability" class="filter-select">
@@ -154,7 +146,7 @@
             </div>
             
             <div id="partnersGrid" class="partners-grid">
-                </div>
+            </div>
 
             <div id="noResults" class="no-results" style="display: none;">
                 <div class="no-results-icon">🔍</div>
@@ -194,6 +186,8 @@
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database-compat.js"></script>
     
+    <!-- Course data must load before partner.js -->
+    <script src="courses-data.js"></script>
     <script src="partner.js"></script>
-    </body>
+</body>
 </html>
