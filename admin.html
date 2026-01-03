@@ -9,7 +9,6 @@
 <body>
     <canvas class="network-bg" id="adminCanvas"></canvas>
 
-    <!-- Admin Login Screen -->
     <div id="adminLoginScreen" class="admin-login-screen">
         <div class="login-box-admin">
             <div class="logo">🔒 FASTSync Admin</div>
@@ -28,7 +27,6 @@
         </div>
     </div>
 
-    <!-- Main Dashboard (Hidden until login) -->
     <div id="mainDashboard" style="display: none;">
         <nav class="navbar">
             <div class="logo">FASTSync Admin</div>
@@ -45,7 +43,6 @@
                 <p class="subtitle">View all registered users and their information</p>
             </div>
 
-            <!-- Statistics Cards -->
             <div class="stats-grid">
                 <div class="stat-card">
                     <div class="stat-icon">👥</div>
@@ -77,14 +74,12 @@
                 </div>
             </div>
 
-            <!-- Search and Filter -->
             <div class="controls-section">
                 <input type="text" id="searchInput" placeholder="🔍 Search by name, email, or roll number..." class="search-box">
                 <button id="refreshBtn" class="btn-refresh">🔄 Refresh</button>
                 <button id="exportBtn" class="btn-export">📥 Export CSV</button>
             </div>
 
-            <!-- Users Table -->
             <div class="table-container">
                 <table class="users-table">
                     <thead>
@@ -100,12 +95,10 @@
                         </tr>
                     </thead>
                     <tbody id="usersTableBody">
-                        <!-- Users will be added here dynamically -->
-                    </tbody>
+                        </tbody>
                 </table>
             </div>
 
-            <!-- No Users Message -->
             <div id="noUsers" class="no-users" style="display: none;">
                 <div class="no-users-icon">📭</div>
                 <h3>No Users Found</h3>
@@ -113,7 +106,6 @@
             </div>
         </div>
 
-        <!-- View Details Modal -->
         <div id="detailsModal" class="modal">
             <div class="modal-content">
                 <span class="close-modal">&times;</span>
@@ -122,6 +114,9 @@
             </div>
         </div>
     </div>
+
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
     <script src="admin.js"></script>
 </body>
