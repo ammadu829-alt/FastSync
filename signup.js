@@ -66,7 +66,6 @@ window.addEventListener('resize', () => {
 const firebaseConfig = {
     apiKey: "YOUR_API_KEY",
     authDomain: "fastsync.firebaseapp.com",
-    // IMPORTANT: Use your actual URL here to fix the warning
     databaseURL: "https://fastsync-8b20e-default-rtdb.firebaseio.com/", 
     projectId: "fastsync",
     storageBucket: "fastsync.appspot.com",
@@ -101,7 +100,9 @@ signupForm.addEventListener('submit', function(e) {
     const password = document.getElementById('password').value;
     const confirmPassword = document.getElementById('confirmPassword').value;
     const rollNumber = document.getElementById('rollNumber').value.trim();
+    const university = document.getElementById('university').value;
     const department = document.getElementById('department').value;
+    const semester = document.getElementById('semester').value;
     const termsAccepted = document.getElementById('terms').checked;
 
     // Validation
@@ -114,13 +115,15 @@ signupForm.addEventListener('submit', function(e) {
     submitBtn.textContent = 'Registering...';
     submitBtn.disabled = true;
 
-    // Data for Cloud Storage
+    // Data for Cloud Storage (NOW INCLUDES UNIVERSITY & SEMESTER)
     const newUser = {
         fullName,
         email,
         password,
         rollNumber,
+        university,
         department,
+        semester,
         createdAt: new Date().toISOString()
     };
 
@@ -132,13 +135,15 @@ signupForm.addEventListener('submit', function(e) {
             localStorage.setItem('isLoggedIn', 'true');
             localStorage.setItem('userName', fullName);
             localStorage.setItem('userEmail', email);
+            localStorage.setItem('userUniversity', university);
+            localStorage.setItem('userSemester', semester);
             
             alert('✓ Account created! You are now visible on the Admin Dashboard.');
             window.location.href = 'find-partner.html';
         })
         .catch(error => {
             alert('Cloud Error: ' + error.message);
-            submitBtn.textContent = 'Sign Up';
+            submitBtn.textContent = 'Create Account';
             submitBtn.disabled = false;
         });
 });
