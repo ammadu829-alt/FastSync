@@ -115,7 +115,7 @@ signupForm.addEventListener('submit', function(e) {
     submitBtn.textContent = 'Registering...';
     submitBtn.disabled = true;
 
-    // Data for Cloud Storage (NOW INCLUDES UNIVERSITY & SEMESTER)
+    // Data for Cloud Storage (NOW INCLUDES AVAILABILITY & PHONE FOR PARTNERSHIP SYSTEM)
     const newUser = {
         fullName,
         email,
@@ -124,6 +124,10 @@ signupForm.addEventListener('submit', function(e) {
         university,
         department,
         semester,
+        phone: "",            // Initialize empty for partner contact
+        availability: "available", // Set default to available for the Find Partner grid
+        bio: "",              // Initial empty bio
+        skills: "",           // Initial empty skills
         createdAt: new Date().toISOString()
     };
 
@@ -138,7 +142,7 @@ signupForm.addEventListener('submit', function(e) {
             localStorage.setItem('userUniversity', university);
             localStorage.setItem('userSemester', semester);
             
-            alert('✓ Account created! You are now visible on the Admin Dashboard.');
+            alert('✓ Account created! You are now visible on the Find Partner list.');
             window.location.href = 'find-partner.html';
         })
         .catch(error => {
