@@ -12,6 +12,7 @@
         <div class="nav-links">
             <a href="index.html">Home</a>
             <a href="find-partner.html" class="active">Find Partner</a>
+            <a href="owner.html">Owner</a>
             <a href="#" id="profileBtn">My Profile</a>
             <a href="#" id="logoutBtn">Logout</a>
         </div>
@@ -44,6 +45,45 @@
                     <div class="input-group">
                         <label for="rollNumber">Roll Number *</label>
                         <input type="text" id="rollNumber" name="rollNumber" placeholder="21K-1234" required>
+                    </div>
+
+                    <div class="input-group">
+                        <label for="university">University *</label>
+                        <select id="university" name="university" required>
+                            <option value="">Select University</option>
+                            <option value="Air University">Air University</option>
+                            <option value="COMSATS University">COMSATS University</option>
+                            <option value="Bahria University">Bahria University</option>
+                            <option value="NUST">NUST</option>
+                            <option value="FAST">FAST</option>
+                            <option value="GIKI">GIKI</option>
+                            <option value="University of Wah">University of Wah</option>
+                        </select>
+                    </div>
+
+                    <div class="input-group">
+                        <label for="department">Department *</label>
+                        <select id="department" name="department" required>
+                            <option value="">Select Department</option>
+                            <option value="Software Engineering">Software Engineering</option>
+                            <option value="Computer Science">Computer Science</option>
+                            <option value="Data Science">Data Science</option>
+                            <option value="Cyber Security">Cyber Security</option>
+                            <option value="Computer Engineering">Computer Engineering</option>
+                        </select>
+                    </div>
+
+                    <div class="input-group">
+                        <label for="batch">Batch *</label>
+                        <select id="batch" name="batch" required>
+                            <option value="">Select Batch</option>
+                            <option value="2025">2025</option>
+                            <option value="2026">2026</option>
+                            <option value="2027">2027</option>
+                            <option value="2028">2028</option>
+                            <option value="2029">2029</option>
+                            <option value="2030">2030</option>
+                        </select>
                     </div>
 
                     <div class="input-group">
@@ -105,6 +145,36 @@
         <section class="filter-section">
             <h2>Find Partners</h2>
             <div class="filter-controls">
+                <select id="filterUniversity" class="filter-select">
+                    <option value="">All Universities</option>
+                    <option value="Air University">Air University</option>
+                    <option value="COMSATS University">COMSATS University</option>
+                    <option value="Bahria University">Bahria University</option>
+                    <option value="NUST">NUST</option>
+                    <option value="FAST">FAST</option>
+                    <option value="GIKI">GIKI</option>
+                    <option value="University of Wah">University of Wah</option>
+                </select>
+
+                <select id="filterDepartment" class="filter-select">
+                    <option value="">All Departments</option>
+                    <option value="Software Engineering">Software Engineering</option>
+                    <option value="Computer Science">Computer Science</option>
+                    <option value="Data Science">Data Science</option>
+                    <option value="Cyber Security">Cyber Security</option>
+                    <option value="Computer Engineering">Computer Engineering</option>
+                </select>
+
+                <select id="filterBatch" class="filter-select">
+                    <option value="">All Batches</option>
+                    <option value="2025">2025</option>
+                    <option value="2026">2026</option>
+                    <option value="2027">2027</option>
+                    <option value="2028">2028</option>
+                    <option value="2029">2029</option>
+                    <option value="2030">2030</option>
+                </select>
+
                 <select id="filterSemester" class="filter-select">
                     <option value="">All Semesters</option>
                     <option value="1">1st Semester</option>
