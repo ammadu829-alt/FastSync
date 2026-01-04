@@ -59,18 +59,17 @@ if (canvas) {
     });
 }
 
-// 2. FIREBASE CONNECTION - FIXED URL AND INITIALIZATION
+// 2. FIREBASE CONNECTION
 const firebaseConfig = {
     apiKey: "YOUR_API_KEY",
     authDomain: "fastsync-8b20e.firebaseapp.com",
-    databaseURL: "https://fastsync-8b20e-default-rtdb.firebaseio.com/", // FIXED
+    databaseURL: "https://fastsync-8b20e-default-rtdb.firebaseio.com/",
     projectId: "fastsync-8b20e",
     storageBucket: "fastsync-8b20e.appspot.com",
     messagingSenderId: "123456789",
     appId: "1:123456789:web:abcdef"
 };
 
-// Safety check for Firebase library
 if (typeof firebase !== 'undefined') {
     if (!firebase.apps.length) {
         firebase.initializeApp(firebaseConfig);
@@ -84,7 +83,7 @@ const database = (typeof firebase !== 'undefined') ? firebase.database() : null;
 // 3. Admin Dashboard State
 let allUsers = [];
 let isAdminLoggedIn = false;
-const ADMIN_PASSWORD = 'admin123'; // Password to share with authorized users
+const ADMIN_PASSWORD = 'admin123';
 
 // 4. Auth & UI Logic
 window.addEventListener('DOMContentLoaded', function() {
@@ -103,7 +102,6 @@ window.addEventListener('DOMContentLoaded', function() {
     }
 });
 
-// Login Handler
 const loginForm = document.getElementById('adminLoginForm');
 if (loginForm) {
     loginForm.addEventListener('submit', function(e) {
@@ -136,16 +134,17 @@ function loadUsers() {
     });
 }
 
-// Display Table - FIXED TYPEERROR
+// Display Table - UPDATED TO INCLUDE UNIVERSITY AND SEMESTER
 function displayUsers(usersToDisplay = null) {
     const users = usersToDisplay || allUsers;
     const tableBody = document.getElementById('usersTableBody');
-    if (!tableBody) return; // Fixes "Cannot set properties of null"
+    if (!tableBody) return;
 
     tableBody.innerHTML = '';
     users.forEach((user, index) => {
         const row = document.createElement('tr');
-        const regDate = user.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'Jan 3, 2026';
+        // Fallback for registration date if createdAt doesn't exist
+        const regDate = user.createdAt ? new Date(user.createdAt).toLocaleDateString() : '04/01/2026';
 
         row.innerHTML = `
             <td>${index + 1}</td>
@@ -157,8 +156,8 @@ function displayUsers(usersToDisplay = null) {
                       onclick="togglePassword('${user.firebaseId}', '${user.password}')">Show</span>
             </td>
             <td>${user.rollNumber || 'N/A'}</td>
-            <td>${user.department || 'N/A'}</td>
-            <td>${regDate}</td>
+            <td>${user.university || 'N/A'}</td> <td>${user.department || 'N/A'}</td>
+            <td>${user.semester || 'N/A'}</td>   <td>${regDate}</td>
             <td>
                 <button class="btn-view" onclick="viewUserDetails('${user.firebaseId}')">View</button>
                 <button class="btn-delete" onclick="deleteUser('${user.firebaseId}')">Delete</button>
@@ -208,7 +207,9 @@ if (searchInput) {
     searchInput.addEventListener('input', (e) => {
         const term = e.target.value.toLowerCase();
         const filtered = allUsers.filter(u => 
-            u.fullName.toLowerCase().includes(term) || u.email.toLowerCase().includes(term)
+            u.fullName.toLowerCase().includes(term) || 
+            u.email.toLowerCase().includes(term) || 
+            (u.rollNumber && u.rollNumber.toLowerCase().includes(term))
         );
         displayUsers(filtered);
     });
