@@ -1,329 +1,290 @@
-// 1. Firebase Configuration
+// 1. FIREBASE CONFIGURATION
 const firebaseConfig = {
     apiKey: "YOUR_API_KEY",
-    authDomain: "fastsync.firebaseapp.com",
-    databaseURL: "https://fastsync-8b20e-default-rtdb.firebaseio.com/", 
-    projectId: "fastsync",
-    storageBucket: "fastsync.appspot.com",
+    authDomain: "fastsync-8b20e.firebaseapp.com",
+    databaseURL: "https://fastsync-8b20e-default-rtdb.firebaseio.com/",
+    projectId: "fastsync-8b20e",
+    storageBucket: "fastsync-8b20e.appspot.com",
     messagingSenderId: "123456789",
-    appId: "1:123456789:web:abcdef12345"
+    appId: "1:123456789:web:abcdef"
 };
 
-// 2. Initialize Firebase
+// Initialize Firebase
 if (!firebase.apps.length) {
     firebase.initializeApp(firebaseConfig);
 }
 const database = firebase.database();
 
-let partners = [];
-let myConnections = {}; // Tracks requests sent and received
-const userEmail = localStorage.getItem('userEmail');
-const userName = localStorage.getItem('userName');
-const userPhone = localStorage.getItem('userPhone'); // Ensure this exists in local storage
+// 2. STATE MANAGEMENT
+let allUsers = [];
+let currentUserProfile = null;
+let currentRequests = {};
 
-// Helper: Firebase doesn't allow "." in keys
-const encodeEmail = (email) => email ? email.replace(/\./g, '_') : '';
+// Helper to handle Firebase keys (dots not allowed)
+const encodeEmail = (email) => email ? email.replace(/\./g, '_') : null;
 
-// 3. Start the App
-function init() {
-    if (!localStorage.getItem('isLoggedIn')) {
-        window.location.href = 'login.html';
+// 3. INITIALIZATION & AUTH CHECK
+window.addEventListener('DOMContentLoaded', () => {
+    const userEmail = sessionStorage.getItem('userEmail') || localStorage.getItem('userEmail');
+    
+    if (!userEmail) {
+        alert("Please login first!");
+        window.location.href = "login.html";
         return;
     }
 
-    const myEncodedEmail = encodeEmail(userEmail);
+    loadData(userEmail);
+    setupEventListeners();
+});
 
-    // Listen for Connection Requests (Privacy Layer)
-    database.ref('requests').on('value', (snapshot) => {
-        myConnections = snapshot.val() || {};
+// 4. DATA LOADING
+function loadData(userEmail) {
+    // Load all users
+    database.ref('users').on('value', (snapshot) => {
+        const data = snapshot.val();
+        allUsers = data ? Object.entries(data).map(([id, val]) => ({...val, firebaseId: id})) : [];
         
-        // Listen for Profile Data
-        database.ref('profiles').on('value', (snapshot) => {
-            const data = snapshot.val();
-            partners = data ? Object.entries(data).map(([id, val]) => ({...val, id})) : [];
-            displayPartners();
-        });
+        // Identify current user's profile
+        currentUserProfile = allUsers.find(u => u.email === userEmail);
+        if (currentUserProfile) {
+            fillProfileForm(currentUserProfile);
+            document.getElementById('formTitle').textContent = "Update Your Partner Profile";
+            document.getElementById('submitBtn').textContent = "Update Profile";
+        }
+        
+        displayPartners();
     });
 
-    const profileBtn = document.getElementById('profileBtn');
-    if (profileBtn && userName) profileBtn.textContent = userName;
+    // Load connection requests
+    const encodedMe = encodeEmail(userEmail);
+    database.ref('requests').on('value', (snapshot) => {
+        const allReqs = snapshot.val() || {};
+        currentRequests = allReqs;
+        updateRequestsUI(encodedMe);
+    });
 }
 
-// 4. Display Cards with Privacy Logic
-function displayPartners() {
-    const grid = document.getElementById('partnersGrid');
-    const countText = document.getElementById('partnersCount');
-    const noResults = document.getElementById('noResults');
+// 5. CONNECTION REQUEST LOGIC (NEW FEATURE)
+function updateRequestsUI(myEncodedEmail) {
+    const badge = document.getElementById('requestBadge');
+    const incomingList = document.getElementById('incomingRequestsList');
+    const outgoingList = document.getElementById('outgoingRequestsList');
     
-    if (!grid) return;
-    if (countText) countText.textContent = partners.length;
+    // 1. Handle Incoming
+    const myIncoming = currentRequests[myEncodedEmail] || {};
+    const pendingIncoming = Object.values(myIncoming).filter(r => r.status === 'pending');
     
-    if (partners.length === 0) {
-        if (noResults) noResults.style.display = 'block';
-        grid.style.display = 'none';
+    // Update Badge
+    if (pendingIncoming.length > 0) {
+        badge.textContent = pendingIncoming.length;
+        badge.style.display = 'inline-block';
+    } else {
+        badge.style.display = 'none';
+    }
+
+    // Render Incoming List
+    incomingList.innerHTML = '';
+    if (Object.keys(myIncoming).length === 0) {
+        incomingList.innerHTML = '<p class="empty-msg">No incoming requests.</p>';
+    } else {
+        for (let senderKey in myIncoming) {
+            const req = myIncoming[senderKey];
+            const div = document.createElement('div');
+            div.className = `request-item ${req.status}`;
+            div.innerHTML = `
+                <div class="req-info">
+                    <strong>${req.fromName}</strong> (${req.fromEmail})
+                    <span class="status-tag">${req.status}</span>
+                </div>
+                ${req.status === 'pending' ? `
+                    <div class="req-actions">
+                        <button onclick="respondRequest('${senderKey}', 'accepted')">Accept</button>
+                        <button class="btn-reject" onclick="respondRequest('${senderKey}', 'rejected')">Decline</button>
+                    </div>
+                ` : req.status === 'accepted' ? `<p class="contact-hint">Contact: ${req.fromPhone || 'Check Email'}</p>` : ''}
+            `;
+            incomingList.appendChild(div);
+        }
+    }
+
+    // 2. Handle Outgoing
+    outgoingList.innerHTML = '';
+    let hasOutgoing = false;
+    for (let receiverKey in currentRequests) {
+        if (currentRequests[receiverKey][myEncodedEmail]) {
+            hasOutgoing = true;
+            const req = currentRequests[receiverKey][myEncodedEmail];
+            const div = document.createElement('div');
+            div.className = `request-item ${req.status}`;
+            div.innerHTML = `
+                <div>Sent to <strong>${req.toName}</strong></div>
+                <span class="status-tag">${req.status}</span>
+            `;
+            outgoingList.appendChild(div);
+        }
+    }
+    if (!hasOutgoing) outgoingList.innerHTML = '<p class="empty-msg">No sent requests.</p>';
+}
+
+window.sendPartnerRequest = function(targetUserEmail, targetUserName) {
+    if (!currentUserProfile) {
+        alert("Please create your profile first!");
+        document.getElementById('profileSection').scrollIntoView();
         return;
     }
+
+    if (currentUserProfile.email === targetUserEmail) {
+        alert("You cannot request yourself!");
+        return;
+    }
+
+    const encodedTarget = encodeEmail(targetUserEmail);
+    const encodedMe = encodeEmail(currentUserProfile.email);
+
+    const requestData = {
+        fromName: currentUserProfile.fullName,
+        fromEmail: currentUserProfile.email,
+        fromPhone: currentUserProfile.phone,
+        toName: targetUserName,
+        status: 'pending',
+        timestamp: Date.now()
+    };
+
+    database.ref(`requests/${encodedTarget}/${encodedMe}`).set(requestData)
+        .then(() => alert("🚀 Partnership request sent!"))
+        .catch(err => alert("Error: " + err.message));
+};
+
+window.respondRequest = function(senderKey, newStatus) {
+    const myEncoded = encodeEmail(currentUserProfile.email);
+    database.ref(`requests/${myEncoded}/${senderKey}/status`).set(newStatus);
+};
+
+// 6. DISPLAY PARTNERS (UPDATED TO INTEGRATE REQUESTS)
+function displayPartners() {
+    const grid = document.getElementById('partnersGrid');
+    const countEl = document.getElementById('partnersCount');
+    const noResults = document.getElementById('noResults');
     
-    if (noResults) noResults.style.display = 'none';
-    grid.style.display = 'grid';
+    // Apply Filters
+    const filtered = allUsers.filter(u => {
+        const matchUniv = !document.getElementById('filterUniversity').value || u.university === document.getElementById('filterUniversity').value;
+        const matchDept = !document.getElementById('filterDepartment').value || u.department === document.getElementById('filterDepartment').value;
+        const matchBatch = !document.getElementById('filterBatch').value || u.batch === document.getElementById('filterBatch').value;
+        const matchSem = !document.getElementById('filterSemester').value || u.semester === document.getElementById('filterSemester').value;
+        const matchAvail = !document.getElementById('filterAvailability').value || u.availability === document.getElementById('filterAvailability').value;
+        
+        // Hide current user from the list
+        const isNotMe = u.email !== (currentUserProfile ? currentUserProfile.email : '');
+        
+        return matchUniv && matchDept && matchBatch && matchSem && matchAvail && isNotMe;
+    });
+
     grid.innerHTML = '';
+    countEl.textContent = filtered.length;
+    noResults.style.display = filtered.length === 0 ? 'block' : 'none';
 
-    const myEncodedEmail = encodeEmail(userEmail);
-
-    partners.forEach(p => {
-        const isMine = p.email === userEmail;
-        const targetEncodedEmail = encodeEmail(p.email);
-        
-        // Check relationship status
-        // Case 1: They sent me a request
-        const incomingReq = myConnections[myEncodedEmail]?.[targetEncodedEmail];
-        // Case 2: I sent them a request
-        const outgoingReq = myConnections[targetEncodedEmail]?.[myEncodedEmail];
-        
-        const isConnected = (incomingReq?.status === 'accepted') || (outgoingReq?.status === 'accepted');
-        const isPending = outgoingReq?.status === 'pending';
-
+    filtered.forEach(user => {
         const card = document.createElement('div');
         card.className = 'partner-card';
-
-        const availabilityClass = p.availability === 'available' ? 'status-available' : 'status-found';
-        const availabilityText = p.availability === 'available' ? '✓ Available' : '✗ Partnered';
         
-        const skillsArray = p.skills ? p.skills.split(',').map(s => s.trim()).filter(s => s) : [];
-        const skillsHTML = skillsArray.length > 0 
-            ? skillsArray.map(skill => `<span class="skill-tag">${skill}</span>`).join('')
-            : '<span class="no-skills">No skills listed</span>';
-
-        // PRIVACY LOGIC: Hide phone unless connected or is own profile
-        const phoneDisplay = (isMine || isConnected) ? p.phone : "<i>Hidden (Connect to view)</i>";
+        // Check if we already sent a request to this person
+        const targetEncoded = encodeEmail(user.email);
+        const myEncoded = currentUserProfile ? encodeEmail(currentUserProfile.email) : null;
+        const existingReq = (myEncoded && currentRequests[targetEncoded]) ? currentRequests[targetEncoded][myEncoded] : null;
         
+        let buttonHTML = `<button class="btn-request" onclick="sendPartnerRequest('${user.email}', '${user.fullName}')">Request Partnership</button>`;
+        if (existingReq) {
+            buttonHTML = `<button class="btn-sent" disabled>Request ${existingReq.status}</button>`;
+        }
+
         card.innerHTML = `
             <div class="card-header">
-                <div class="profile-avatar">${p.fullName.charAt(0).toUpperCase()}</div>
-                <div class="profile-info">
-                    <h3 class="profile-name">${p.fullName}</h3>
-                    <p class="profile-roll">${p.rollNumber}</p>
-                </div>
-                <span class="availability-badge ${availabilityClass}">${availabilityText}</span>
+                <h3>${user.fullName}</h3>
+                <span class="badge-${user.availability}">${user.availability}</span>
             </div>
-            
             <div class="card-body">
-                <div class="info-section">
-                    <div class="info-row">
-                        <span class="info-icon">🎓</span>
-                        <div class="info-content"><strong>University</strong><p>${p.university || 'Not specified'}</p></div>
-                    </div>
-                    <div class="info-row">
-                        <span class="info-icon">💼</span>
-                        <div class="info-content"><strong>Department</strong><p>${p.department || 'Not specified'}</p></div>
-                    </div>
-                    <div class="info-row">
-                        <span class="info-icon">📚</span>
-                        <div class="info-content"><strong>Semester</strong><p>${getOrdinalSemester(p.semester)}</p></div>
-                    </div>
-                    <div class="info-row">
-                        <span class="info-icon">📧</span>
-                        <div class="info-content"><strong>Email</strong><p>${p.email}</p></div>
-                    </div>
-                    <div class="info-row">
-                        <span class="info-icon">📱</span>
-                        <div class="info-content"><strong>Phone</strong><p>${phoneDisplay}</p></div>
-                    </div>
-                </div>
-                
-                ${p.bio ? `<div class="bio-section"><strong>About:</strong><p>${p.bio}</p></div>` : ''}
-                <div class="skills-section">
-                    <strong>Skills:</strong>
-                    <div class="skills-container">${skillsHTML}</div>
-                </div>
+                <p><strong>🎓 ${user.university}</strong></p>
+                <p>📍 ${user.department} | Sem ${user.semester}</p>
+                <p class="skills">💻 ${user.skills || 'No skills listed'}</p>
+                <p class="bio">"${user.bio || 'Available for projects!'}"</p>
             </div>
-            
-            <div class="card-footer" id="footer-${targetEncodedEmail}">
-                ${isMine ? 
-                    `<button class="btn-contact" onclick="editProfile('${p.id}')" style="flex:1;">✏️ Edit</button>
-                     <button class="btn-whatsapp" onclick="deleteProfile('${p.id}')" style="flex:1; background:rgba(239,68,68,0.2); color:#ef4444;">🗑️ Delete</button>` : 
-                    renderActionButton(p, targetEncodedEmail, incomingReq, outgoingReq, isConnected, isPending)
-                }
+            <div class="card-footer">
+                ${buttonHTML}
             </div>
         `;
         grid.appendChild(card);
     });
 }
 
-// Helper to render buttons based on privacy/request state
-function renderActionButton(p, targetId, incoming, outgoing, isConnected, isPending) {
-    if (isConnected) {
-        return `
-            <button class="btn-contact" onclick="openContactModal('${p.id}', '${p.fullName}', '${p.email}')">📧 Email</button>
-            <a href="https://wa.me/${p.phone.replace(/\D/g, '')}" target="_blank" class="btn-whatsapp">💬 WhatsApp</a>
-        `;
-    } else if (incoming && incoming.status === 'pending') {
-        return `
-            <button class="btn-contact" onclick="respondRequest('${targetId}', 'accepted')" style="background:#10b981; color:white;">Accept Request</button>
-            <button class="btn-whatsapp" onclick="respondRequest('${targetId}', 'declined')" style="background:#ef4444; color:white;">Decline</button>
-        `;
-    } else if (isPending) {
-        return `<button class="btn-contact" disabled style="flex:1; background:#6b7280;">⏳ Request Pending</button>`;
-    } else {
-        return `<button class="btn-contact" onclick="sendPartnerRequest('${targetId}', '${p.fullName}')" style="flex:1;">🤝 Request to Partner</button>`;
-    }
-}
-
-// 5. New Privacy Functions (Request/Accept)
-window.sendPartnerRequest = function(targetEncodedEmail, targetName) {
-    const myEncodedEmail = encodeEmail(userEmail);
-    const requestData = {
-        fromName: userName,
-        fromEmail: userEmail,
-        status: 'pending',
-        timestamp: Date.now()
+// 7. PROFILE FORM HANDLING
+document.getElementById('profileForm').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const formData = {
+        fullName: document.getElementById('fullName').value,
+        email: document.getElementById('email').value,
+        phone: document.getElementById('phone').value,
+        rollNumber: document.getElementById('rollNumber').value,
+        university: document.getElementById('university').value,
+        department: document.getElementById('department').value,
+        batch: document.getElementById('batch').value,
+        section: document.getElementById('section').value,
+        semester: document.getElementById('semester').value,
+        session: document.getElementById('session').value,
+        course: document.getElementById('course').value,
+        skills: document.getElementById('skills').value,
+        bio: document.getElementById('bio').value,
+        availability: document.getElementById('availability').value,
+        createdAt: currentUserProfile ? currentUserProfile.createdAt : Date.now()
     };
 
-    database.ref('requests/' + targetEncodedEmail + '/' + myEncodedEmail).set(requestData)
-        .then(() => alert("✅ Partnership request sent to " + targetName + ". They must accept before you can see their contact info."))
-        .catch(err => alert("❌ Error: " + err.message));
-};
-
-window.respondRequest = function(senderEncodedEmail, status) {
-    const myEncodedEmail = encodeEmail(userEmail);
-    database.ref('requests/' + myEncodedEmail + '/' + senderEncodedEmail).update({ status: status })
+    const userId = currentUserProfile ? currentUserProfile.firebaseId : database.ref('users').push().key;
+    database.ref('users/' + userId).set(formData)
         .then(() => {
-            if(status === 'accepted') alert("✅ Connection accepted! You can now see each other's contact details.");
+            alert("✅ Profile Saved Successfully!");
+            location.reload();
         });
-};
+});
 
-// --- PRE-EXISTING FUNCTIONS (Kept Exactly As Requested) ---
-
-function getOrdinalSemester(num) {
-    if (!num) return 'Not specified';
-    const suffixes = ['th', 'st', 'nd', 'rd'];
-    const v = num % 100;
-    return num + (suffixes[(v - 20) % 10] || suffixes[v] || suffixes[0]) + ' Semester';
-}
-
-window.editProfile = function(id) {
-    const p = partners.find(item => item.id === id);
-    if (!p) return;
-    const formSection = document.getElementById('profileSection');
-    if (formSection) formSection.scrollIntoView({ behavior: 'smooth' });
-    document.getElementById('profileId').value = p.id;
-    document.getElementById('fullName').value = p.fullName || '';
-    document.getElementById('email').value = p.email || '';
-    document.getElementById('phone').value = p.phone || '';
-    document.getElementById('rollNumber').value = p.rollNumber || '';
-    document.getElementById('university').value = p.university || '';
-    document.getElementById('department').value = p.department || '';
-    document.getElementById('batch').value = p.batch || '';
-    document.getElementById('section').value = p.section || '';
-    document.getElementById('semester').value = p.semester || '';
-    const semesterSelect = document.getElementById('semester');
-    const event = new Event('change');
-    semesterSelect.dispatchEvent(event);
-    setTimeout(() => { document.getElementById('course').value = p.course || ''; }, 100);
-    document.getElementById('session').value = p.session || '';
-    document.getElementById('skills').value = p.skills || '';
-    document.getElementById('bio').value = p.bio || '';
-    document.getElementById('availability').value = p.availability || 'available';
-    document.getElementById('formTitle').textContent = 'Edit Your Profile';
-    document.getElementById('submitBtn').textContent = 'Update My Profile';
-};
-
-window.deleteProfile = function(id) {
-    if (confirm("⚠️ Are you sure? This action cannot be undone!")) {
-        database.ref('profiles/' + id).remove()
-            .then(() => alert("✅ Profile deleted successfully!"))
-            .catch(err => alert("❌ Error: " + err.message));
-    }
-};
-
-const profileForm = document.getElementById('profileForm');
-if (profileForm) {
-    profileForm.addEventListener('submit', function(e) {
-        e.preventDefault();
-        const existingId = document.getElementById('profileId').value;
-        const id = existingId || Date.now().toString();
-        const profileData = {
-            fullName: document.getElementById('fullName').value,
-            email: document.getElementById('email').value,
-            phone: document.getElementById('phone').value,
-            rollNumber: document.getElementById('rollNumber').value,
-            university: document.getElementById('university').value,
-            department: document.getElementById('department').value,
-            batch: document.getElementById('batch').value,
-            section: document.getElementById('section').value,
-            semester: document.getElementById('semester').value,
-            session: document.getElementById('session').value,
-            course: document.getElementById('course').value,
-            skills: document.getElementById('skills').value,
-            bio: document.getElementById('bio').value,
-            availability: document.getElementById('availability').value,
-            timestamp: Date.now()
-        };
-        database.ref('profiles/' + id).set(profileData).then(() => {
-            alert(existingId ? "✅ Profile Updated!" : "✅ Profile Added!");
-            profileForm.reset();
-            document.getElementById('profileId').value = '';
-            document.getElementById('formTitle').textContent = 'Create Your Partner Profile';
-            document.getElementById('submitBtn').textContent = 'Add My Profile';
-        });
-    });
-}
-
-function filterProfiles() {
-    const filterIds = ['filterUniversity', 'filterDepartment', 'filterBatch', 'filterSection', 'filterSemester', 'filterSession', 'filterCourse', 'filterAvailability'];
-    const filters = {};
-    filterIds.forEach(id => { filters[id.replace('filter', '').toLowerCase()] = document.getElementById(id)?.value || ''; });
+function fillProfileForm(user) {
+    document.getElementById('fullName').value = user.fullName || '';
+    document.getElementById('email').value = user.email || '';
+    document.getElementById('phone').value = user.phone || '';
+    document.getElementById('rollNumber').value = user.rollNumber || '';
+    document.getElementById('university').value = user.university || '';
+    document.getElementById('department').value = user.department || '';
+    document.getElementById('batch').value = user.batch || '';
+    document.getElementById('section').value = user.section || '';
+    document.getElementById('semester').value = user.semester || '';
+    document.getElementById('session').value = user.session || '';
+    document.getElementById('skills').value = user.skills || '';
+    document.getElementById('bio').value = user.bio || '';
+    document.getElementById('availability').value = user.availability || 'available';
     
-    database.ref('profiles').once('value', (snapshot) => {
-        const data = snapshot.val();
-        let allPartners = data ? Object.entries(data).map(([id, val]) => ({...val, id})) : [];
-        partners = allPartners.filter(p => {
-            for (let key in filters) {
-                if (filters[key] && p[key] !== filters[key]) return false;
-            }
-            return true;
-        });
+    // Trigger course loading if your courses-data.js supports it
+    if (window.updateCourses) window.updateCourses(user.semester);
+}
+
+// 8. UI HELPERS (Modals & Filters)
+function setupEventListeners() {
+    // Modal Toggles
+    const reqModal = document.getElementById('requestsModal');
+    document.getElementById('requestsBtn').onclick = () => reqModal.style.display = 'block';
+    document.getElementById('closeRequestsModal').onclick = () => reqModal.style.display = 'none';
+
+    // Filters
+    document.querySelectorAll('.filter-select').forEach(select => {
+        select.onchange = displayPartners;
+    });
+
+    document.getElementById('resetFilters').onclick = () => {
+        document.querySelectorAll('.filter-select').forEach(s => s.value = "");
         displayPartners();
-    });
+    };
+
+    // Logout
+    document.getElementById('logoutBtn').onclick = () => {
+        sessionStorage.clear();
+        window.location.href = "login.html";
+    };
 }
-
-const filterIds = ['filterUniversity', 'filterDepartment', 'filterBatch', 'filterSection', 'filterSemester', 'filterSession', 'filterCourse', 'filterAvailability'];
-filterIds.forEach(id => { document.getElementById(id)?.addEventListener('change', filterProfiles); });
-
-const resetFiltersBtn = document.getElementById('resetFilters');
-if (resetFiltersBtn) { resetFiltersBtn.addEventListener('click', () => init()); }
-
-window.openContactModal = function(profileId, name, email) {
-    const modal = document.getElementById('messageModal');
-    if (modal) {
-        document.getElementById('partnerNameModal').textContent = name;
-        modal.style.display = 'flex';
-        const messageForm = document.getElementById('messageForm');
-        messageForm.dataset.partnerEmail = email;
-        messageForm.dataset.partnerName = name;
-    }
-};
-
-const messageForm = document.getElementById('messageForm');
-if (messageForm) {
-    messageForm.addEventListener('submit', function(e) {
-        e.preventDefault();
-        const senderName = document.getElementById('senderName').value;
-        const message = document.getElementById('messageText').value;
-        const partnerEmail = this.dataset.partnerEmail;
-        const subject = encodeURIComponent(`Project Partnership Request`);
-        const body = encodeURIComponent(`Hi, ${message}\n\nBest, ${senderName}`);
-        window.location.href = `mailto:${partnerEmail}?subject=${subject}&body=${body}`;
-        document.getElementById('messageModal').style.display = 'none';
-    });
-}
-
-const logoutBtn = document.getElementById('logoutBtn');
-if (logoutBtn) {
-    logoutBtn.addEventListener('click', (e) => {
-        e.preventDefault();
-        if (confirm('Logout?')) { localStorage.clear(); window.location.href = 'index.html'; }
-    });
-}
-
-init();
