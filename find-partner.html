@@ -5,6 +5,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Find Partner - FASTSync</title>
     <link rel="stylesheet" href="partner.css">
+    <style>
+        /* Small addition for the notification badge */
+        .badge {
+            background: #ff4757;
+            color: white;
+            padding: 2px 6px;
+            border-radius: 10px;
+            font-size: 0.7rem;
+            margin-left: 5px;
+            vertical-align: middle;
+        }
+    </style>
 </head>
 <body>
     <nav class="navbar">
@@ -13,6 +25,7 @@
             <a href="index.html">Home</a>
             <a href="find-partner.html" class="active">Find Partner</a>
             <a href="owner.html">Owner</a>
+            <a href="#" id="requestsBtn">Requests <span id="requestBadge" class="badge" style="display:none">0</span></a>
             <a href="#" id="profileBtn">My Profile</a>
             <a href="#" id="logoutBtn">Logout</a>
         </div>
@@ -289,6 +302,24 @@
         </section>
     </div>
 
+    <div id="requestsModal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal" id="closeRequestsModal">&times;</span>
+            <h2>Connection Requests</h2>
+            <div class="tabs">
+                <p class="modal-subtitle">Manage your partnership requests</p>
+            </div>
+            <div id="incomingRequestsList">
+                <p class="empty-msg">No incoming requests yet.</p>
+            </div>
+            <hr>
+            <h3>Sent Requests</h3>
+            <div id="outgoingRequestsList">
+                <p class="empty-msg">No sent requests.</p>
+            </div>
+        </div>
+    </div>
+
     <div id="messageModal" class="modal">
         <div class="modal-content">
             <span class="close-modal" id="closeModal">&times;</span>
@@ -319,7 +350,6 @@
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database-compat.js"></script>
     
-    <!-- Course data must load before partner.js -->
     <script src="courses-data.js"></script>
     <script src="partner.js"></script>
 </body>
