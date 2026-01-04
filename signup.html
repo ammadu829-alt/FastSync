@@ -20,7 +20,6 @@
                     <label for="fullName">Full Name *</label>
                     <input type="text" id="fullName" name="fullName" placeholder="John Doe" required>
                 </div>
-
                 <div class="input-group">
                     <label for="email">University Email *</label>
                     <input type="email" id="email" name="email" placeholder="your.email@nu.edu.pk" required>
@@ -31,17 +30,27 @@
                     <input type="password" id="password" name="password" placeholder="Create a strong password" required minlength="6">
                     <span class="password-hint">At least 6 characters</span>
                 </div>
-
                 <div class="input-group">
                     <label for="confirmPassword">Confirm Password *</label>
                     <input type="password" id="confirmPassword" name="confirmPassword" placeholder="Re-enter your password" required>
                 </div>
-
                 <div class="input-group">
                     <label for="rollNumber">Roll Number *</label>
                     <input type="text" id="rollNumber" name="rollNumber" placeholder="21K-1234" required>
                 </div>
-
+                <div class="input-group">
+                    <label for="university">University *</label>
+                    <select id="university" name="university" required>
+                        <option value="">Select University</option>
+                        <option value="Air University">Air University</option>
+                        <option value="COMSATS University">COMSATS University</option>
+                        <option value="Bahria University">Bahria University</option>
+                        <option value="NUST">NUST</option>
+                        <option value="FAST">FAST</option>
+                        <option value="GIKI">GIKI</option>
+                        <option value="University of Wah">University of Wah</option>
+                    </select>
+                </div>
                 <div class="input-group">
                     <label for="department">Department *</label>
                     <select id="department" name="department" required>
@@ -52,6 +61,20 @@
                         <option value="Data Science">Data Science</option>
                         <option value="Cyber Security">Cyber Security</option>
                         <option value="Information Technology">Information Technology</option>
+                    </select>
+                </div>
+                <div class="input-group">
+                    <label for="semester">Semester *</label>
+                    <select id="semester" name="semester" required>
+                        <option value="">Select Semester</option>
+                        <option value="1">1st Semester</option>
+                        <option value="2">2nd Semester</option>
+                        <option value="3">3rd Semester</option>
+                        <option value="4">4th Semester</option>
+                        <option value="5">5th Semester</option>
+                        <option value="6">6th Semester</option>
+                        <option value="7">7th Semester</option>
+                        <option value="8">8th Semester</option>
                     </select>
                 </div>
                 
@@ -73,7 +96,6 @@
     
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
-
     <script src="signup.js"></script>
 </body>
 </html>
