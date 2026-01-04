@@ -82,6 +82,7 @@ const database = (typeof firebase !== 'undefined') ? firebase.database() : null;
 
 // 3. Admin Dashboard State
 let allUsers = [];
+let allRequests = {}; // NEW: Track connections for monitoring
 let isAdminLoggedIn = false;
 const ADMIN_PASSWORD = 'admin123';
 
@@ -120,10 +121,17 @@ if (loginForm) {
     });
 }
 
-// 5. DATA SYNC - LOAD USERS FROM CLOUD
+// 5. DATA SYNC - LOAD USERS & REQUESTS FROM CLOUD
 function loadUsers() {
     if (!database) return;
     console.log('📊 Synchronizing with Cloud...');
+    
+    // NEW FEATURE: Sync connection requests for privacy monitoring
+    database.ref('requests').on('value', (snapshot) => {
+        allRequests = snapshot.val() || {};
+        updateStatistics();
+    });
+
     database.ref('users').on('value', (snapshot) => {
         const data = snapshot.val();
         allUsers = data ? Object.entries(data).map(([id, val]) => ({...val, firebaseId: id})) : [];
@@ -134,7 +142,7 @@ function loadUsers() {
     });
 }
 
-// Display Table - UPDATED TO INCLUDE UNIVERSITY AND SEMESTER
+// Display Table
 function displayUsers(usersToDisplay = null) {
     const users = usersToDisplay || allUsers;
     const tableBody = document.getElementById('usersTableBody');
@@ -143,7 +151,6 @@ function displayUsers(usersToDisplay = null) {
     tableBody.innerHTML = '';
     users.forEach((user, index) => {
         const row = document.createElement('tr');
-        // Fallback for registration date if createdAt doesn't exist
         const regDate = user.createdAt ? new Date(user.createdAt).toLocaleDateString() : '04/01/2026';
 
         row.innerHTML = `
@@ -156,8 +163,10 @@ function displayUsers(usersToDisplay = null) {
                       onclick="togglePassword('${user.firebaseId}', '${user.password}')">Show</span>
             </td>
             <td>${user.rollNumber || 'N/A'}</td>
-            <td>${user.university || 'N/A'}</td> <td>${user.department || 'N/A'}</td>
-            <td>${user.semester || 'N/A'}</td>   <td>${regDate}</td>
+            <td>${user.university || 'N/A'}</td> 
+            <td>${user.department || 'N/A'}</td>
+            <td>${user.semester || 'N/A'}</td>   
+            <td>${regDate}</td>
             <td>
                 <button class="btn-view" onclick="viewUserDetails('${user.firebaseId}')">View</button>
                 <button class="btn-delete" onclick="deleteUser('${user.firebaseId}')">Delete</button>
@@ -188,16 +197,77 @@ window.deleteUser = function(userId) {
     }
 }
 
+// NEW FEATURE: IMPLEMENTED VIEW USER DETAILS MODAL
+window.viewUserDetails = function(userId) {
+    const user = allUsers.find(u => u.firebaseId === userId);
+    if (!user) return;
+
+    const modal = document.getElementById('detailsModal');
+    const content = document.getElementById('userDetailsContent');
+    const encodedEmail = user.email.replace(/\./g, '_');
+
+    // Fetch this user's connections
+    const userRequests = allRequests[encodedEmail] || {};
+    let connectionsHTML = `<div class="connections-summary"><h4>Privacy & Connections</h4>`;
+    
+    if (Object.keys(userRequests).length === 0) {
+        connectionsHTML += `<p>No connection requests yet.</p>`;
+    } else {
+        connectionsHTML += `<ul>`;
+        for (let sender in userRequests) {
+            const req = userRequests[sender];
+            const statusColor = req.status === 'accepted' ? '#10b981' : '#f59e0b';
+            connectionsHTML += `<li>
+                <strong>${req.fromName}</strong> (${req.fromEmail}) 
+                - <span style="color:${statusColor}">${req.status.toUpperCase()}</span>
+            </li>`;
+        }
+        connectionsHTML += `</ul>`;
+    }
+    connectionsHTML += `</div>`;
+
+    content.innerHTML = `
+        <div class="admin-user-profile">
+            <p><strong>Phone:</strong> ${user.phone || 'N/A'}</p>
+            <p><strong>Roll No:</strong> ${user.rollNumber || 'N/A'}</p>
+            <p><strong>Semester:</strong> ${user.semester || 'N/A'}</p>
+            <p><strong>Registration:</strong> ${user.createdAt ? new Date(user.createdAt).toLocaleString() : 'N/A'}</p>
+            <hr>
+            ${connectionsHTML}
+        </div>
+    `;
+    modal.style.display = 'block';
+}
+
+// Close Modal Logic
+const closeBtn = document.querySelector('.close-modal');
+if (closeBtn) {
+    closeBtn.onclick = () => document.getElementById('detailsModal').style.display = 'none';
+}
+window.onclick = (event) => {
+    const modal = document.getElementById('detailsModal');
+    if (event.target == modal) modal.style.display = "none";
+}
+
 function updateStatistics() {
     const totalU = document.getElementById('totalUsers');
     const totalE = document.getElementById('totalEmails');
     const totalD = document.getElementById('totalDepartments');
+    const totalN = document.getElementById('newToday');
     
     if (totalU) totalU.textContent = allUsers.length;
     if (totalE) totalE.textContent = allUsers.length;
     if (totalD) {
         const depts = new Set(allUsers.map(u => u.department).filter(d => d));
         totalD.textContent = depts.size;
+    }
+    if (totalN) {
+        const today = new Date().toLocaleDateString();
+        const count = allUsers.filter(u => {
+            const d = u.createdAt ? new Date(u.createdAt).toLocaleDateString() : '04/01/2026';
+            return d === today;
+        }).length;
+        totalN.textContent = count;
     }
 }
 
