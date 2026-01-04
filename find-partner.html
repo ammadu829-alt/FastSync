@@ -1,356 +1,326 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Find Partner - FASTSync</title>
-    <link rel="stylesheet" href="partner.css">
-    <style>
-        /* Small addition for the notification badge */
-        .badge {
-            background: #ff4757;
-            color: white;
-            padding: 2px 6px;
-            border-radius: 10px;
-            font-size: 0.7rem;
-            margin-left: 5px;
-            vertical-align: middle;
-        }
-    </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Find Partner - FASTSync</title>
+    <link rel="stylesheet" href="partner.css">
 </head>
 <body>
-    <nav class="navbar">
-        <div class="logo">FASTSync</div>
-        <div class="nav-links">
-            <a href="index.html">Home</a>
-            <a href="find-partner.html" class="active">Find Partner</a>
-            <a href="owner.html">Owner</a>
-            <a href="#" id="requestsBtn">Requests <span id="requestBadge" class="badge" style="display:none">0</span></a>
-            <a href="#" id="profileBtn">My Profile</a>
-            <a href="#" id="logoutBtn">Logout</a>
-        </div>
-    </nav>
+    <nav class="navbar">
+        <div class="logo">FASTSync</div>
+        <div class="nav-links">
+            <a href="index.html">Home</a>
+            <a href="find-partner.html" class="active">Find Partner</a>
+            <a href="owner.html">Owner</a>
+            <a href="#" id="profileBtn">My Profile</a>
+            <a href="#" id="logoutBtn">Logout</a>
+        </div>
+    </nav>
 
-    <div class="container">
-        <section class="add-profile-section" id="profileSection">
-            <h1 id="formTitle">Create Your Partner Profile</h1>
-            <p class="subtitle">Fill in your information to find the perfect project partner</p>
-            
-            <form id="profileForm" class="profile-form">
-                <input type="hidden" id="profileId" value="">
+    <div class="container">
+        <section class="add-profile-section" id="profileSection">
+            <h1 id="formTitle">Create Your Partner Profile</h1>
+            <p class="subtitle">Fill in your information to find the perfect project partner</p>
+            
+            <form id="profileForm" class="profile-form">
+                <input type="hidden" id="profileId" value="">
 
-                <div class="form-grid">
-                    <div class="input-group">
-                        <label for="fullName">Full Name *</label>
-                        <input type="text" id="fullName" name="fullName" placeholder="John Doe" required>
-                    </div>
+                <div class="form-grid">
+                    <div class="input-group">
+                        <label for="fullName">Full Name *</label>
+                        <input type="text" id="fullName" name="fullName" placeholder="John Doe" required>
+                    </div>
 
-                    <div class="input-group">
-                        <label for="email">Email *</label>
-                        <input type="email" id="email" name="email" placeholder="john.doe@nu.edu.pk" required>
-                    </div>
+                    <div class="input-group">
+                        <label for="email">Email *</label>
+                        <input type="email" id="email" name="email" placeholder="john.doe@nu.edu.pk" required>
+                    </div>
 
-                    <div class="input-group">
-                        <label for="phone">Phone Number (WhatsApp) *</label>
-                        <input type="tel" id="phone" name="phone" placeholder="+92 300 1234567" required>
-                    </div>
+                    <div class="input-group">
+                        <label for="phone">Phone Number (WhatsApp) *</label>
+                        <input type="tel" id="phone" name="phone" placeholder="+92 300 1234567" required>
+                    </div>
 
-                    <div class="input-group">
-                        <label for="rollNumber">Roll Number *</label>
-                        <input type="text" id="rollNumber" name="rollNumber" placeholder="21K-1234" required>
-                    </div>
+                    <div class="input-group">
+                        <label for="rollNumber">Roll Number *</label>
+                        <input type="text" id="rollNumber" name="rollNumber" placeholder="21K-1234" required>
+                    </div>
 
-                    <div class="input-group">
-                        <label for="university">University *</label>
-                        <select id="university" name="university" required>
-                            <option value="">Select University</option>
-                            <option value="Air University">Air University</option>
-                            <option value="COMSATS University">COMSATS University</option>
-                            <option value="Bahria University">Bahria University</option>
-                            <option value="NUST">NUST</option>
-                            <option value="FAST">FAST</option>
-                            <option value="GIKI">GIKI</option>
-                            <option value="University of Wah">University of Wah</option>
-                        </select>
-                    </div>
+                    <div class="input-group">
+                        <label for="university">University *</label>
+                        <select id="university" name="university" required>
+                            <option value="">Select University</option>
+                            <option value="Air University">Air University</option>
+                            <option value="COMSATS University">COMSATS University</option>
+                            <option value="Bahria University">Bahria University</option>
+                            <option value="NUST">NUST</option>
+                            <option value="FAST">FAST</option>
+                            <option value="GIKI">GIKI</option>
+                            <option value="University of Wah">University of Wah</option>
+                        </select>
+                    </div>
 
-                    <div class="input-group">
-                        <label for="department">Department *</label>
-                        <select id="department" name="department" required>
-                            <option value="">Select Department</option>
-                            <option value="Software Engineering">Software Engineering</option>
-                            <option value="Computer Science">Computer Science</option>
-                            <option value="Data Science">Data Science</option>
-                            <option value="Cyber Security">Cyber Security</option>
-                            <option value="Computer Engineering">Computer Engineering</option>
-                        </select>
-                    </div>
+                    <div class="input-group">
+                        <label for="department">Department *</label>
+                        <select id="department" name="department" required>
+                            <option value="">Select Department</option>
+                            <option value="Software Engineering">Software Engineering</option>
+                            <option value="Computer Science">Computer Science</option>
+                            <option value="Data Science">Data Science</option>
+                            <option value="Cyber Security">Cyber Security</option>
+                            <option value="Computer Engineering">Computer Engineering</option>
+                        </select>
+                    </div>
 
-                    <div class="input-group">
-                        <label for="batch">Batch *</label>
-                        <select id="batch" name="batch" required>
-                            <option value="">Select Batch</option>
-                            <option value="2025">2025</option>
-                            <option value="2026">2026</option>
-                            <option value="2027">2027</option>
-                            <option value="2028">2028</option>
-                            <option value="2029">2029</option>
-                            <option value="2030">2030</option>
-                        </select>
-                    </div>
+                    <div class="input-group">
+                        <label for="batch">Batch *</label>
+                        <select id="batch" name="batch" required>
+                            <option value="">Select Batch</option>
+                            <option value="2025">2025</option>
+                            <option value="2026">2026</option>
+                            <option value="2027">2027</option>
+                            <option value="2028">2028</option>
+                            <option value="2029">2029</option>
+                            <option value="2030">2030</option>
+                        </select>
+                    </div>
 
-                    <div class="input-group">
-                        <label for="section">Section *</label>
-                        <select id="section" name="section" required>
-                            <option value="">Select Section</option>
-                            <option value="A">Section A</option>
-                            <option value="B">Section B</option>
-                            <option value="C">Section C</option>
-                            <option value="D">Section D</option>
-                            <option value="E">Section E</option>
-                            <option value="F">Section F</option>
-                            <option value="G">Section G</option>
-                            <option value="H">Section H</option>
-                            <option value="I">Section I</option>
-                            <option value="J">Section J</option>
-                            <option value="K">Section K</option>
-                            <option value="L">Section L</option>
-                            <option value="M">Section M</option>
-                            <option value="N">Section N</option>
-                            <option value="O">Section O</option>
-                            <option value="P">Section P</option>
-                            <option value="Q">Section Q</option>
-                            <option value="R">Section R</option>
-                            <option value="S">Section S</option>
-                            <option value="T">Section T</option>
-                            <option value="U">Section U</option>
-                            <option value="V">Section V</option>
-                            <option value="W">Section W</option>
-                            <option value="X">Section X</option>
-                            <option value="Y">Section Y</option>
-                            <option value="Z">Section Z</option>
-                        </select>
-                    </div>
+                    <div class="input-group">
+                        <label for="section">Section *</label>
+                        <select id="section" name="section" required>
+                            <option value="">Select Section</option>
+                            <option value="A">Section A</option>
+                            <option value="B">Section B</option>
+                            <option value="C">Section C</option>
+                            <option value="D">Section D</option>
+                            <option value="E">Section E</option>
+                            <option value="F">Section F</option>
+                            <option value="G">Section G</option>
+                            <option value="H">Section H</option>
+                            <option value="I">Section I</option>
+                            <option value="J">Section J</option>
+                            <option value="K">Section K</option>
+                            <option value="L">Section L</option>
+                            <option value="M">Section M</option>
+                            <option value="N">Section N</option>
+                            <option value="O">Section O</option>
+                            <option value="P">Section P</option>
+                            <option value="Q">Section Q</option>
+                            <option value="R">Section R</option>
+                            <option value="S">Section S</option>
+                            <option value="T">Section T</option>
+                            <option value="U">Section U</option>
+                            <option value="V">Section V</option>
+                            <option value="W">Section W</option>
+                            <option value="X">Section X</option>
+                            <option value="Y">Section Y</option>
+                            <option value="Z">Section Z</option>
+                        </select>
+                    </div>
 
-                    <div class="input-group">
-                        <label for="semester">Semester *</label>
-                        <select id="semester" name="semester" required>
-                            <option value="">Select Semester</option>
-                            <option value="1">1st Semester</option>
-                            <option value="2">2nd Semester</option>
-                            <option value="3">3rd Semester</option>
-                            <option value="4">4th Semester</option>
-                            <option value="5">5th Semester</option>
-                            <option value="6">6th Semester</option>
-                            <option value="7">7th Semester</option>
-                            <option value="8">8th Semester</option>
-                        </select>
-                    </div>
+                    <div class="input-group">
+                        <label for="semester">Semester *</label>
+                        <select id="semester" name="semester" required>
+                            <option value="">Select Semester</option>
+                            <option value="1">1st Semester</option>
+                            <option value="2">2nd Semester</option>
+                            <option value="3">3rd Semester</option>
+                            <option value="4">4th Semester</option>
+                            <option value="5">5th Semester</option>
+                            <option value="6">6th Semester</option>
+                            <option value="7">7th Semester</option>
+                            <option value="8">8th Semester</option>
+                        </select>
+                    </div>
 
-                    <div class="input-group">
-                        <label for="session">Session *</label>
-                        <select id="session" name="session" required>
-                            <option value="">Select Session</option>
-                            <option value="Fall 2024">Fall 2024</option>
-                            <option value="Spring 2025">Spring 2025</option>
-                            <option value="Fall 2025">Fall 2025</option>
-                            <option value="Spring 2026">Spring 2026</option>
-                        </select>
-                    </div>
+                    <div class="input-group">
+                        <label for="session">Session *</label>
+                        <select id="session" name="session" required>
+                            <option value="">Select Session</option>
+                            <option value="Fall 2024">Fall 2024</option>
+                            <option value="Spring 2025">Spring 2025</option>
+                            <option value="Fall 2025">Fall 2025</option>
+                            <option value="Spring 2026">Spring 2026</option>
+                        </select>
+                    </div>
 
-                    <div class="input-group">
-                        <label for="course">Course *</label>
-                        <select id="course" name="course" required disabled>
-                            <option value="">Select Semester First</option>
-                        </select>
-                    </div>
+                    <div class="input-group">
+                        <label for="course">Course *</label>
+                        <select id="course" name="course" required disabled>
+                            <option value="">Select Semester First</option>
+                        </select>
+                    </div>
 
-                    <div class="input-group full-width">
-                        <label for="skills">Your Skills (comma separated)</label>
-                        <input type="text" id="skills" name="skills" placeholder="Python, JavaScript, React, Node.js">
-                    </div>
+                    <div class="input-group full-width">
+                        <label for="skills">Your Skills (comma separated)</label>
+                        <input type="text" id="skills" name="skills" placeholder="Python, JavaScript, React, Node.js">
+                    </div>
 
-                    <div class="input-group full-width">
-                        <label for="bio">About You</label>
-                        <textarea id="bio" name="bio" rows="3" placeholder="Tell potential partners about yourself..."></textarea>
-                    </div>
+                    <div class="input-group full-width">
+                        <label for="bio">About You</label>
+                        <textarea id="bio" name="bio" rows="3" placeholder="Tell potential partners about yourself..."></textarea>
+                    </div>
 
-                    <div class="input-group full-width">
-                        <label for="availability">Availability Status *</label>
-                        <select id="availability" name="availability" required>
-                            <option value="available">Available for Partner</option>
-                            <option value="found">Already Found Partner</option>
-                        </select>
-                    </div>
-                </div>
+                    <div class="input-group full-width">
+                        <label for="availability">Availability Status *</label>
+                        <select id="availability" name="availability" required>
+                            <option value="available">Available for Partner</option>
+                            <option value="found">Already Found Partner</option>
+                        </select>
+                    </div>
+                </div>
 
-                <button type="submit" id="submitBtn" class="btn-submit">Add My Profile</button>
-            </form>
-        </section>
+                <button type="submit" id="submitBtn" class="btn-submit">Add My Profile</button>
+            </form>
+        </section>
 
-        <section class="filter-section">
-            <h2>Find Partners</h2>
-            <div class="filter-controls">
-                <select id="filterUniversity" class="filter-select">
-                    <option value="">All Universities</option>
-                    <option value="Air University">Air University</option>
-                    <option value="COMSATS University">COMSATS University</option>
-                    <option value="Bahria University">Bahria University</option>
-                    <option value="NUST">NUST</option>
-                    <option value="FAST">FAST</option>
-                    <option value="GIKI">GIKI</option>
-                    <option value="University of Wah">University of Wah</option>
-                </select>
+        <section class="filter-section">
+            <h2>Find Partners</h2>
+            <div class="filter-controls">
+                <select id="filterUniversity" class="filter-select">
+                    <option value="">All Universities</option>
+                    <option value="Air University">Air University</option>
+                    <option value="COMSATS University">COMSATS University</option>
+                    <option value="Bahria University">Bahria University</option>
+                    <option value="NUST">NUST</option>
+                    <option value="FAST">FAST</option>
+                    <option value="GIKI">GIKI</option>
+                    <option value="University of Wah">University of Wah</option>
+                </select>
 
-                <select id="filterDepartment" class="filter-select">
-                    <option value="">All Departments</option>
-                    <option value="Software Engineering">Software Engineering</option>
-                    <option value="Computer Science">Computer Science</option>
-                    <option value="Data Science">Data Science</option>
-                    <option value="Cyber Security">Cyber Security</option>
-                    <option value="Computer Engineering">Computer Engineering</option>
-                </select>
+                <select id="filterDepartment" class="filter-select">
+                    <option value="">All Departments</option>
+                    <option value="Software Engineering">Software Engineering</option>
+                    <option value="Computer Science">Computer Science</option>
+                    <option value="Data Science">Data Science</option>
+                    <option value="Cyber Security">Cyber Security</option>
+                    <option value="Computer Engineering">Computer Engineering</option>
+                </select>
 
-                <select id="filterBatch" class="filter-select">
-                    <option value="">All Batches</option>
-                    <option value="2025">2025</option>
-                    <option value="2026">2026</option>
-                    <option value="2027">2027</option>
-                    <option value="2028">2028</option>
-                    <option value="2029">2029</option>
-                    <option value="2030">2030</option>
-                </select>
+                <select id="filterBatch" class="filter-select">
+                    <option value="">All Batches</option>
+                    <option value="2025">2025</option>
+                    <option value="2026">2026</option>
+                    <option value="2027">2027</option>
+                    <option value="2028">2028</option>
+                    <option value="2029">2029</option>
+                    <option value="2030">2030</option>
+                </select>
 
-                <select id="filterSection" class="filter-select">
-                    <option value="">All Sections</option>
-                    <option value="A">Section A</option>
-                    <option value="B">Section B</option>
-                    <option value="C">Section C</option>
-                    <option value="D">Section D</option>
-                    <option value="E">Section E</option>
-                    <option value="F">Section F</option>
-                    <option value="G">Section G</option>
-                    <option value="H">Section H</option>
-                    <option value="I">Section I</option>
-                    <option value="J">Section J</option>
-                    <option value="K">Section K</option>
-                    <option value="L">Section L</option>
-                    <option value="M">Section M</option>
-                    <option value="N">Section N</option>
-                    <option value="O">Section O</option>
-                    <option value="P">Section P</option>
-                    <option value="Q">Section Q</option>
-                    <option value="R">Section R</option>
-                    <option value="S">Section S</option>
-                    <option value="T">Section T</option>
-                    <option value="U">Section U</option>
-                    <option value="V">Section V</option>
-                    <option value="W">Section W</option>
-                    <option value="X">Section X</option>
-                    <option value="Y">Section Y</option>
-                    <option value="Z">Section Z</option>
-                </select>
+                <select id="filterSection" class="filter-select">
+                    <option value="">All Sections</option>
+                    <option value="A">Section A</option>
+                    <option value="B">Section B</option>
+                    <option value="C">Section C</option>
+                    <option value="D">Section D</option>
+                    <option value="E">Section E</option>
+                    <option value="F">Section F</option>
+                    <option value="G">Section G</option>
+                    <option value="H">Section H</option>
+                    <option value="I">Section I</option>
+                    <option value="J">Section J</option>
+                    <option value="K">Section K</option>
+                    <option value="L">Section L</option>
+                    <option value="M">Section M</option>
+                    <option value="N">Section N</option>
+                    <option value="O">Section O</option>
+                    <option value="P">Section P</option>
+                    <option value="Q">Section Q</option>
+                    <option value="R">Section R</option>
+                    <option value="S">Section S</option>
+                    <option value="T">Section T</option>
+                    <option value="U">Section U</option>
+                    <option value="V">Section V</option>
+                    <option value="W">Section W</option>
+                    <option value="X">Section X</option>
+                    <option value="Y">Section Y</option>
+                    <option value="Z">Section Z</option>
+                </select>
 
-                <select id="filterSemester" class="filter-select">
-                    <option value="">All Semesters</option>
-                    <option value="1">1st Semester</option>
-                    <option value="2">2nd Semester</option>
-                    <option value="3">3rd Semester</option>
-                    <option value="4">4th Semester</option>
-                    <option value="5">5th Semester</option>
-                    <option value="6">6th Semester</option>
-                    <option value="7">7th Semester</option>
-                    <option value="8">8th Semester</option>
-                </select>
+                <select id="filterSemester" class="filter-select">
+                    <option value="">All Semesters</option>
+                    <option value="1">1st Semester</option>
+                    <option value="2">2nd Semester</option>
+                    <option value="3">3rd Semester</option>
+                    <option value="4">4th Semester</option>
+                    <option value="5">5th Semester</option>
+                    <option value="6">6th Semester</option>
+                    <option value="7">7th Semester</option>
+                    <option value="8">8th Semester</option>
+                </select>
 
-                <select id="filterSession" class="filter-select">
-                    <option value="">All Sessions</option>
-                    <option value="Fall 2024">Fall 2024</option>
-                    <option value="Spring 2025">Spring 2025</option>
-                    <option value="Fall 2025">Fall 2025</option>
-                    <option value="Spring 2026">Spring 2026</option>
-                </select>
+                <select id="filterSession" class="filter-select">
+                    <option value="">All Sessions</option>
+                    <option value="Fall 2024">Fall 2024</option>
+                    <option value="Spring 2025">Spring 2025</option>
+                    <option value="Fall 2025">Fall 2025</option>
+                    <option value="Spring 2026">Spring 2026</option>
+                </select>
 
-                <select id="filterCourse" class="filter-select">
-                    <option value="">All Courses</option>
-                </select>
+                <select id="filterCourse" class="filter-select">
+                    <option value="">All Courses</option>
+                </select>
 
-                <select id="filterAvailability" class="filter-select">
-                    <option value="">All Status</option>
-                    <option value="available">Available Only</option>
-                    <option value="found">Already Partnered</option>
-                </select>
+                <select id="filterAvailability" class="filter-select">
+                    <option value="">All Status</option>
+                    <option value="available">Available Only</option>
+                    <option value="found">Already Partnered</option>
+                </select>
 
-                <button id="resetFilters" class="btn-reset">Reset Filters</button>
-            </div>
-        </section>
+                <button id="resetFilters" class="btn-reset">Reset Filters</button>
+            </div>
+        </section>
 
-        <section class="partners-section">
-            <div class="partners-header">
-                <h2>Available Partners</h2>
-                <p class="partners-count">Showing <span id="partnersCount">0</span> students</p>
-            </div>
-            
-            <div id="partnersGrid" class="partners-grid">
-            </div>
+        <section class="partners-section">
+            <div class="partners-header">
+                <h2>Available Partners</h2>
+                <p class="partners-count">Showing <span id="partnersCount">0</span> students</p>
+            </div>
+            
+            <div id="partnersGrid" class="partners-grid">
+            </div>
 
-            <div id="noResults" class="no-results" style="display: none;">
-                <div class="no-results-icon">🔍</div>
-                <h3>No Partners Found</h3>
-                <p>Try adjusting your filters or be the first to add your profile!</p>
-            </div>
-        </section>
-    </div>
+            <div id="noResults" class="no-results" style="display: none;">
+                <div class="no-results-icon">🔍</div>
+                <h3>No Partners Found</h3>
+                <p>Try adjusting your filters or be the first to add your profile!</p>
+            </div>
+        </section>
+    </div>
 
-    <div id="requestsModal" class="modal">
-        <div class="modal-content">
-            <span class="close-modal" id="closeRequestsModal">&times;</span>
-            <h2>Connection Requests</h2>
-            <div class="tabs">
-                <p class="modal-subtitle">Manage your partnership requests</p>
-            </div>
-            <div id="incomingRequestsList">
-                <p class="empty-msg">No incoming requests yet.</p>
-            </div>
-            <hr>
-            <h3>Sent Requests</h3>
-            <div id="outgoingRequestsList">
-                <p class="empty-msg">No sent requests.</p>
-            </div>
-        </div>
-    </div>
+    <div id="messageModal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal" id="closeModal">&times;</span>
+            <h2>Send Message</h2>
+            <p class="modal-subtitle">Contact <span id="partnerNameModal"></span></p>
+            
+            <form id="messageForm">
+                <div class="input-group">
+                    <label for="senderName">Your Name *</label>
+                    <input type="text" id="senderName" placeholder="Your full name" required>
+                </div>
+                
+                <div class="input-group">
+                    <label for="senderEmail">Your Email *</label>
+                    <input type="email" id="senderEmail" placeholder="your.email@nu.edu.pk" required>
+                </div>
+                
+                <div class="input-group">
+                    <label for="messageText">Message *</label>
+                    <textarea id="messageText" rows="5" placeholder="Hi! I'd like to partner up..." required></textarea>
+                </div>
+                
+                <button type="submit" class="btn-send-message">Send Message via Email</button>
+            </form>
+        </div>
+    </div>
 
-    <div id="messageModal" class="modal">
-        <div class="modal-content">
-            <span class="close-modal" id="closeModal">&times;</span>
-            <h2>Send Message</h2>
-            <p class="modal-subtitle">Contact <span id="partnerNameModal"></span></p>
-            
-            <form id="messageForm">
-                <div class="input-group">
-                    <label for="senderName">Your Name *</label>
-                    <input type="text" id="senderName" placeholder="Your full name" required>
-                </div>
-                
-                <div class="input-group">
-                    <label for="senderEmail">Your Email *</label>
-                    <input type="email" id="senderEmail" placeholder="your.email@nu.edu.pk" required>
-                </div>
-                
-                <div class="input-group">
-                    <label for="messageText">Message *</label>
-                    <textarea id="messageText" rows="5" placeholder="Hi! I'd like to partner up..." required></textarea>
-                </div>
-                
-                <button type="submit" class="btn-send-message">Send Message via Email</button>
-            </form>
-        </div>
-    </div>
-
-    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database-compat.js"></script>
-    
-    <script src="courses-data.js"></script>
-    <script src="partner.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database-compat.js"></script>
+    
+    <!-- Course data must load before partner.js -->
+    <script src="courses-data.js"></script>
+    <script src="partner.js"></script>
 </body>
 </html>
