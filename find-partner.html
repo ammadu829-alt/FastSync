@@ -13,6 +13,10 @@
             <a href="index.html">Home</a>
             <a href="find-partner.html" class="active">Find Partner</a>
             <a href="owner.html">Owner</a>
+            <a href="#" id="requestsBtn">
+                Requests
+                <span id="requestBadge" class="notification-badge" style="display: none;">0</span>
+            </a>
             <a href="#" id="profileBtn">My Profile</a>
             <a href="#" id="logoutBtn">Logout</a>
         </div>
@@ -289,6 +293,27 @@
         </section>
     </div>
 
+    <!-- Requests Modal -->
+    <div id="requestsModal" class="modal">
+        <div class="modal-content requests-modal-content">
+            <span class="close-modal" id="closeRequestsModal">&times;</span>
+            <h2>Connection Requests</h2>
+            <div class="requests-tabs">
+                <button class="tab-btn active" data-tab="received">Received</button>
+                <button class="tab-btn" data-tab="sent">Sent</button>
+            </div>
+            
+            <div id="receivedRequests" class="requests-list">
+                <p class="no-requests">No pending requests</p>
+            </div>
+            
+            <div id="sentRequests" class="requests-list" style="display: none;">
+                <p class="no-requests">No sent requests</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Message Modal -->
     <div id="messageModal" class="modal">
         <div class="modal-content">
             <span class="close-modal" id="closeModal">&times;</span>
