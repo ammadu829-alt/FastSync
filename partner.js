@@ -16,6 +16,7 @@ if (!firebase.apps.length) {
 const database = firebase.database();
 
 let partners = [];
+let myConnections = [];
 const userEmail = localStorage.getItem('userEmail');
 const userName = localStorage.getItem('userName');
 
@@ -35,9 +36,55 @@ function init() {
 
     const profileBtn = document.getElementById('profileBtn');
     if (profileBtn && userName) profileBtn.textContent = userName;
+    
+    // Load connections and requests
+    loadMyConnections();
+    loadPendingRequests();
 }
 
-// 4. Display Cards with ALL NEW FIELDS
+// Load my connections (accepted requests)
+function loadMyConnections() {
+    if (!userEmail) return;
+    const userId = emailToId(userEmail);
+    
+    database.ref('connections/' + userId).on('value', (snapshot) => {
+        const data = snapshot.val();
+        myConnections = data ? Object.keys(data) : [];
+        displayPartners();
+    });
+}
+
+// Load pending requests for badge
+function loadPendingRequests() {
+    if (!userEmail) return;
+    const userId = emailToId(userEmail);
+    
+    database.ref('requests').orderByChild('toUserId').equalTo(userId).on('value', (snapshot) => {
+        const data = snapshot.val();
+        const received = data ? Object.entries(data).filter(([id, req]) => req.status === 'pending') : [];
+        updateRequestBadge(received.length);
+    });
+}
+
+// Update request badge
+function updateRequestBadge(count) {
+    const badge = document.getElementById('requestBadge');
+    if (badge) {
+        if (count > 0) {
+            badge.textContent = count;
+            badge.style.display = 'inline-block';
+        } else {
+            badge.style.display = 'none';
+        }
+    }
+}
+
+// Helper function to convert email to ID
+function emailToId(email) {
+    return email.replace(/[.@]/g, '_');
+}
+
+// 4. Display Cards with PRIVACY CONTROLS
 function displayPartners() {
     const grid = document.getElementById('partnersGrid');
     const countText = document.getElementById('partnersCount');
@@ -59,63 +106,89 @@ function displayPartners() {
 
     partners.forEach(p => {
         const isMine = p.email === userEmail;
-        const card = document.createElement('div');
-        card.className = 'partner-card';
+        const isConnected = myConnections.includes(p.id);
+        const card = createProfileCard(p, isMine, isConnected);
+        grid.appendChild(card);
+    });
+}
 
-        const availabilityClass = p.availability === 'available' ? 'status-available' : 'status-found';
-        const availabilityText = p.availability === 'available' ? '✓ Available' : '✗ Partnered';
-        
-        const skillsArray = p.skills ? p.skills.split(',').map(s => s.trim()).filter(s => s) : [];
-        const skillsHTML = skillsArray.length > 0 
-            ? skillsArray.map(skill => `<span class="skill-tag">${skill}</span>`).join('')
-            : '<span class="no-skills">No skills listed</span>';
+// Create profile card with privacy controls
+function createProfileCard(p, isMine, isConnected) {
+    const card = document.createElement('div');
+    card.className = 'partner-card';
 
-        card.innerHTML = `
-            <div class="card-header">
-                <div class="profile-avatar">
-                    ${p.fullName.charAt(0).toUpperCase()}
-                </div>
-                <div class="profile-info">
-                    <h3 class="profile-name">${p.fullName}</h3>
-                    <p class="profile-roll">${p.rollNumber}</p>
-                </div>
-                <span class="availability-badge ${availabilityClass}">${availabilityText}</span>
+    const availabilityClass = p.availability === 'available' ? 'status-available' : 'status-found';
+    const availabilityText = p.availability === 'available' ? '✓ Available' : '✗ Partnered';
+    
+    const skillsArray = p.skills ? p.skills.split(',').map(s => s.trim()).filter(s => s) : [];
+    const skillsHTML = skillsArray.length > 0 
+        ? skillsArray.map(skill => `<span class="skill-tag">${skill}</span>`).join('')
+        : '<span class="no-skills">No skills listed</span>';
+
+    // PUBLIC INFORMATION (Always visible)
+    let publicInfo = `
+        <div class="card-header">
+            <div class="profile-avatar">
+                ${p.fullName.charAt(0).toUpperCase()}
             </div>
-            
-            <div class="card-body">
+            <div class="profile-info">
+                <h3 class="profile-name">${p.fullName}</h3>
+                <p class="profile-roll">${p.rollNumber}</p>
+            </div>
+            <span class="availability-badge ${availabilityClass}">${availabilityText}</span>
+        </div>
+        
+        <div class="card-body">
+            <div class="info-section">
+                <div class="info-row">
+                    <span class="info-icon">🎓</span>
+                    <div class="info-content">
+                        <strong>University</strong>
+                        <p>${p.university || 'Not specified'}</p>
+                    </div>
+                </div>
+                
+                <div class="info-row">
+                    <span class="info-icon">💼</span>
+                    <div class="info-content">
+                        <strong>Department</strong>
+                        <p>${p.department || 'Not specified'}</p>
+                    </div>
+                </div>
+                
+                <div class="info-row">
+                    <span class="info-icon">📅</span>
+                    <div class="info-content">
+                        <strong>Batch</strong>
+                        <p>${p.batch || 'N/A'}</p>
+                    </div>
+                </div>
+                
+                <div class="info-row">
+                    <span class="info-icon">📚</span>
+                    <div class="info-content">
+                        <strong>Semester</strong>
+                        <p>${getOrdinalSemester(p.semester)}</p>
+                    </div>
+                </div>
+            </div>`;
+
+    // PRIVATE INFORMATION (Only if connected or own profile)
+    let privateInfo = '';
+    if (isMine || isConnected) {
+        privateInfo = `
+            <div class="privacy-unlocked">
+                <p class="connection-status">🔓 Full Profile Access</p>
+                
                 <div class="info-section">
                     <div class="info-row">
-                        <span class="info-icon">🎓</span>
+                        <span class="info-icon">🔖</span>
                         <div class="info-content">
-                            <strong>University</strong>
-                            <p>${p.university || 'Not specified'}</p>
+                            <strong>Section</strong>
+                            <p>Section ${p.section || 'N/A'}</p>
                         </div>
                     </div>
-                    
-                    <div class="info-row">
-                        <span class="info-icon">💼</span>
-                        <div class="info-content">
-                            <strong>Department</strong>
-                            <p>${p.department || 'Not specified'}</p>
-                        </div>
-                    </div>
-                    
-                    <div class="info-row">
-                        <span class="info-icon">📅</span>
-                        <div class="info-content">
-                            <strong>Batch & Section</strong>
-                            <p>${p.batch || 'N/A'} - Section ${p.section || 'N/A'}</p>
-                        </div>
-                    </div>
-                    
-                    <div class="info-row">
-                        <span class="info-icon">📚</span>
-                        <div class="info-content">
-                            <strong>Semester</strong>
-                            <p>${getOrdinalSemester(p.semester)}</p>
-                        </div>
-                    </div>
-                    
+
                     <div class="info-row">
                         <span class="info-icon">🗓️</span>
                         <div class="info-content">
@@ -162,28 +235,92 @@ function displayPartners() {
                         ${skillsHTML}
                     </div>
                 </div>
-            </div>
-            
-            <div class="card-footer">
-                ${isMine ? 
-                    `<button class="btn-contact" onclick="editProfile('${p.id}')" style="flex:1;">
-                        <span>✏️</span> Edit Profile
-                    </button>
-                    <button class="btn-whatsapp" onclick="deleteProfile('${p.id}')" style="flex:1; background: rgba(239, 68, 68, 0.2); color: #ef4444; border-color: #ef4444;">
-                        <span>🗑️</span> Delete
-                    </button>` : 
-                    `<button class="btn-contact" onclick="openContactModal('${p.id}', '${p.fullName}', '${p.email}')">
-                        <span>📧</span> Contact
-                    </button>
-                    <a href="https://wa.me/${p.phone.replace(/\D/g, '')}" target="_blank" class="btn-whatsapp">
-                        <span>💬</span> WhatsApp
-                    </a>`
-                }
-            </div>
-        `;
-        grid.appendChild(card);
-    });
+            </div>`;
+    } else {
+        // LOCKED PRIVATE INFO
+        privateInfo = `
+            <div class="privacy-locked">
+                <div class="locked-message">
+                    <span class="lock-icon">🔒</span>
+                    <p><strong>Private Information</strong></p>
+                    <p class="locked-text">Email, Phone, Section, Session, Course, Bio & Skills are hidden for privacy protection.</p>
+                    <p class="locked-hint">Send a connection request to view full profile</p>
+                </div>
+            </div>`;
+    }
+
+    // FOOTER BUTTONS
+    let footerButtons = '';
+    if (isMine) {
+        footerButtons = `
+            <button class="btn-contact" onclick="editProfile('${p.id}')" style="flex:1;">
+                <span>✏️</span> Edit Profile
+            </button>
+            <button class="btn-delete" onclick="deleteProfile('${p.id}')" style="flex:1;">
+                <span>🗑️</span> Delete
+            </button>`;
+    } else if (isConnected) {
+        footerButtons = `
+            <button class="btn-contact" onclick="openContactModal('${p.id}', '${p.fullName}', '${p.email}')">
+                <span>📧</span> Contact
+            </button>
+            <a href="https://wa.me/${p.phone.replace(/\D/g, '')}" target="_blank" class="btn-whatsapp">
+                <span>💬</span> WhatsApp
+            </a>`;
+    } else {
+        footerButtons = `
+            <button class="btn-request" onclick="sendConnectionRequest('${p.id}', '${p.fullName}')">
+                <span>🔗</span> Send Request
+            </button>`;
+    }
+
+    card.innerHTML = publicInfo + privateInfo + `
+        </div>
+        <div class="card-footer">
+            ${footerButtons}
+        </div>
+    `;
+    
+    return card;
 }
+
+// Send connection request
+window.sendConnectionRequest = function(toProfileId, toUserName) {
+    if (!userEmail) return alert('Please log in first');
+    
+    const fromUserId = emailToId(userEmail);
+    const toUserId = toProfileId;
+    
+    // Check if request already exists
+    database.ref('requests').orderByChild('fromUserId').equalTo(fromUserId).once('value', (snapshot) => {
+        const existing = snapshot.val();
+        if (existing) {
+            const alreadySent = Object.values(existing).some(req => 
+                req.toUserId === toUserId && req.status === 'pending'
+            );
+            if (alreadySent) {
+                return alert('⚠️ Request already sent to this user!');
+            }
+        }
+        
+        // Send new request
+        const requestData = {
+            fromUserId: fromUserId,
+            fromUserName: userName,
+            fromUserEmail: userEmail,
+            toUserId: toUserId,
+            toUserName: toUserName,
+            status: 'pending',
+            timestamp: Date.now()
+        };
+        
+        database.ref('requests').push(requestData).then(() => {
+            alert(`✅ Connection request sent to ${toUserName}!`);
+        }).catch(err => {
+            alert('❌ Error sending request: ' + err.message);
+        });
+    });
+};
 
 // Helper function for ordinal semester
 function getOrdinalSemester(num) {
@@ -338,7 +475,138 @@ if (resetFiltersBtn) {
     });
 }
 
-// 9. Contact Modal Functions
+// 9. Requests Button Click
+const requestsBtn = document.getElementById('requestsBtn');
+if (requestsBtn) {
+    requestsBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+        showRequestsModal();
+    });
+}
+
+// Show requests modal
+function showRequestsModal() {
+    const modal = document.getElementById('requestsModal');
+    if (modal) {
+        modal.style.display = 'flex';
+        loadReceivedRequests();
+    }
+}
+
+// Load received requests
+function loadReceivedRequests() {
+    const userId = emailToId(userEmail);
+    const container = document.getElementById('receivedRequests');
+    if (!container) return;
+    
+    database.ref('requests').orderByChild('toUserId').equalTo(userId).once('value', (snapshot) => {
+        const data = snapshot.val();
+        const requests = data ? Object.entries(data).filter(([id, req]) => req.status === 'pending') : [];
+        
+        if (requests.length === 0) {
+            container.innerHTML = '<p class="no-requests">No pending requests</p>';
+            return;
+        }
+        
+        container.innerHTML = requests.map(([id, req]) => `
+            <div class="request-item">
+                <div class="request-avatar">${req.fromUserName.charAt(0)}</div>
+                <div class="request-info">
+                    <strong>${req.fromUserName}</strong>
+                    <p>${req.fromUserEmail}</p>
+                </div>
+                <div class="request-actions">
+                    <button class="btn-accept" onclick="acceptRequest('${id}', '${req.fromUserId}')">Accept</button>
+                    <button class="btn-reject" onclick="rejectRequest('${id}')">Reject</button>
+                </div>
+            </div>
+        `).join('');
+    });
+}
+
+// Accept request
+window.acceptRequest = function(requestId, fromUserId) {
+    const toUserId = emailToId(userEmail);
+    
+    // Update request status
+    database.ref('requests/' + requestId).update({status: 'accepted'}).then(() => {
+        // Create connection both ways
+        database.ref('connections/' + toUserId + '/' + fromUserId).set(true);
+        database.ref('connections/' + fromUserId + '/' + toUserId).set(true);
+        
+        alert('✅ Request accepted! You can now see full profile.');
+        loadReceivedRequests();
+        loadMyConnections();
+    });
+};
+
+// Reject request
+window.rejectRequest = function(requestId) {
+    database.ref('requests/' + requestId).update({status: 'rejected'}).then(() => {
+        alert('❌ Request rejected');
+        loadReceivedRequests();
+    });
+};
+
+// Load sent requests
+function loadSentRequests() {
+    const userId = emailToId(userEmail);
+    const container = document.getElementById('sentRequests');
+    if (!container) return;
+    
+    database.ref('requests').orderByChild('fromUserId').equalTo(userId).once('value', (snapshot) => {
+        const data = snapshot.val();
+        const requests = data ? Object.entries(data) : [];
+        
+        if (requests.length === 0) {
+            container.innerHTML = '<p class="no-requests">No sent requests</p>';
+            return;
+        }
+        
+        container.innerHTML = requests.map(([id, req]) => `
+            <div class="request-item">
+                <div class="request-avatar">${req.toUserName.charAt(0)}</div>
+                <div class="request-info">
+                    <strong>${req.toUserName}</strong>
+                    <p class="request-status status-${req.status}">${req.status}</p>
+                </div>
+            </div>
+        `).join('');
+    });
+}
+
+// Tabs functionality
+const tabButtons = document.querySelectorAll('.tab-btn');
+if (tabButtons.length > 0) {
+    tabButtons.forEach(btn => {
+        btn.addEventListener('click', function() {
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+            
+            const tab = this.dataset.tab;
+            const receivedDiv = document.getElementById('receivedRequests');
+            const sentDiv = document.getElementById('sentRequests');
+            
+            if (receivedDiv && sentDiv) {
+                receivedDiv.style.display = tab === 'received' ? 'block' : 'none';
+                sentDiv.style.display = tab === 'sent' ? 'block' : 'none';
+                
+                if (tab === 'sent') loadSentRequests();
+            }
+        });
+    });
+}
+
+// Close requests modal
+const closeRequestsModal = document.getElementById('closeRequestsModal');
+if (closeRequestsModal) {
+    closeRequestsModal.addEventListener('click', () => {
+        const modal = document.getElementById('requestsModal');
+        if (modal) modal.style.display = 'none';
+    });
+}
+
+// 10. Contact Modal Functions
 window.openContactModal = function(profileId, name, email) {
     const modal = document.getElementById('messageModal');
     if (modal) {
@@ -360,8 +628,12 @@ if (closeModal) {
 
 window.addEventListener('click', function(e) {
     const modal = document.getElementById('messageModal');
+    const requestsModal = document.getElementById('requestsModal');
     if (e.target === modal) {
         modal.style.display = 'none';
+    }
+    if (e.target === requestsModal) {
+        requestsModal.style.display = 'none';
     }
 });
 
@@ -390,7 +662,7 @@ if (messageForm) {
     });
 }
 
-// 10. Logout Button
+// 11. Logout Button
 const logoutBtn = document.getElementById('logoutBtn');
 if (logoutBtn) {
     logoutBtn.addEventListener('click', function(e) {
@@ -402,6 +674,22 @@ if (logoutBtn) {
     });
 }
 
+// Profile button
+const profileBtn = document.getElementById('profileBtn');
+if (profileBtn) {
+    profileBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+        // Find current user's profile
+        const myProfile = partners.find(p => p.email === userEmail);
+        if (myProfile) {
+            editProfile(myProfile.id);
+        } else {
+            alert('Please create your profile first!');
+            document.getElementById('profileSection').scrollIntoView({ behavior: 'smooth' });
+        }
+    });
+}
+
 // Initialize on page load
 init();
-console.log('✅ FASTSync Partner Finder loaded successfully!');
+console.log('✅ FASTSync Partner Finder with Privacy System loaded successfully!');
