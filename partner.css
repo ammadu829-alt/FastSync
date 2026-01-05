@@ -1071,4 +1071,32 @@ html {
         padding: 20px;
     }
 
-    .request
+    .request-actions {
+    width: 100%;
+    justify-content: stretch;
+}
+
+.btn-accept,
+.btn-reject {
+    flex: 1;
+}
+
+.requests-modal-content {
+    max-height: 90vh;
+}
+    .add-profile-section {
+    padding: 25px 20px;
+}
+
+.add-profile-section h1 {
+    font-size: 26px;
+}
+
+.nav-links {
+    display: none;
+}
+
+.logo {
+    font-size: 24px;
+}
+
