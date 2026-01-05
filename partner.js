@@ -506,7 +506,11 @@ function showRequestsModal() {
     const modal = document.getElementById('requestsModal');
     if (modal) {
         modal.style.display = 'flex';
-        loadReceivedRequests();
+        
+        // Load received requests immediately
+        setTimeout(() => {
+            loadReceivedRequests();
+        }, 100);
     }
 }
 
@@ -514,9 +518,16 @@ function showRequestsModal() {
 function loadReceivedRequests() {
     const userId = emailToId(userEmail);
     const container = document.getElementById('receivedRequests');
-    if (!container) return;
     
-    console.log('🔍 Loading requests for user:', userId);
+    if (!container) {
+        console.error('❌ receivedRequests container not found!');
+        return;
+    }
+    
+    console.log('🔍 Loading requests for user:', userId, 'Email:', userEmail);
+    
+    // Show loading message
+    container.innerHTML = '<p class="no-requests">Loading requests...</p>';
     
     database.ref('requests').once('value', (snapshot) => {
         const data = snapshot.val();
@@ -528,24 +539,25 @@ function loadReceivedRequests() {
         }
         
         // Filter requests where current user is the recipient and status is pending
-        const requests = Object.entries(data).filter(([id, req]) => 
-            req.toUserId === userId && req.status === 'pending'
-        );
+        const requests = Object.entries(data).filter(([id, req]) => {
+            console.log('Checking request:', id, 'toUserId:', req.toUserId, 'matches:', req.toUserId === userId);
+            return req.toUserId === userId && req.status === 'pending';
+        });
         
-        console.log('✅ Filtered requests for this user:', requests);
+        console.log('✅ Filtered requests for this user:', requests.length, 'requests');
         
         if (requests.length === 0) {
             container.innerHTML = '<p class="no-requests">No pending requests</p>';
             return;
         }
         
-        container.innerHTML = requests.map(([id, req]) => `
+        const html = requests.map(([id, req]) => `
             <div class="request-item">
-                <div class="request-avatar">${req.fromUserName.charAt(0)}</div>
+                <div class="request-avatar">${req.fromUserName ? req.fromUserName.charAt(0).toUpperCase() : '?'}</div>
                 <div class="request-info">
-                    <strong>${req.fromUserName}</strong>
-                    <p>${req.fromUserEmail}</p>
-                    <small style="color: #8a2be2;">wants to connect with you</small>
+                    <strong>${req.fromUserName || 'Unknown User'}</strong>
+                    <p>${req.fromUserEmail || 'No email'}</p>
+                    <small style="color: #8a2be2; display: block; margin-top: 5px;">wants to connect with you</small>
                 </div>
                 <div class="request-actions">
                     <button class="btn-accept" onclick="acceptRequest('${id}', '${req.fromUserId}')">Accept</button>
@@ -553,6 +565,12 @@ function loadReceivedRequests() {
                 </div>
             </div>
         `).join('');
+        
+        container.innerHTML = html;
+        console.log('✅ Requests displayed successfully');
+    }).catch(error => {
+        console.error('❌ Error loading requests:', error);
+        container.innerHTML = '<p class="no-requests">Error loading requests</p>';
     });
 }
 
@@ -584,9 +602,16 @@ window.rejectRequest = function(requestId) {
 function loadSentRequests() {
     const userId = emailToId(userEmail);
     const container = document.getElementById('sentRequests');
-    if (!container) return;
     
-    console.log('🔍 Loading sent requests from user:', userId);
+    if (!container) {
+        console.error('❌ sentRequests container not found!');
+        return;
+    }
+    
+    console.log('🔍 Loading sent requests from user:', userId, 'Email:', userEmail);
+    
+    // Show loading message
+    container.innerHTML = '<p class="no-requests">Loading sent requests...</p>';
     
     database.ref('requests').once('value', (snapshot) => {
         const data = snapshot.val();
@@ -597,26 +622,34 @@ function loadSentRequests() {
         }
         
         // Filter requests where current user is the sender
-        const requests = Object.entries(data).filter(([id, req]) => 
-            req.fromUserId === userId
-        );
+        const requests = Object.entries(data).filter(([id, req]) => {
+            console.log('Checking sent request:', id, 'fromUserId:', req.fromUserId, 'matches:', req.fromUserId === userId);
+            return req.fromUserId === userId;
+        });
         
-        console.log('📤 Sent requests:', requests);
+        console.log('📤 Sent requests:', requests.length, 'requests');
         
         if (requests.length === 0) {
             container.innerHTML = '<p class="no-requests">No sent requests</p>';
             return;
         }
         
-        container.innerHTML = requests.map(([id, req]) => `
+        const html = requests.map(([id, req]) => `
             <div class="request-item">
-                <div class="request-avatar">${req.toUserName.charAt(0)}</div>
+                <div class="request-avatar">${req.toUserName ? req.toUserName.charAt(0).toUpperCase() : '?'}</div>
                 <div class="request-info">
-                    <strong>${req.toUserName}</strong>
-                    <p class="request-status status-${req.status}">${req.status}</p>
+                    <strong>${req.toUserName || 'Unknown User'}</strong>
+                    <p class="request-status status-${req.status || 'pending'}">${req.status || 'pending'}</p>
+                    <small style="color: #b0b0b0; display: block; margin-top: 5px;">Request sent</small>
                 </div>
             </div>
         `).join('');
+        
+        container.innerHTML = html;
+        console.log('✅ Sent requests displayed successfully');
+    }).catch(error => {
+        console.error('❌ Error loading sent requests:', error);
+        container.innerHTML = '<p class="no-requests">Error loading sent requests</p>';
     });
 }
 
