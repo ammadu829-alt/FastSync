@@ -59,10 +59,21 @@ function loadPendingRequests() {
     if (!userEmail) return;
     const userId = emailToId(userEmail);
     
-    database.ref('requests').orderByChild('toUserId').equalTo(userId).on('value', (snapshot) => {
+    // Listen for all requests and filter for this user
+    database.ref('requests').on('value', (snapshot) => {
         const data = snapshot.val();
-        const received = data ? Object.entries(data).filter(([id, req]) => req.status === 'pending') : [];
+        if (!data) {
+            updateRequestBadge(0);
+            return;
+        }
+        
+        // Filter requests where current user is the recipient
+        const received = Object.entries(data).filter(([id, req]) => 
+            req.toUserId === userId && req.status === 'pending'
+        );
+        
         updateRequestBadge(received.length);
+        console.log(`📬 You have ${received.length} pending requests`);
     });
 }
 
@@ -291,12 +302,14 @@ window.sendConnectionRequest = function(toProfileId, toUserName) {
     const fromUserId = emailToId(userEmail);
     const toUserId = toProfileId;
     
+    console.log('📤 Sending request from:', fromUserId, 'to:', toUserId);
+    
     // Check if request already exists
-    database.ref('requests').orderByChild('fromUserId').equalTo(fromUserId).once('value', (snapshot) => {
+    database.ref('requests').once('value', (snapshot) => {
         const existing = snapshot.val();
         if (existing) {
             const alreadySent = Object.values(existing).some(req => 
-                req.toUserId === toUserId && req.status === 'pending'
+                req.fromUserId === fromUserId && req.toUserId === toUserId && req.status === 'pending'
             );
             if (alreadySent) {
                 return alert('⚠️ Request already sent to this user!');
@@ -314,10 +327,14 @@ window.sendConnectionRequest = function(toProfileId, toUserName) {
             timestamp: Date.now()
         };
         
+        console.log('💾 Saving request:', requestData);
+        
         database.ref('requests').push(requestData).then(() => {
             alert(`✅ Connection request sent to ${toUserName}!`);
+            console.log('✅ Request sent successfully');
         }).catch(err => {
             alert('❌ Error sending request: ' + err.message);
+            console.error('❌ Error:', err);
         });
     });
 };
@@ -499,9 +516,23 @@ function loadReceivedRequests() {
     const container = document.getElementById('receivedRequests');
     if (!container) return;
     
-    database.ref('requests').orderByChild('toUserId').equalTo(userId).once('value', (snapshot) => {
+    console.log('🔍 Loading requests for user:', userId);
+    
+    database.ref('requests').once('value', (snapshot) => {
         const data = snapshot.val();
-        const requests = data ? Object.entries(data).filter(([id, req]) => req.status === 'pending') : [];
+        console.log('📦 All requests in database:', data);
+        
+        if (!data) {
+            container.innerHTML = '<p class="no-requests">No pending requests</p>';
+            return;
+        }
+        
+        // Filter requests where current user is the recipient and status is pending
+        const requests = Object.entries(data).filter(([id, req]) => 
+            req.toUserId === userId && req.status === 'pending'
+        );
+        
+        console.log('✅ Filtered requests for this user:', requests);
         
         if (requests.length === 0) {
             container.innerHTML = '<p class="no-requests">No pending requests</p>';
@@ -514,6 +545,7 @@ function loadReceivedRequests() {
                 <div class="request-info">
                     <strong>${req.fromUserName}</strong>
                     <p>${req.fromUserEmail}</p>
+                    <small style="color: #8a2be2;">wants to connect with you</small>
                 </div>
                 <div class="request-actions">
                     <button class="btn-accept" onclick="acceptRequest('${id}', '${req.fromUserId}')">Accept</button>
@@ -554,9 +586,22 @@ function loadSentRequests() {
     const container = document.getElementById('sentRequests');
     if (!container) return;
     
-    database.ref('requests').orderByChild('fromUserId').equalTo(userId).once('value', (snapshot) => {
+    console.log('🔍 Loading sent requests from user:', userId);
+    
+    database.ref('requests').once('value', (snapshot) => {
         const data = snapshot.val();
-        const requests = data ? Object.entries(data) : [];
+        
+        if (!data) {
+            container.innerHTML = '<p class="no-requests">No sent requests</p>';
+            return;
+        }
+        
+        // Filter requests where current user is the sender
+        const requests = Object.entries(data).filter(([id, req]) => 
+            req.fromUserId === userId
+        );
+        
+        console.log('📤 Sent requests:', requests);
         
         if (requests.length === 0) {
             container.innerHTML = '<p class="no-requests">No sent requests</p>';
