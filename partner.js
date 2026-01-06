@@ -189,10 +189,26 @@ function createProfileCard(p, isMine, isConnected) {
                 </div>
                 
                 <div class="info-row">
+                    <span class="info-icon">🔖</span>
+                    <div class="info-content">
+                        <strong>Section</strong>
+                        <p>Section ${p.section || 'N/A'}</p>
+                    </div>
+                </div>
+                
+                <div class="info-row">
                     <span class="info-icon">📚</span>
                     <div class="info-content">
                         <strong>Semester</strong>
                         <p>${getOrdinalSemester(p.semester)}</p>
+                    </div>
+                </div>
+                
+                <div class="info-row">
+                    <span class="info-icon">📖</span>
+                    <div class="info-content">
+                        <strong>Course</strong>
+                        <p>${p.course || 'Not specified'}</p>
                     </div>
                 </div>
             </div>`;
@@ -206,26 +222,10 @@ function createProfileCard(p, isMine, isConnected) {
                 
                 <div class="info-section">
                     <div class="info-row">
-                        <span class="info-icon">🔖</span>
-                        <div class="info-content">
-                            <strong>Section</strong>
-                            <p>Section ${p.section || 'N/A'}</p>
-                        </div>
-                    </div>
-
-                    <div class="info-row">
                         <span class="info-icon">🗓️</span>
                         <div class="info-content">
                             <strong>Session</strong>
                             <p>${p.session || 'Not specified'}</p>
-                        </div>
-                    </div>
-                    
-                    <div class="info-row">
-                        <span class="info-icon">📖</span>
-                        <div class="info-content">
-                            <strong>Course</strong>
-                            <p>${p.course || 'Not specified'}</p>
                         </div>
                     </div>
 
@@ -267,7 +267,7 @@ function createProfileCard(p, isMine, isConnected) {
                 <div class="locked-message">
                     <span class="lock-icon">🔒</span>
                     <p><strong>Private Information</strong></p>
-                    <p class="locked-text">Email, Phone, Section, Session, Course, Bio & Skills are hidden for privacy protection.</p>
+                    <p class="locked-text">Email, Phone, Session, Bio & Skills are hidden for privacy protection.</p>
                     <p class="locked-hint">Send a connection request to view full profile</p>
                 </div>
             </div>`;
