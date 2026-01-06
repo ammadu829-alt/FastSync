@@ -47,9 +47,12 @@ function loadMyConnections() {
     if (!userEmail) return;
     const userId = emailToId(userEmail);
     
+    console.log('🔗 Loading connections for user:', userId);
+    
     database.ref('connections/' + userId).on('value', (snapshot) => {
         const data = snapshot.val();
         myConnections = data ? Object.keys(data) : [];
+        console.log('🔗 My connections:', myConnections);
         displayPartners();
     });
 }
@@ -136,6 +139,16 @@ function createProfileCard(p, isMine, isConnected) {
         ? skillsArray.map(skill => `<span class="skill-tag">${skill}</span>`).join('')
         : '<span class="no-skills">No skills listed</span>';
 
+    // Check if connected using email-based ID
+    const recipientUserId = emailToId(p.email);
+    const actuallyConnected = isMine || isConnected || myConnections.includes(recipientUserId);
+    
+    console.log('🔍 Checking connection for:', p.fullName);
+    console.log('   Email:', p.email);
+    console.log('   UserId:', recipientUserId);
+    console.log('   My connections:', myConnections);
+    console.log('   Is connected:', actuallyConnected);
+
     // PUBLIC INFORMATION (Always visible)
     let publicInfo = `
         <div class="card-header">
@@ -186,7 +199,7 @@ function createProfileCard(p, isMine, isConnected) {
 
     // PRIVATE INFORMATION (Only if connected or own profile)
     let privateInfo = '';
-    if (isMine || isConnected) {
+    if (actuallyConnected) {
         privateInfo = `
             <div class="privacy-unlocked">
                 <p class="connection-status">🔓 Full Profile Access</p>
@@ -270,7 +283,7 @@ function createProfileCard(p, isMine, isConnected) {
             <button class="btn-delete" onclick="deleteProfile('${p.id}')" style="flex:1;">
                 <span>🗑️</span> Delete
             </button>`;
-    } else if (isConnected) {
+    } else if (actuallyConnected) {
         footerButtons = `
             <button class="btn-contact" onclick="openContactModal('${p.id}', '${p.fullName}', '${p.email}')">
                 <span>📧</span> Contact
@@ -300,9 +313,19 @@ window.sendConnectionRequest = function(toProfileId, toUserName) {
     if (!userEmail) return alert('Please log in first');
     
     const fromUserId = emailToId(userEmail);
-    const toUserId = toProfileId;
     
-    console.log('📤 Sending request from:', fromUserId, 'to:', toUserId);
+    // IMPORTANT: Get the recipient's email from their profile to create proper userId
+    const recipientProfile = partners.find(p => p.id === toProfileId);
+    if (!recipientProfile) {
+        alert('❌ Error: Could not find recipient profile');
+        return;
+    }
+    
+    const toUserId = emailToId(recipientProfile.email);
+    
+    console.log('📤 Sending request');
+    console.log('From:', fromUserId, '(', userEmail, ')');
+    console.log('To:', toUserId, '(', recipientProfile.email, ')');
     
     // Check if request already exists
     database.ref('requests').once('value', (snapshot) => {
@@ -323,6 +346,7 @@ window.sendConnectionRequest = function(toProfileId, toUserName) {
             fromUserEmail: userEmail,
             toUserId: toUserId,
             toUserName: toUserName,
+            toUserEmail: recipientProfile.email,
             status: 'pending',
             timestamp: Date.now()
         };
@@ -578,15 +602,22 @@ function loadReceivedRequests() {
 window.acceptRequest = function(requestId, fromUserId) {
     const toUserId = emailToId(userEmail);
     
+    console.log('✅ Accepting request:', requestId);
+    console.log('Connection between:', fromUserId, 'and', toUserId);
+    
     // Update request status
     database.ref('requests/' + requestId).update({status: 'accepted'}).then(() => {
-        // Create connection both ways
+        // Create connection both ways using email-based user IDs
         database.ref('connections/' + toUserId + '/' + fromUserId).set(true);
         database.ref('connections/' + fromUserId + '/' + toUserId).set(true);
         
         alert('✅ Request accepted! You can now see full profile.');
+        console.log('✅ Connection created successfully');
         loadReceivedRequests();
         loadMyConnections();
+    }).catch(err => {
+        alert('❌ Error accepting request: ' + err.message);
+        console.error('❌ Error:', err);
     });
 };
 
