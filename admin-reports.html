@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - User Reports - FASTSync</title>
+    <link rel="stylesheet" href="admin-reports.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="logo">FASTSync Admin</div>
+        <div class="nav-links">
+            <a href="admin.html">Users</a>
+            <a href="admin-reports.html" class="active">Reports</a>
+            <a href="index.html">Back to Site</a>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="header">
+            <h1>🚨 User Reports Management</h1>
+            <p class="subtitle">Review and manage reported users</p>
+        </div>
+
+        <div class="stats-row">
+            <div class="stat-card pending">
+                <div class="stat-icon">⏳</div>
+                <div class="stat-info">
+                    <h3 id="pendingCount">0</h3>
+                    <p>Pending Reports</p>
+                </div>
+            </div>
+            <div class="stat-card reviewed">
+                <div class="stat-icon">✅</div>
+                <div class="stat-info">
+                    <h3 id="reviewedCount">0</h3>
+                    <p>Reviewed</p>
+                </div>
+            </div>
+            <div class="stat-card total">
+                <div class="stat-icon">📊</div>
+                <div class="stat-info">
+                    <h3 id="totalCount">0</h3>
+                    <p>Total Reports</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="filters">
+            <select id="statusFilter" class="filter-select">
+                <option value="">All Status</option>
+                <option value="pending">Pending Only</option>
+                <option value="reviewed">Reviewed Only</option>
+                <option value="action_taken">Action Taken</option>
+            </select>
+
+            <select id="reasonFilter" class="filter-select">
+                <option value="">All Reasons</option>
+                <option value="Harassment">Harassment</option>
+                <option value="Inappropriate Content">Inappropriate Content</option>
+                <option value="Fake Profile">Fake Profile</option>
+                <option value="Spam">Spam or Scam</option>
+                <option value="Unacademic Behavior">Unacademic Behavior</option>
+                <option value="Other">Other</option>
+            </select>
+
+            <button id="refreshBtn" class="btn-refresh">🔄 Refresh</button>
+        </div>
+
+        <div class="reports-section">
+            <div id="reportsContainer">
+                <div class="loading">Loading reports...</div>
+            </div>
+
+            <div id="noReports" class="no-data" style="display: none;">
+                <div class="no-data-icon">📭</div>
+                <h3>No Reports Found</h3>
+                <p>There are no user reports at this time.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Report Detail Modal -->
+    <div id="detailModal" class="modal">
+        <div class="modal-content large">
+            <span class="close-modal" id="closeDetailModal">&times;</span>
+            <h2>📋 Report Details</h2>
+            
+            <div id="reportDetailContent">
+                <!-- Content will be populated by JavaScript -->
+            </div>
+        </div>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database-compat.js"></script>
+    <script src="admin-reports.js"></script>
+</body>
+</html>
