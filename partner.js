@@ -525,6 +525,83 @@ if (requestsBtn) {
     });
 }
 
+// 10. Report Button Click
+const reportBtn = document.getElementById('reportBtn');
+if (reportBtn) {
+    reportBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+        showReportModal();
+    });
+}
+
+// Show report modal
+function showReportModal() {
+    const modal = document.getElementById('reportModal');
+    if (modal) {
+        modal.style.display = 'flex';
+    }
+}
+
+// Close report modal
+const closeReportModal = document.getElementById('closeReportModal');
+if (closeReportModal) {
+    closeReportModal.addEventListener('click', () => {
+        document.getElementById('reportModal').style.display = 'none';
+    });
+}
+
+// Report form submission
+const reportForm = document.getElementById('reportForm');
+if (reportForm) {
+    reportForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        if (!userEmail) {
+            alert('❌ Please log in to submit a report');
+            return;
+        }
+        
+        // Get reporter's profile information
+        const reporterProfile = partners.find(p => p.email === userEmail);
+        
+        const reportData = {
+            // Reported user info
+            reportedUserName: document.getElementById('reportedUserName').value,
+            reportedUserRoll: document.getElementById('reportedUserRoll').value,
+            reportReason: document.getElementById('reportReason').value,
+            reportDescription: document.getElementById('reportDescription').value,
+            
+            // Reporter's info (automatically included)
+            reporterName: userName || 'Unknown',
+            reporterEmail: userEmail,
+            reporterRollNumber: reporterProfile ? reporterProfile.rollNumber : 'N/A',
+            reporterUniversity: reporterProfile ? reporterProfile.university : 'N/A',
+            reporterDepartment: reporterProfile ? reporterProfile.department : 'N/A',
+            reporterSection: reporterProfile ? reporterProfile.section : 'N/A',
+            reporterSemester: reporterProfile ? reporterProfile.semester : 'N/A',
+            
+            // Metadata
+            timestamp: Date.now(),
+            status: 'pending',
+            dateReported: new Date().toISOString()
+        };
+        
+        console.log('📝 Submitting report:', reportData);
+        
+        // Save to Firebase
+        database.ref('reports').push(reportData)
+            .then(() => {
+                alert('✅ Report submitted successfully! The admin will review it shortly.');
+                document.getElementById('reportModal').style.display = 'none';
+                reportForm.reset();
+            })
+            .catch(err => {
+                alert('❌ Error submitting report: ' + err.message);
+                console.error('Error:', err);
+            });
+    });
+}
+
 // Show requests modal
 function showRequestsModal() {
     const modal = document.getElementById('requestsModal');
@@ -715,7 +792,7 @@ if (closeRequestsModal) {
     });
 }
 
-// 10. Contact Modal Functions
+// 11. Contact Modal Functions
 window.openContactModal = function(profileId, name, email) {
     const modal = document.getElementById('messageModal');
     if (modal) {
@@ -738,11 +815,15 @@ if (closeModal) {
 window.addEventListener('click', function(e) {
     const modal = document.getElementById('messageModal');
     const requestsModal = document.getElementById('requestsModal');
+    const reportModal = document.getElementById('reportModal');
     if (e.target === modal) {
         modal.style.display = 'none';
     }
     if (e.target === requestsModal) {
         requestsModal.style.display = 'none';
+    }
+    if (e.target === reportModal) {
+        reportModal.style.display = 'none';
     }
 });
 
@@ -771,7 +852,7 @@ if (messageForm) {
     });
 }
 
-// 11. Logout Button
+// 12. Logout Button
 const logoutBtn = document.getElementById('logoutBtn');
 if (logoutBtn) {
     logoutBtn.addEventListener('click', function(e) {
