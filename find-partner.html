@@ -17,6 +17,7 @@
                 Requests
                 <span id="requestBadge" class="notification-badge" style="display: none;">0</span>
             </a>
+            <a href="#" id="reportBtn">Report</a>
             <a href="#" id="profileBtn">My Profile</a>
             <a href="#" id="logoutBtn">Logout</a>
         </div>
@@ -337,6 +338,55 @@
                 </div>
                 
                 <button type="submit" class="btn-send-message">Send Message via Email</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Report Modal -->
+    <div id="reportModal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal" id="closeReportModal">&times;</span>
+            <h2>🚨 Report User</h2>
+            <p class="modal-subtitle">Report inappropriate behavior or rule violations</p>
+            
+            <form id="reportForm">
+                <div class="input-group">
+                    <label for="reportedUserName">User to Report *</label>
+                    <input type="text" id="reportedUserName" placeholder="Name of the user" required>
+                </div>
+
+                <div class="input-group">
+                    <label for="reportedUserRoll">Their Roll Number (if known)</label>
+                    <input type="text" id="reportedUserRoll" placeholder="e.g., 21K-1234">
+                </div>
+                
+                <div class="input-group">
+                    <label for="reportReason">Reason for Report *</label>
+                    <select id="reportReason" required>
+                        <option value="">Select a reason</option>
+                        <option value="Harassment">Harassment or Bullying</option>
+                        <option value="Inappropriate Content">Inappropriate Content</option>
+                        <option value="Fake Profile">Fake Profile</option>
+                        <option value="Spam">Spam or Scam</option>
+                        <option value="Unacademic Behavior">Unacademic Behavior</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
+                
+                <div class="input-group">
+                    <label for="reportDescription">Detailed Description *</label>
+                    <textarea id="reportDescription" rows="5" placeholder="Please provide details about the incident..." required></textarea>
+                </div>
+
+                <div style="background: rgba(239, 68, 68, 0.1); padding: 15px; border-radius: 10px; margin-bottom: 20px; border: 1px solid rgba(239, 68, 68, 0.3);">
+                    <p style="color: #b0b0b0; font-size: 13px; margin: 0; line-height: 1.6;">
+                        <strong style="color: #ef4444;">⚠️ Important:</strong> Your information (name, university, department, section, semester, roll number) will be included in this report for verification purposes. False reports may result in action against your account.
+                    </p>
+                </div>
+                
+                <button type="submit" class="btn-send-message" style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);">
+                    Submit Report
+                </button>
             </form>
         </div>
     </div>
