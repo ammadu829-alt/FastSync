@@ -255,6 +255,55 @@
 
     <script>
         let skills = [];
+        let isEditMode = false;
+        let existingProfile = null;
+
+        // Check if editing existing profile
+        window.addEventListener('load', async function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const isEdit = urlParams.get('edit');
+            const currentUser = JSON.parse(localStorage.getItem('loggedInUser'));
+            
+            if (currentUser) {
+                document.getElementById('contactEmail').value = currentUser.email;
+                
+                // Load existing profile if in edit mode
+                if (isEdit) {
+                    isEditMode = true;
+                    document.querySelector('h1').textContent = '✏️ Edit Your Personal Project Profile';
+                    document.querySelector('.subtitle').textContent = 'Update your project details and preferences';
+                    document.querySelector('.btn-submit').textContent = 'Update Profile';
+                    
+                    try {
+                        let profiles = [];
+                        
+                        if (window.storage && typeof window.storage.get === 'function') {
+                            const stored = await window.storage.get('personal_profiles');
+                            profiles = stored ? JSON.parse(stored.value) : [];
+                        } else {
+                            const stored = localStorage.getItem('personal_profiles');
+                            profiles = stored ? JSON.parse(stored) : [];
+                        }
+                        
+                        existingProfile = profiles.find(p => p.userId === currentUser.email);
+                        
+                        if (existingProfile) {
+                            // Pre-fill form with existing data
+                            document.getElementById('projectType').value = existingProfile.projectType;
+                            document.getElementById('lookingFor').value = existingProfile.lookingFor;
+                            document.getElementById('description').value = existingProfile.description;
+                            document.getElementById('availability').value = existingProfile.availability;
+                            document.getElementById('experience').value = existingProfile.experience;
+                            document.getElementById('contactEmail').value = existingProfile.email;
+                            skills = [...existingProfile.skills];
+                            displaySkills();
+                        }
+                    } catch (error) {
+                        console.error('Error loading profile:', error);
+                    }
+                }
+            }
+        });
         
         function addSkill() {
             const input = document.getElementById('skillInput');
@@ -307,7 +356,7 @@
             }
             
             const profile = {
-                id: Date.now(),
+                id: existingProfile ? existingProfile.id : Date.now(),
                 name: currentUser.name || currentUser.username,
                 email: document.getElementById('contactEmail').value.trim(),
                 avatar: (currentUser.name || currentUser.username).substring(0, 2).toUpperCase(),
@@ -317,9 +366,10 @@
                 description: document.getElementById('description').value.trim(),
                 availability: document.getElementById('availability').value,
                 experience: document.getElementById('experience').value,
-                rating: 0,
-                totalReviews: 0,
-                createdAt: new Date().toISOString(),
+                rating: existingProfile ? existingProfile.rating : 0,
+                totalReviews: existingProfile ? existingProfile.totalReviews : 0,
+                createdAt: existingProfile ? existingProfile.createdAt : new Date().toISOString(),
+                updatedAt: new Date().toISOString(),
                 userId: currentUser.email
             };
             
@@ -364,13 +414,7 @@
             }
         });
         
-        // Pre-fill email if user is logged in
-        window.addEventListener('load', function() {
-            const currentUser = JSON.parse(localStorage.getItem('loggedInUser'));
-            if (currentUser) {
-                document.getElementById('contactEmail').value = currentUser.email;
-            }
-        });
+        // Pre-fill email if user is logged in - REMOVED AS IT'S NOW IN window.onload
     </script>
 </body>
 </html>
