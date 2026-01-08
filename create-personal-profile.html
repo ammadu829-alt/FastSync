@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Personal Profile - FASTSync</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .create-profile-container {
+            max-width: 800px;
+            margin: 60px auto;
+            padding: 40px;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+        }
+        
+        .create-profile-container h1 {
+            text-align: center;
+            color: #2d3748;
+            margin-bottom: 10px;
+        }
+        
+        .create-profile-container .subtitle {
+            text-align: center;
+            color: #718096;
+            margin-bottom: 40px;
+        }
+        
+        .form-group {
+            margin-bottom: 25px;
+        }
+        
+        .form-group label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #2d3748;
+        }
+        
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 15px;
+            transition: all 0.3s;
+        }
+        
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        
+        .form-group textarea {
+            resize: vertical;
+            min-height: 120px;
+        }
+        
+        .skills-input-container {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        
+        .skills-input-container input {
+            flex: 1;
+        }
+        
+        .btn-add-skill {
+            padding: 12px 24px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        
+        .skills-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        
+        .skill-tag-added {
+            padding: 8px 15px;
+            background: #e0e7ff;
+            color: #4c51bf;
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .remove-skill {
+            cursor: pointer;
+            font-weight: bold;
+            color: #ef4444;
+        }
+        
+        .form-actions {
+            display: flex;
+            gap: 15px;
+            margin-top: 40px;
+        }
+        
+        .btn-submit {
+            flex: 1;
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .btn-submit:hover {
+            transform: scale(1.02);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn-cancel {
+            padding: 15px 30px;
+            background: white;
+            color: #667eea;
+            border: 2px solid #667eea;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        
+        .form-hint {
+            font-size: 13px;
+            color: #718096;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="logo">FASTSync</div>
+        <div class="nav-links">
+            <a href="index.html">Home</a>
+            <a href="find-partner.html">Semester Projects</a>
+            <a href="personal-projects.html">Personal Projects</a>
+            <a href="reviews.html">⭐ Reviews</a>
+            <a href="contact.html">Contact</a>
+        </div>
+    </nav>
+
+    <div class="create-profile-container">
+        <h1>🚀 Create Your Personal Project Profile</h1>
+        <p class="subtitle">Share your passion projects and find like-minded collaborators</p>
+        
+        <form id="personalProfileForm">
+            <div class="form-group">
+                <label>Project Type *</label>
+                <select id="projectType" required>
+                    <option value="">Select Project Type</option>
+                    <option value="Startup">Startup / Business Idea</option>
+                    <option value="Open Source">Open Source Contribution</option>
+                    <option value="Freelance">Freelance Project</option>
+                    <option value="Creative">Creative / Design Project</option>
+                    <option value="Research">Research Project</option>
+                    <option value="Other">Other</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label>Looking For *</label>
+                <select id="lookingFor" required>
+                    <option value="">What role are you looking for?</option>
+                    <option value="Developer">Developer / Programmer</option>
+                    <option value="Designer">Designer (UI/UX)</option>
+                    <option value="Marketing">Marketing / Growth</option>
+                    <option value="Business">Business / Strategy</option>
+                    <option value="Content">Content Creator / Writer</option>
+                    <option value="Data">Data Scientist / Analyst</option>
+                    <option value="Other">Other</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label>Your Skills *</label>
+                <div class="skills-input-container">
+                    <input type="text" id="skillInput" placeholder="e.g., React, Python, UI Design...">
+                    <button type="button" class="btn-add-skill" onclick="addSkill()">Add Skill</button>
+                </div>
+                <div class="skills-tags" id="skillsTags"></div>
+                <p class="form-hint">Add skills one at a time</p>
+            </div>
+            
+            <div class="form-group">
+                <label>Project Description *</label>
+                <textarea id="description" placeholder="Describe your project, what you're building, and what kind of partner you need..." required></textarea>
+                <p class="form-hint">Be specific about your goals and expectations</p>
+            </div>
+            
+            <div class="form-group">
+                <label>Availability *</label>
+                <select id="availability" required>
+                    <option value="">Select your availability</option>
+                    <option value="5-10 hours/week">5-10 hours/week</option>
+                    <option value="10-15 hours/week">10-15 hours/week</option>
+                    <option value="15-20 hours/week">15-20 hours/week</option>
+                    <option value="20+ hours/week">20+ hours/week</option>
+                    <option value="Flexible">Flexible</option>
+                    <option value="Full-time">Full-time</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label>Your Experience Level *</label>
+                <select id="experience" required>
+                    <option value="">Select experience level</option>
+                    <option value="Beginner">Beginner (< 1 year)</option>
+                    <option value="1 year">1 year</option>
+                    <option value="2 years">2 years</option>
+                    <option value="3+ years">3+ years</option>
+                    <option value="Expert">Expert (5+ years)</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label>Contact Email *</label>
+                <input type="email" id="contactEmail" placeholder="your.email@nu.edu.pk" required>
+                <p class="form-hint">This will be visible to potential partners</p>
+            </div>
+            
+            <div class="form-actions">
+                <button type="button" class="btn-cancel" onclick="window.location.href='personal-projects.html'">
+                    Cancel
+                </button>
+                <button type="submit" class="btn-submit">
+                    Create Profile
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <footer>
+        <p>&copy; 2025 FASTSync. All rights reserved.</p>
+    </footer>
+
+    <script>
+        let skills = [];
+        
+        function addSkill() {
+            const input = document.getElementById('skillInput');
+            const skill = input.value.trim();
+            
+            if (skill && !skills.includes(skill)) {
+                skills.push(skill);
+                input.value = '';
+                displaySkills();
+            }
+        }
+        
+        function removeSkill(skill) {
+            skills = skills.filter(s => s !== skill);
+            displaySkills();
+        }
+        
+        function displaySkills() {
+            const container = document.getElementById('skillsTags');
+            container.innerHTML = skills.map(skill => `
+                <span class="skill-tag-added">
+                    ${skill}
+                    <span class="remove-skill" onclick="removeSkill('${skill}')">×</span>
+                </span>
+            `).join('');
+        }
+        
+        // Allow Enter key to add skills
+        document.getElementById('skillInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                addSkill();
+            }
+        });
+        
+        document.getElementById('personalProfileForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            // Check if user is logged in
+            const currentUser = JSON.parse(localStorage.getItem('loggedInUser'));
+            if (!currentUser) {
+                alert('Please login first!');
+                window.location.href = 'login.html';
+                return;
+            }
+            
+            if (skills.length === 0) {
+                alert('Please add at least one skill!');
+                return;
+            }
+            
+            const profile = {
+                id: Date.now(),
+                name: currentUser.name || currentUser.username,
+                email: document.getElementById('contactEmail').value.trim(),
+                avatar: (currentUser.name || currentUser.username).substring(0, 2).toUpperCase(),
+                projectType: document.getElementById('projectType').value,
+                lookingFor: document.getElementById('lookingFor').value,
+                skills: skills,
+                description: document.getElementById('description').value.trim(),
+                availability: document.getElementById('availability').value,
+                experience: document.getElementById('experience').value,
+                rating: 0,
+                totalReviews: 0,
+                createdAt: new Date().toISOString(),
+                userId: currentUser.email
+            };
+            
+            try {
+                // Load existing profiles
+                const stored = await window.storage.get('personal_profiles');
+                const profiles = stored ? JSON.parse(stored.value) : [];
+                
+                // Check if user already has a profile
+                const existingIndex = profiles.findIndex(p => p.userId === currentUser.email);
+                if (existingIndex !== -1) {
+                    // Update existing profile
+                    profiles[existingIndex] = profile;
+                    alert('✅ Your profile has been updated!');
+                } else {
+                    // Add new profile
+                    profiles.push(profile);
+                    alert('✅ Your profile has been created successfully!');
+                }
+                
+                // Save to storage
+                await window.storage.set('personal_profiles', JSON.stringify(profiles));
+                
+                // Redirect to personal projects page
+                window.location.href = 'personal-projects.html';
+            } catch (error) {
+                console.error('Error saving profile:', error);
+                alert('Error creating profile. Please try again.');
+            }
+        });
+        
+        // Pre-fill email if user is logged in
+        window.addEventListener('load', function() {
+            const currentUser = JSON.parse(localStorage.getItem('loggedInUser'));
+            if (currentUser) {
+                document.getElementById('contactEmail').value = currentUser.email;
+            }
+        });
+    </script>
+</body>
+</html>
