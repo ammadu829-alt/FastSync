@@ -1,9 +1,7 @@
 const canvas = document.getElementById('loginCanvas');
 const ctx = canvas.getContext('2d');
-
 canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
-
 const particles = [];
 const particleCount = 60;
 const maxDistance = 150;
@@ -16,14 +14,12 @@ class Particle {
         this.vy = (Math.random() - 0.5) * 0.5;
         this.radius = 2;
     }
-
     update() {
         this.x += this.vx;
         this.y += this.vy;
         if (this.x < 0 || this.x > canvas.width) this.vx *= -1;
         if (this.y < 0 || this.y > canvas.height) this.vy *= -1;
     }
-
     draw() {
         ctx.beginPath();
         ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
@@ -62,24 +58,95 @@ function animate() {
 }
 animate();
 
-// --- LOGIN LOGIC ---
+// --- FIREBASE INITIALIZATION ---
+const firebaseConfig = {
+    apiKey: "YOUR_API_KEY",
+    authDomain: "fastsync.firebaseapp.com",
+    databaseURL: "https://fastsync-8b20e-default-rtdb.firebaseio.com/", 
+    projectId: "fastsync",
+    storageBucket: "fastsync.appspot.com",
+    messagingSenderId: "123456789",
+    appId: "1:123456789:web:abcdef"
+};
+
+if (typeof firebase !== 'undefined') {
+    if (!firebase.apps.length) {
+        firebase.initializeApp(firebaseConfig);
+    }
+} else {
+    console.error("Firebase library not found!");
+}
+
+const database = (typeof firebase !== 'undefined') ? firebase.database() : null;
+
+// --- LOGIN LOGIC (FIXED) ---
 const loginForm = document.getElementById('loginForm');
 if (loginForm) {
     loginForm.addEventListener('submit', function(e) {
         e.preventDefault();
+        
         const emailInput = document.getElementById('email').value.trim().toLowerCase();
         const passwordInput = document.getElementById('password').value.trim();
         
-        const users = JSON.parse(localStorage.getItem('fastsync_users')) || [];
-        const validUser = users.find(u => u.email === emailInput && u.password === passwordInput);
-
-        if (validUser) {
-            localStorage.setItem('isLoggedIn', 'true');
-            localStorage.setItem('userEmail', validUser.email);
-            localStorage.setItem('userName', validUser.name);
-            window.location.href = 'index.html';
-        } else {
-            alert('❌ Invalid Email or Password.');
+        if (!database) {
+            alert('❌ Database connection failed. Please refresh the page.');
+            return;
         }
+
+        // Show loading state
+        const loginBtn = loginForm.querySelector('.btn-login');
+        const originalText = loginBtn.textContent;
+        loginBtn.textContent = 'Logging in...';
+        loginBtn.disabled = true;
+
+        // Sanitize email for Firebase key
+        const userId = emailInput.replace(/\./g, '_');
+        
+        // Check Firebase database
+        database.ref('users/' + userId).once('value')
+            .then(snapshot => {
+                if (snapshot.exists()) {
+                    const userData = snapshot.val();
+                    
+                    // Verify password
+                    if (userData.password === passwordInput) {
+                        // Successfully logged in - Save to localStorage
+                        localStorage.setItem('isLoggedIn', 'true');
+                        localStorage.setItem('userEmail', userData.email);
+                        localStorage.setItem('userName', userData.fullName);
+                        localStorage.setItem('userUniversity', userData.university);
+                        localStorage.setItem('userSemester', userData.semester);
+                        localStorage.setItem('userDepartment', userData.department);
+                        localStorage.setItem('userRollNumber', userData.rollNumber);
+                        
+                        // Save complete user object for reviews system
+                        localStorage.setItem('loggedInUser', JSON.stringify({
+                            email: userData.email,
+                            name: userData.fullName,
+                            username: userData.fullName,
+                            university: userData.university,
+                            semester: userData.semester,
+                            department: userData.department,
+                            rollNumber: userData.rollNumber
+                        }));
+                        
+                        alert('✅ Login Successful! Welcome back, ' + userData.fullName);
+                        window.location.href = 'index.html';
+                    } else {
+                        alert('❌ Incorrect password. Please try again.');
+                        loginBtn.textContent = originalText;
+                        loginBtn.disabled = false;
+                    }
+                } else {
+                    alert('❌ No account found with this email. Please sign up first.');
+                    loginBtn.textContent = originalText;
+                    loginBtn.disabled = false;
+                }
+            })
+            .catch(error => {
+                alert('❌ Login Error: ' + error.message);
+                loginBtn.textContent = originalText;
+                loginBtn.disabled = false;
+            });
     });
 }
