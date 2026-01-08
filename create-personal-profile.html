@@ -325,8 +325,17 @@
             
             try {
                 // Load existing profiles
-                const stored = await window.storage.get('personal_profiles');
-                const profiles = stored ? JSON.parse(stored.value) : [];
+                let profiles = [];
+                
+                if (window.storage && typeof window.storage.get === 'function') {
+                    // Try persistent storage
+                    const stored = await window.storage.get('personal_profiles');
+                    profiles = stored ? JSON.parse(stored.value) : [];
+                } else {
+                    // Fallback to localStorage
+                    const stored = localStorage.getItem('personal_profiles');
+                    profiles = stored ? JSON.parse(stored) : [];
+                }
                 
                 // Check if user already has a profile
                 const existingIndex = profiles.findIndex(p => p.userId === currentUser.email);
@@ -341,7 +350,11 @@
                 }
                 
                 // Save to storage
-                await window.storage.set('personal_profiles', JSON.stringify(profiles));
+                if (window.storage && typeof window.storage.set === 'function') {
+                    await window.storage.set('personal_profiles', JSON.stringify(profiles));
+                } else {
+                    localStorage.setItem('personal_profiles', JSON.stringify(profiles));
+                }
                 
                 // Redirect to personal projects page
                 window.location.href = 'personal-projects.html';
