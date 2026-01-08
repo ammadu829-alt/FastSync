@@ -395,12 +395,21 @@
         // Load from Firebase or localStorage
         async function loadPersonalProfiles() {
             try {
-                const stored = await window.storage.get('personal_profiles');
-                if (stored) {
-                    personalProfiles = JSON.parse(stored.value);
+                // Try persistent storage if available
+                if (window.storage && typeof window.storage.get === 'function') {
+                    const stored = await window.storage.get('personal_profiles');
+                    if (stored) {
+                        personalProfiles = JSON.parse(stored.value);
+                    }
+                } else {
+                    // Fallback to localStorage
+                    const stored = localStorage.getItem('personal_profiles');
+                    if (stored) {
+                        personalProfiles = JSON.parse(stored);
+                    }
                 }
             } catch (error) {
-                console.log('Using demo data');
+                console.log('Using demo data', error);
             }
             displayProfiles(personalProfiles);
         }
