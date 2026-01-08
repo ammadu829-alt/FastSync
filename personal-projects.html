@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Personal Projects - FASTSync</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .personal-projects-hero {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 60px 20px;
+            text-align: center;
+            color: white;
+            margin-bottom: 40px;
+        }
+        
+        .personal-projects-hero h1 {
+            font-size: 2.5em;
+            margin-bottom: 15px;
+        }
+        
+        .personal-projects-hero p {
+            font-size: 1.1em;
+            opacity: 0.95;
+            max-width: 700px;
+            margin: 0 auto;
+        }
+        
+        .filters-section {
+            max-width: 1200px;
+            margin: 0 auto 40px;
+            padding: 0 20px;
+        }
+        
+        .filters-container {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        
+        .filter-group {
+            flex: 1;
+            min-width: 200px;
+        }
+        
+        .filter-group label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #333;
+            font-size: 14px;
+        }
+        
+        .filter-group input,
+        .filter-group select {
+            width: 100%;
+            padding: 10px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+        
+        .filter-group input:focus,
+        .filter-group select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        
+        .projects-grid {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px 60px;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 25px;
+        }
+        
+        .project-card {
+            background: white;
+            border-radius: 16px;
+            padding: 25px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+            transition: all 0.3s;
+            border: 2px solid transparent;
+        }
+        
+        .project-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+            border-color: #667eea;
+        }
+        
+        .project-header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .project-avatar {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 20px;
+            flex-shrink: 0;
+        }
+        
+        .project-info h3 {
+            margin: 0 0 5px 0;
+            font-size: 1.3em;
+            color: #2d3748;
+        }
+        
+        .project-type {
+            display: inline-block;
+            padding: 4px 12px;
+            background: #e0e7ff;
+            color: #4c51bf;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        
+        .project-details {
+            margin: 20px 0;
+        }
+        
+        .detail-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 12px;
+            font-size: 14px;
+            color: #4a5568;
+        }
+        
+        .detail-row svg {
+            width: 18px;
+            height: 18px;
+            color: #667eea;
+            flex-shrink: 0;
+        }
+        
+        .skills-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin: 15px 0;
+        }
+        
+        .skill-tag {
+            padding: 6px 12px;
+            background: #f7fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            font-size: 13px;
+            color: #4a5568;
+        }
+        
+        .project-description {
+            color: #718096;
+            font-size: 14px;
+            line-height: 1.6;
+            margin: 15px 0;
+        }
+        
+        .rating-display {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin: 15px 0;
+        }
+        
+        .stars {
+            color: #fbbf24;
+            font-size: 16px;
+        }
+        
+        .rating-text {
+            font-size: 14px;
+            color: #718096;
+        }
+        
+        .project-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        
+        .btn-contact {
+            flex: 1;
+            padding: 12px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .btn-contact:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn-view-profile {
+            padding: 12px 20px;
+            background: white;
+            color: #667eea;
+            border: 2px solid #667eea;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .btn-view-profile:hover {
+            background: #667eea;
+            color: white;
+        }
+        
+        .no-results {
+            text-align: center;
+            padding: 60px 20px;
+            color: #718096;
+        }
+        
+        .no-results svg {
+            width: 80px;
+            height: 80px;
+            margin-bottom: 20px;
+            opacity: 0.3;
+        }
+        
+        .create-profile-btn {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            padding: 15px 30px;
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+            border: none;
+            border-radius: 50px;
+            font-weight: 600;
+            font-size: 16px;
+            cursor: pointer;
+            box-shadow: 0 5px 20px rgba(16, 185, 129, 0.4);
+            transition: all 0.3s;
+            z-index: 1000;
+        }
+        
+        .create-profile-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 8px 30px rgba(16, 185, 129, 0.6);
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="logo">FASTSync</div>
+        <div class="nav-links">
+            <a href="index.html">Home</a>
+            <a href="find-partner.html">Semester Projects</a>
+            <a href="personal-projects.html" style="color: #667eea; font-weight: 600;">Personal Projects</a>
+            <a href="reviews.html">⭐ Reviews</a>
+            <a href="contact.html">Contact</a>
+            <a href="login.html" class="btn-login">Login</a>
+        </div>
+    </nav>
+
+    <section class="personal-projects-hero">
+        <h1>🚀 Personal Projects</h1>
+        <p>Find passionate partners for your side projects, startups, open-source contributions, and creative endeavors beyond academics</p>
+    </section>
+
+    <section class="filters-section">
+        <div class="filters-container">
+            <div class="filter-group">
+                <label>🔍 Search by Name or Skills</label>
+                <input type="text" id="searchInput" placeholder="e.g., React, Python, AI...">
+            </div>
+            <div class="filter-group">
+                <label>📂 Project Type</label>
+                <select id="projectTypeFilter">
+                    <option value="">All Types</option>
+                    <option value="Startup">Startup</option>
+                    <option value="Open Source">Open Source</option>
+                    <option value="Freelance">Freelance</option>
+                    <option value="Creative">Creative</option>
+                    <option value="Research">Research</option>
+                    <option value="Other">Other</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label>🎯 Looking For</label>
+                <select id="roleFilter">
+                    <option value="">Any Role</option>
+                    <option value="Developer">Developer</option>
+                    <option value="Designer">Designer</option>
+                    <option value="Marketing">Marketing</option>
+                    <option value="Business">Business</option>
+                    <option value="Content">Content Creator</option>
+                </select>
+            </div>
+        </div>
+    </section>
+
+    <section class="projects-grid" id="projectsGrid">
+        <!-- Projects will be loaded here by JavaScript -->
+    </section>
+
+    <button class="create-profile-btn" onclick="window.location.href='create-personal-profile.html'">
+        + Create Profile
+    </button>
+
+    <footer>
+        <p>&copy; 2025 FASTSync. All rights reserved.</p>
+    </footer>
+
+    <script>
+        // Sample data - Replace with Firebase data
+        let personalProfiles = [
+            {
+                id: 1,
+                name: "Ahmed Hassan",
+                email: "ahmed@nu.edu.pk",
+                avatar: "AH",
+                projectType: "Startup",
+                lookingFor: "Developer",
+                skills: ["React", "Node.js", "MongoDB"],
+                description: "Building a fintech startup for students. Need a co-founder with backend expertise.",
+                availability: "10-15 hours/week",
+                experience: "2 years",
+                rating: 4.8,
+                totalReviews: 12
+            },
+            {
+                id: 2,
+                name: "Fatima Khan",
+                email: "fatima@nu.edu.pk",
+                avatar: "FK",
+                projectType: "Open Source",
+                lookingFor: "Developer",
+                skills: ["Python", "Django", "AI/ML"],
+                description: "Contributing to open-source ML projects. Looking for Python enthusiasts.",
+                availability: "5-10 hours/week",
+                experience: "1 year",
+                rating: 4.5,
+                totalReviews: 8
+            },
+            {
+                id: 3,
+                name: "Ali Raza",
+                email: "ali@nu.edu.pk",
+                avatar: "AR",
+                projectType: "Creative",
+                lookingFor: "Designer",
+                skills: ["UI/UX", "Figma", "Adobe XD"],
+                description: "Creating a portfolio website design agency. Need talented designers.",
+                availability: "Flexible",
+                experience: "3 years",
+                rating: 4.9,
+                totalReviews: 15
+            },
+            {
+                id: 4,
+                name: "Sara Ahmed",
+                email: "sara@nu.edu.pk",
+                avatar: "SA",
+                projectType: "Freelance",
+                lookingFor: "Marketing",
+                skills: ["Social Media", "Content Writing", "SEO"],
+                description: "Running a digital marketing agency. Looking for content creators.",
+                availability: "15-20 hours/week",
+                experience: "2 years",
+                rating: 4.7,
+                totalReviews: 10
+            }
+        ];
+
+        // Load from Firebase or localStorage
+        async function loadPersonalProfiles() {
+            try {
+                const stored = await window.storage.get('personal_profiles');
+                if (stored) {
+                    personalProfiles = JSON.parse(stored.value);
+                }
+            } catch (error) {
+                console.log('Using demo data');
+            }
+            displayProfiles(personalProfiles);
+        }
+
+        function displayProfiles(profiles) {
+            const grid = document.getElementById('projectsGrid');
+            
+            if (profiles.length === 0) {
+                grid.innerHTML = `
+                    <div class="no-results" style="grid-column: 1/-1;">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <h3>No profiles found</h3>
+                        <p>Be the first to create a personal project profile!</p>
+                    </div>
+                `;
+                return;
+            }
+
+            grid.innerHTML = profiles.map(profile => `
+                <div class="project-card">
+                    <div class="project-header">
+                        <div class="project-avatar">${profile.avatar}</div>
+                        <div class="project-info">
+                            <h3>${profile.name}</h3>
+                            <span class="project-type">${profile.projectType}</span>
+                        </div>
+                    </div>
+                    
+                    <div class="project-details">
+                        <div class="detail-row">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                            </svg>
+                            <span>Looking for: ${profile.lookingFor}</span>
+                        </div>
+                        <div class="detail-row">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            <span>${profile.availability}</span>
+                        </div>
+                        <div class="detail-row">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
+                            </svg>
+                            <span>Experience: ${profile.experience}</span>
+                        </div>
+                    </div>
+                    
+                    <div class="skills-container">
+                        ${profile.skills.map(skill => `<span class="skill-tag">${skill}</span>`).join('')}
+                    </div>
+                    
+                    <p class="project-description">${profile.description}</p>
+                    
+                    <div class="rating-display">
+                        <span class="stars">${'★'.repeat(Math.round(profile.rating))}${'☆'.repeat(5 - Math.round(profile.rating))}</span>
+                        <span class="rating-text">${profile.rating} (${profile.totalReviews} reviews)</span>
+                    </div>
+                    
+                    <div class="project-actions">
+                        <button class="btn-contact" onclick="contactUser('${profile.email}', '${profile.name}')">
+                            Contact
+                        </button>
+                        <button class="btn-view-profile" onclick="viewReviews('${profile.email}', '${profile.name}')">
+                            View Reviews
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function contactUser(email, name) {
+            alert(`Contact ${name} at: ${email}`);
+            // In real implementation, open messaging system or show contact modal
+        }
+
+        function viewReviews(email, name) {
+            window.location.href = `view-user-reviews.html?email=${email}&name=${name}`;
+        }
+
+        // Search and filter functionality
+        document.getElementById('searchInput').addEventListener('input', filterProfiles);
+        document.getElementById('projectTypeFilter').addEventListener('change', filterProfiles);
+        document.getElementById('roleFilter').addEventListener('change', filterProfiles);
+
+        function filterProfiles() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const projectType = document.getElementById('projectTypeFilter').value;
+            const role = document.getElementById('roleFilter').value;
+
+            const filtered = personalProfiles.filter(profile => {
+                const matchesSearch = profile.name.toLowerCase().includes(searchTerm) ||
+                                    profile.skills.some(skill => skill.toLowerCase().includes(searchTerm)) ||
+                                    profile.description.toLowerCase().includes(searchTerm);
+                const matchesType = !projectType || profile.projectType === projectType;
+                const matchesRole = !role || profile.lookingFor === role;
+                
+                return matchesSearch && matchesType && matchesRole;
+            });
+
+            displayProfiles(filtered);
+        }
+
+        // Load profiles on page load
+        loadPersonalProfiles();
+    </script>
+</body>
+</html>
