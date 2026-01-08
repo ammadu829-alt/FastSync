@@ -332,65 +332,8 @@
     </footer>
 
     <script>
-        // Sample data - Replace with Firebase data
-        let personalProfiles = [
-            {
-                id: 1,
-                name: "Ahmed Hassan",
-                email: "ahmed@nu.edu.pk",
-                avatar: "AH",
-                projectType: "Startup",
-                lookingFor: "Developer",
-                skills: ["React", "Node.js", "MongoDB"],
-                description: "Building a fintech startup for students. Need a co-founder with backend expertise.",
-                availability: "10-15 hours/week",
-                experience: "2 years",
-                rating: 4.8,
-                totalReviews: 12
-            },
-            {
-                id: 2,
-                name: "Fatima Khan",
-                email: "fatima@nu.edu.pk",
-                avatar: "FK",
-                projectType: "Open Source",
-                lookingFor: "Developer",
-                skills: ["Python", "Django", "AI/ML"],
-                description: "Contributing to open-source ML projects. Looking for Python enthusiasts.",
-                availability: "5-10 hours/week",
-                experience: "1 year",
-                rating: 4.5,
-                totalReviews: 8
-            },
-            {
-                id: 3,
-                name: "Ali Raza",
-                email: "ali@nu.edu.pk",
-                avatar: "AR",
-                projectType: "Creative",
-                lookingFor: "Designer",
-                skills: ["UI/UX", "Figma", "Adobe XD"],
-                description: "Creating a portfolio website design agency. Need talented designers.",
-                availability: "Flexible",
-                experience: "3 years",
-                rating: 4.9,
-                totalReviews: 15
-            },
-            {
-                id: 4,
-                name: "Sara Ahmed",
-                email: "sara@nu.edu.pk",
-                avatar: "SA",
-                projectType: "Freelance",
-                lookingFor: "Marketing",
-                skills: ["Social Media", "Content Writing", "SEO"],
-                description: "Running a digital marketing agency. Looking for content creators.",
-                availability: "15-20 hours/week",
-                experience: "2 years",
-                rating: 4.7,
-                totalReviews: 10
-            }
-        ];
+        // All profiles loaded from storage
+        let personalProfiles = [];
 
         // Load from Firebase or localStorage
         async function loadPersonalProfiles() {
@@ -416,6 +359,7 @@
 
         function displayProfiles(profiles) {
             const grid = document.getElementById('projectsGrid');
+            const currentUser = JSON.parse(localStorage.getItem('loggedInUser'));
             
             if (profiles.length === 0) {
                 grid.innerHTML = `
@@ -430,7 +374,10 @@
                 return;
             }
 
-            grid.innerHTML = profiles.map(profile => `
+            grid.innerHTML = profiles.map(profile => {
+                const isOwnProfile = currentUser && profile.userId === currentUser.email;
+                
+                return `
                 <div class="project-card">
                     <div class="project-header">
                         <div class="project-avatar">${profile.avatar}</div>
@@ -469,19 +416,28 @@
                     
                     <div class="rating-display">
                         <span class="stars">${'★'.repeat(Math.round(profile.rating))}${'☆'.repeat(5 - Math.round(profile.rating))}</span>
-                        <span class="rating-text">${profile.rating} (${profile.totalReviews} reviews)</span>
+                        <span class="rating-text">${profile.rating.toFixed(1)} (${profile.totalReviews} reviews)</span>
                     </div>
                     
                     <div class="project-actions">
-                        <button class="btn-contact" onclick="contactUser('${profile.email}', '${profile.name}')">
-                            Contact
-                        </button>
-                        <button class="btn-view-profile" onclick="viewReviews('${profile.email}', '${profile.name}')">
-                            View Reviews
-                        </button>
+                        ${isOwnProfile ? `
+                            <button class="btn-contact" onclick="editProfile('${profile.userId}')" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">
+                                Edit Profile
+                            </button>
+                            <button class="btn-view-profile" onclick="deleteProfile('${profile.userId}')" style="border-color: #ef4444; color: #ef4444;">
+                                Delete
+                            </button>
+                        ` : `
+                            <button class="btn-contact" onclick="contactUser('${profile.email}', '${profile.name}')">
+                                Contact
+                            </button>
+                            <button class="btn-view-profile" onclick="viewReviews('${profile.email}', '${profile.name}')">
+                                View Reviews
+                            </button>
+                        `}
                     </div>
                 </div>
-            `).join('');
+            `}).join('');
         }
 
         function contactUser(email, name) {
@@ -491,6 +447,44 @@
 
         function viewReviews(email, name) {
             window.location.href = `view-user-reviews.html?email=${email}&name=${name}`;
+        }
+
+        function editProfile(userId) {
+            window.location.href = `create-personal-profile.html?edit=true`;
+        }
+
+        async function deleteProfile(userId) {
+            if (!confirm('Are you sure you want to delete your profile? This cannot be undone.')) {
+                return;
+            }
+
+            try {
+                let profiles = [];
+                
+                if (window.storage && typeof window.storage.get === 'function') {
+                    const stored = await window.storage.get('personal_profiles');
+                    profiles = stored ? JSON.parse(stored.value) : [];
+                } else {
+                    const stored = localStorage.getItem('personal_profiles');
+                    profiles = stored ? JSON.parse(stored) : [];
+                }
+
+                // Remove the profile
+                profiles = profiles.filter(p => p.userId !== userId);
+
+                // Save back
+                if (window.storage && typeof window.storage.set === 'function') {
+                    await window.storage.set('personal_profiles', JSON.stringify(profiles));
+                } else {
+                    localStorage.setItem('personal_profiles', JSON.stringify(profiles));
+                }
+
+                alert('✅ Profile deleted successfully!');
+                window.location.reload();
+            } catch (error) {
+                console.error('Error deleting profile:', error);
+                alert('Error deleting profile. Please try again.');
+            }
         }
 
         // Search and filter functionality
