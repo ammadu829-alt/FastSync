@@ -253,7 +253,28 @@
         <p>&copy; 2025 FASTSync. All rights reserved.</p>
     </footer>
 
+    <!-- ADD FIREBASE SCRIPTS -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+
     <script>
+        // Initialize Firebase
+        const firebaseConfig = {
+            apiKey: "YOUR_API_KEY",
+            authDomain: "fastsync.firebaseapp.com",
+            databaseURL: "https://fastsync-8b20e-default-rtdb.firebaseio.com/", 
+            projectId: "fastsync",
+            storageBucket: "fastsync.appspot.com",
+            messagingSenderId: "123456789",
+            appId: "1:123456789:web:abcdef"
+        };
+
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
+
+        const database = firebase.database();
+
         let skills = [];
         let isEditMode = false;
         let existingProfile = null;
@@ -275,17 +296,10 @@
                     document.querySelector('.btn-submit').textContent = 'Update Profile';
                     
                     try {
-                        let profiles = [];
-                        
-                        if (window.storage && typeof window.storage.get === 'function') {
-                            const stored = await window.storage.get('personal_profiles');
-                            profiles = stored ? JSON.parse(stored.value) : [];
-                        } else {
-                            const stored = localStorage.getItem('personal_profiles');
-                            profiles = stored ? JSON.parse(stored) : [];
-                        }
-                        
-                        existingProfile = profiles.find(p => p.userId === currentUser.email);
+                        // Load from Firebase
+                        const sanitizedEmail = currentUser.email.replace(/\./g, '_');
+                        const snapshot = await database.ref('personal_profiles/' + sanitizedEmail).once('value');
+                        existingProfile = snapshot.val();
                         
                         if (existingProfile) {
                             // Pre-fill form with existing data
@@ -374,43 +388,17 @@
             };
             
             try {
-                // Load existing profiles
-                let profiles = [];
+                // Sanitize email for Firebase key
+                const sanitizedEmail = currentUser.email.replace(/\./g, '_');
                 
-                if (window.storage && typeof window.storage.get === 'function') {
-                    // Try persistent storage
-                    const stored = await window.storage.get('personal_profiles');
-                    profiles = stored ? JSON.parse(stored.value) : [];
-                } else {
-                    // Fallback to localStorage
-                    const stored = localStorage.getItem('personal_profiles');
-                    profiles = stored ? JSON.parse(stored) : [];
-                }
+                // Save to Firebase
+                await database.ref('personal_profiles/' + sanitizedEmail).set(profile);
                 
-                // Check if user already has a profile
-                const existingIndex = profiles.findIndex(p => p.userId === currentUser.email);
-                if (existingIndex !== -1) {
-                    // Update existing profile
-                    profiles[existingIndex] = profile;
-                    alert('✅ Your profile has been updated!');
-                } else {
-                    // Add new profile
-                    profiles.push(profile);
-                    alert('✅ Your profile has been created successfully!');
-                }
-                
-                // Save to storage
-                if (window.storage && typeof window.storage.set === 'function') {
-                    await window.storage.set('personal_profiles', JSON.stringify(profiles));
-                } else {
-                    localStorage.setItem('personal_profiles', JSON.stringify(profiles));
-                }
-                
-                // Redirect to personal projects page
+                alert('✅ Profile ' + (isEditMode ? 'updated' : 'created') + ' successfully!');
                 window.location.href = 'personal-projects.html';
             } catch (error) {
                 console.error('Error saving profile:', error);
-                alert('Error creating profile. Please try again.');
+                alert('Error ' + (isEditMode ? 'updating' : 'creating') + ' profile. Please try again.');
             }
         });
         
