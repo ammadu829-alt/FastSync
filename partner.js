@@ -129,22 +129,28 @@ function createProfileCard(p) {
     const card = document.createElement('div');
     card.className = 'partner-card';
 
-    // Check if this is MY profile
-    const isMine = p.email === userEmail;
+    // CRITICAL: Check if this is MY profile (exact email match)
+    const isMine = (p.email && userEmail && p.email.toLowerCase() === userEmail.toLowerCase());
     
-    // Check if I'm connected with this user
+    // CRITICAL: Check if I'm connected with this user
     const recipientUserId = emailToId(p.email);
     const isConnected = myConnections.includes(recipientUserId);
     
-    // PRIVACY RULE: Show full info ONLY if it's my profile OR we're connected
-    const showPrivateInfo = isMine || isConnected;
+    // STRICT PRIVACY RULE: Show full info ONLY if it's my profile OR we're connected
+    // Default to FALSE for safety
+    const showPrivateInfo = isMine === true || isConnected === true;
     
-    console.log('🔍 Profile Check:', p.fullName);
-    console.log('   My email:', userEmail);
+    // Debug logging - Check console to see what's happening
+    console.log('========================================');
+    console.log('🔍 PRIVACY CHECK for:', p.fullName);
     console.log('   Profile email:', p.email);
-    console.log('   Is mine:', isMine);
-    console.log('   Is connected:', isConnected);
-    console.log('   Show private info:', showPrivateInfo);
+    console.log('   My email:', userEmail);
+    console.log('   Profile userId:', recipientUserId);
+    console.log('   Is mine?:', isMine);
+    console.log('   My connections:', myConnections);
+    console.log('   Is connected?:', isConnected);
+    console.log('   ✅ SHOW PRIVATE INFO?:', showPrivateInfo);
+    console.log('========================================');
 
     const availabilityClass = p.availability === 'available' ? 'status-available' : 'status-found';
     const availabilityText = p.availability === 'available' ? '✓ Available' : '✗ Partnered';
@@ -218,9 +224,12 @@ function createProfileCard(p) {
                 </div>
             </div>`;
 
-    // PRIVATE INFORMATION - ONLY show if it's MY profile OR we're connected
+    // PRIVATE INFORMATION - STRICT CHECK
     let privateInfo = '';
-    if (showPrivateInfo) {
+    
+    // CRITICAL: Only show if showPrivateInfo is explicitly TRUE
+    if (showPrivateInfo === true) {
+        console.log('✅ UNLOCKING private info for:', p.fullName);
         // UNLOCKED - Show full private information
         privateInfo = `
             <div class="privacy-unlocked">
@@ -267,6 +276,7 @@ function createProfileCard(p) {
                 </div>
             </div>`;
     } else {
+        console.log('🔒 LOCKING private info for:', p.fullName);
         // LOCKED - Hide private information
         privateInfo = `
             <div class="privacy-locked">
@@ -279,9 +289,10 @@ function createProfileCard(p) {
             </div>`;
     }
 
-    // FOOTER BUTTONS
+    // FOOTER BUTTONS - Also use strict checks
     let footerButtons = '';
-    if (isMine) {
+    if (isMine === true) {
+        console.log('👤 Showing MY profile buttons for:', p.fullName);
         // My own profile - Show Edit and Delete
         footerButtons = `
             <button class="btn-contact" onclick="editProfile('${p.id}')" style="flex:1;">
@@ -290,7 +301,8 @@ function createProfileCard(p) {
             <button class="btn-delete" onclick="deleteProfile('${p.id}')" style="flex:1;">
                 <span>🗑️</span> Delete
             </button>`;
-    } else if (showPrivateInfo) {
+    } else if (showPrivateInfo === true) {
+        console.log('🔗 Showing CONNECTED user buttons for:', p.fullName);
         // Connected user - Show Contact and WhatsApp
         footerButtons = `
             <button class="btn-contact" onclick="openContactModal('${p.id}', '${p.fullName}', '${p.email}')">
@@ -300,6 +312,7 @@ function createProfileCard(p) {
                 <span>💬</span> WhatsApp
             </a>`;
     } else {
+        console.log('🔐 Showing SEND REQUEST button for:', p.fullName);
         // Not connected - Show Send Request button
         footerButtons = `
             <button class="btn-request" onclick="sendConnectionRequest('${p.id}', '${p.fullName}')">
