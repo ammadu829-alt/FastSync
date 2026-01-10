@@ -42,17 +42,37 @@ function init() {
     loadPendingRequests();
 }
 
-// Load my connections (accepted requests)
+// Load my connections (accepted requests) - WITH BETTER LOGGING
 function loadMyConnections() {
-    if (!userEmail) return;
+    if (!userEmail) {
+        console.log('❌ No userEmail found, cannot load connections');
+        return;
+    }
+    
     const userId = emailToId(userEmail);
     
-    console.log('🔗 Loading connections for user:', userId);
+    console.log('========================================');
+    console.log('🔗 LOADING MY CONNECTIONS');
+    console.log('   My email:', userEmail);
+    console.log('   My userId:', userId);
+    console.log('   Firebase path: connections/' + userId);
+    console.log('========================================');
     
     database.ref('connections/' + userId).on('value', (snapshot) => {
         const data = snapshot.val();
-        myConnections = data ? Object.keys(data) : [];
-        console.log('🔗 My connections:', myConnections);
+        
+        console.log('📦 Raw connections data from Firebase:', data);
+        
+        if (data) {
+            myConnections = Object.keys(data);
+            console.log('✅ Loaded connections:', myConnections);
+            console.log('✅ Number of connections:', myConnections.length);
+        } else {
+            myConnections = [];
+            console.log('ℹ️ No connections found (empty array)');
+        }
+        
+        console.log('🔄 Refreshing partner display with updated connections');
         displayPartners();
     });
 }
@@ -351,13 +371,16 @@ function createProfileCard(p) {
     return card;
 }
 
-// Send connection request
+// Send connection request with PROPER REQUEST TRACKING
 window.sendConnectionRequest = function(toProfileId, toUserName) {
-    if (!userEmail) return alert('Please log in first');
+    if (!userEmail) {
+        alert('❌ Please log in first');
+        return;
+    }
     
     const fromUserId = emailToId(userEmail);
     
-    // Get the recipient's email from their profile
+    // Get the recipient's profile
     const recipientProfile = partners.find(p => p.id === toProfileId);
     if (!recipientProfile) {
         alert('❌ Error: Could not find recipient profile');
@@ -366,42 +389,79 @@ window.sendConnectionRequest = function(toProfileId, toUserName) {
     
     const toUserId = emailToId(recipientProfile.email);
     
-    console.log('📤 Sending request');
-    console.log('From:', fromUserId, '(', userEmail, ')');
-    console.log('To:', toUserId, '(', recipientProfile.email, ')');
+    // IMPORTANT: Cannot send request to yourself
+    if (fromUserId === toUserId) {
+        alert('❌ You cannot send a request to yourself!');
+        return;
+    }
     
-    // Check if request already exists
+    console.log('📤 Sending connection request');
+    console.log('   From:', fromUserId, '(', userEmail, ')');
+    console.log('   To:', toUserId, '(', recipientProfile.email, ')');
+    
+    // Check if request already exists or if already connected
     database.ref('requests').once('value', (snapshot) => {
         const existing = snapshot.val();
+        
+        // Check for existing pending request
         if (existing) {
             const alreadySent = Object.values(existing).some(req => 
-                req.fromUserId === fromUserId && req.toUserId === toUserId && req.status === 'pending'
+                req.fromUserId === fromUserId && 
+                req.toUserId === toUserId && 
+                req.status === 'pending'
             );
+            
             if (alreadySent) {
-                return alert('⚠️ Request already sent to this user!');
+                alert('⚠️ You already sent a request to this user! Please wait for them to accept.');
+                return;
+            }
+            
+            // Check if they sent you a request (can accept instead)
+            const receivedRequest = Object.entries(existing).find(([id, req]) => 
+                req.fromUserId === toUserId && 
+                req.toUserId === fromUserId && 
+                req.status === 'pending'
+            );
+            
+            if (receivedRequest) {
+                const [requestId] = receivedRequest;
+                if (confirm(`${toUserName} already sent you a request! Accept it now?`)) {
+                    acceptRequest(requestId, toUserId);
+                }
+                return;
             }
         }
         
-        // Send new request
-        const requestData = {
-            fromUserId: fromUserId,
-            fromUserName: userName,
-            fromUserEmail: userEmail,
-            toUserId: toUserId,
-            toUserName: toUserName,
-            toUserEmail: recipientProfile.email,
-            status: 'pending',
-            timestamp: Date.now()
-        };
-        
-        console.log('💾 Saving request:', requestData);
-        
-        database.ref('requests').push(requestData).then(() => {
-            alert(`✅ Connection request sent to ${toUserName}!`);
-            console.log('✅ Request sent successfully');
-        }).catch(err => {
-            alert('❌ Error sending request: ' + err.message);
-            console.error('❌ Error:', err);
+        // Check if already connected
+        database.ref('connections/' + fromUserId + '/' + toUserId).once('value', (connSnap) => {
+            if (connSnap.exists()) {
+                alert('✅ You are already connected with this user!');
+                return;
+            }
+            
+            // All checks passed - Send new request
+            const requestData = {
+                fromUserId: fromUserId,
+                fromUserName: userName,
+                fromUserEmail: userEmail,
+                toUserId: toUserId,
+                toUserName: toUserName,
+                toUserEmail: recipientProfile.email,
+                status: 'pending',
+                timestamp: Date.now()
+            };
+            
+            console.log('💾 Saving request to Firebase:', requestData);
+            
+            database.ref('requests').push(requestData)
+                .then(() => {
+                    alert(`✅ Connection request sent to ${toUserName}!\n\nThey will be notified. Once they accept, you'll see their full profile.`);
+                    console.log('✅ Request sent successfully');
+                })
+                .catch(err => {
+                    alert('❌ Error sending request: ' + err.message);
+                    console.error('❌ Error:', err);
+                });
         });
     });
 };
@@ -691,17 +751,49 @@ function loadReceivedRequests() {
     });
 }
 
-// Accept request
+// Accept request with PROPER CONNECTION CREATION
 window.acceptRequest = function(requestId, fromUserId) {
     const toUserId = emailToId(userEmail);
     
-    database.ref('requests/' + requestId).update({status: 'accepted'}).then(() => {
-        database.ref('connections/' + toUserId + '/' + fromUserId).set(true);
-        database.ref('connections/' + fromUserId + '/' + toUserId).set(true);
+    console.log('========================================');
+    console.log('✅ ACCEPTING REQUEST');
+    console.log('   Request ID:', requestId);
+    console.log('   From user:', fromUserId);
+    console.log('   To user (me):', toUserId);
+    console.log('========================================');
+    
+    // Step 1: Update request status to 'accepted'
+    database.ref('requests/' + requestId).update({
+        status: 'accepted',
+        acceptedAt: Date.now()
+    })
+    .then(() => {
+        console.log('✅ Step 1: Request status updated to accepted');
         
-        alert('✅ Request accepted!');
+        // Step 2: Create bidirectional connection
+        const connectionPromises = [
+            database.ref('connections/' + toUserId + '/' + fromUserId).set(true),
+            database.ref('connections/' + fromUserId + '/' + toUserId).set(true)
+        ];
+        
+        return Promise.all(connectionPromises);
+    })
+    .then(() => {
+        console.log('✅ Step 2: Bidirectional connection created');
+        console.log('   Connection path 1: connections/' + toUserId + '/' + fromUserId);
+        console.log('   Connection path 2: connections/' + fromUserId + '/' + toUserId);
+        
+        alert('✅ Connection request accepted!\n\nYou can now see each other\'s full profiles.');
+        
+        // Step 3: Reload connections and requests
         loadReceivedRequests();
         loadMyConnections();
+        
+        console.log('✅ Step 3: Reloading connections and UI');
+    })
+    .catch(err => {
+        alert('❌ Error accepting request: ' + err.message);
+        console.error('❌ Error details:', err);
     });
 };
 
