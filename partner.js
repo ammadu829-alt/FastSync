@@ -42,7 +42,7 @@ function init() {
     loadPendingRequests();
 }
 
-// Load my connections (accepted requests) - WITH BETTER LOGGING
+// Load my connections (accepted requests) - FILTER OUT SELF
 function loadMyConnections() {
     if (!userEmail) {
         console.log('❌ No userEmail found, cannot load connections');
@@ -64,9 +64,18 @@ function loadMyConnections() {
         console.log('📦 Raw connections data from Firebase:', data);
         
         if (data) {
-            myConnections = Object.keys(data);
-            console.log('✅ Loaded connections:', myConnections);
-            console.log('✅ Number of connections:', myConnections.length);
+            // CRITICAL FIX: Filter out self from connections
+            const allConnections = Object.keys(data);
+            myConnections = allConnections.filter(connId => connId !== userId);
+            
+            console.log('📋 All connections from Firebase:', allConnections);
+            console.log('🔒 Filtered connections (excluding self):', myConnections);
+            console.log('✅ Number of valid connections:', myConnections.length);
+            
+            if (allConnections.length !== myConnections.length) {
+                console.warn('⚠️ WARNING: Your own userId was in your connections! This is a data error.');
+                console.warn('⚠️ Removed self-connection:', userId);
+            }
         } else {
             myConnections = [];
             console.log('ℹ️ No connections found (empty array)');
@@ -154,10 +163,16 @@ function createProfileCard(p) {
     
     // CRITICAL: Check if I'm connected with this user - MORE PRECISE CHECK
     const recipientUserId = emailToId(p.email);
+    const myUserId = emailToId(userEmail);
+    
+    // SUPER IMPORTANT: Cannot be "connected" to yourself!
+    if (recipientUserId === myUserId) {
+        console.log('⚠️ Checking my own profile - skipping connection check');
+    }
     
     // Extra validation: Make sure myConnections is an array and recipientUserId exists
     let isConnected = false;
-    if (Array.isArray(myConnections) && myConnections.length > 0 && recipientUserId) {
+    if (Array.isArray(myConnections) && myConnections.length > 0 && recipientUserId && recipientUserId !== myUserId) {
         isConnected = myConnections.includes(recipientUserId);
         
         // Double check: Also verify the connection exists in the other direction
@@ -168,16 +183,16 @@ function createProfileCard(p) {
     // STRICT PRIVACY RULE with ADDITIONAL SAFETY CHECK
     // Rule: ONLY show private info if:
     // 1. It's definitely MY profile (both userIds match)
-    // 2. OR (we're connected AND it's NOT my profile)
+    // 2. OR (we're connected AND it's NOT my profile AND recipient is not myself)
     
-    const myUserId = emailToId(userEmail);
-    const isActuallyConnected = isConnected && (recipientUserId !== myUserId);
+    const isActuallyConnected = isConnected && (recipientUserId !== myUserId) && !isMine;
     
     console.log('   🔐 My userId:', myUserId);
     console.log('   🔐 Recipient userId:', recipientUserId);
     console.log('   🔐 Are they different users?:', recipientUserId !== myUserId);
-    console.log('   🔐 Actually connected (excluding self)?:', isActuallyConnected);
+    console.log('   🔐 Is actually connected (excluding self)?:', isActuallyConnected);
     
+    // FINAL DECISION: Only show private info if it's MY profile OR truly connected to different user
     const showPrivateInfo = (isMine === true) || (isActuallyConnected === true);
     
     // Debug logging - Check console to see what's happening
