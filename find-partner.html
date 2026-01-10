@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Find Partner - FASTSync</title>
     <link rel="stylesheet" href="partner.css">
+     <link rel="stylesheet" href="chatbot.css"> 
 </head>
 <body>
     <nav class="navbar">
@@ -396,8 +397,58 @@
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database-compat.js"></script>
     
     <!-- Course data must load before partner.js -->
+     <!-- CHATBOT START -->
+    <div class="chat-button" onclick="toggleChat()">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+        </svg>
+        <div class="chat-badge" id="chatBadge" style="display: none;">1</div>
+    </div>
+
+    <div class="chat-window" id="chatWindow">
+        <div class="chat-header">
+            <div class="chat-header-left">
+                <div class="bot-avatar">🤖</div>
+                <div class="chat-header-info">
+                    <h3>FastSync Assistant</h3>
+                    <p>Always here to help!</p>
+                </div>
+            </div>
+            <button class="chat-close" onclick="toggleChat()">✕</button>
+        </div>
+
+        <div class="chat-messages" id="chatMessages">
+            <div class="message bot">
+                <div class="message-avatar">🤖</div>
+                <div class="message-content">
+                    Hi! I'm your FastSync Assistant! 👋<br><br>
+                    I can help you with:
+                    <div class="quick-actions">
+                        <button class="quick-action-btn" onclick="sendQuickMessage('Find partners')">🔍 Find Partners</button>
+                        <button class="quick-action-btn" onclick="sendQuickMessage('Project ideas')">💡 Project Ideas</button>
+                        <button class="quick-action-btn" onclick="sendQuickMessage('How to use FastSync')">❓ Help</button>
+                        <button class="quick-action-btn" onclick="sendQuickMessage('Skills to learn')">📚 Learn Skills</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="chat-input-container">
+            <div class="chat-input-wrapper">
+                <input type="text" class="chat-input" id="chatInput" placeholder="Type your message..." onkeypress="handleKeyPress(event)">
+                <button class="chat-send-btn" onclick="sendMessage()">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </div>
+    <!-- CHATBOT END -->
     <script src="courses-data.js"></script>
     <script src="partner.js"></script>
+     <script src="chatbot.js"></script>
 </body>
 </html>
+
 
