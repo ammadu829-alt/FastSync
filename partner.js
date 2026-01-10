@@ -132,13 +132,33 @@ function createProfileCard(p) {
     // CRITICAL: Check if this is MY profile (exact email match)
     const isMine = (p.email && userEmail && p.email.toLowerCase() === userEmail.toLowerCase());
     
-    // CRITICAL: Check if I'm connected with this user
+    // CRITICAL: Check if I'm connected with this user - MORE PRECISE CHECK
     const recipientUserId = emailToId(p.email);
-    const isConnected = myConnections.includes(recipientUserId);
     
-    // STRICT PRIVACY RULE: Show full info ONLY if it's my profile OR we're connected
-    // Default to FALSE for safety
-    const showPrivateInfo = isMine === true || isConnected === true;
+    // Extra validation: Make sure myConnections is an array and recipientUserId exists
+    let isConnected = false;
+    if (Array.isArray(myConnections) && myConnections.length > 0 && recipientUserId) {
+        isConnected = myConnections.includes(recipientUserId);
+        
+        // Double check: Also verify the connection exists in the other direction
+        console.log('   🔍 Checking if', recipientUserId, 'is in', myConnections);
+        console.log('   📋 Array includes result:', myConnections.includes(recipientUserId));
+    }
+    
+    // STRICT PRIVACY RULE with ADDITIONAL SAFETY CHECK
+    // Rule: ONLY show private info if:
+    // 1. It's definitely MY profile (both userIds match)
+    // 2. OR (we're connected AND it's NOT my profile)
+    
+    const myUserId = emailToId(userEmail);
+    const isActuallyConnected = isConnected && (recipientUserId !== myUserId);
+    
+    console.log('   🔐 My userId:', myUserId);
+    console.log('   🔐 Recipient userId:', recipientUserId);
+    console.log('   🔐 Are they different users?:', recipientUserId !== myUserId);
+    console.log('   🔐 Actually connected (excluding self)?:', isActuallyConnected);
+    
+    const showPrivateInfo = (isMine === true) || (isActuallyConnected === true);
     
     // Debug logging - Check console to see what's happening
     console.log('========================================');
@@ -147,7 +167,8 @@ function createProfileCard(p) {
     console.log('   My email:', userEmail);
     console.log('   Profile userId:', recipientUserId);
     console.log('   Is mine?:', isMine);
-    console.log('   My connections:', myConnections);
+    console.log('   My connections array:', JSON.stringify(myConnections));
+    console.log('   Number of connections:', myConnections.length);
     console.log('   Is connected?:', isConnected);
     console.log('   ✅ SHOW PRIVATE INFO?:', showPrivateInfo);
     console.log('========================================');
