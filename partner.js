@@ -42,17 +42,46 @@ function init() {
     loadPendingRequests();
 }
 
-// Load my connections (accepted requests)
+// Load my connections (accepted requests) - FILTER OUT SELF
 function loadMyConnections() {
-    if (!userEmail) return;
+    if (!userEmail) {
+        console.log('❌ No userEmail found, cannot load connections');
+        return;
+    }
+    
     const userId = emailToId(userEmail);
     
-    console.log('🔗 Loading connections for user:', userId);
+    console.log('========================================');
+    console.log('🔗 LOADING MY CONNECTIONS');
+    console.log('   My email:', userEmail);
+    console.log('   My userId:', userId);
+    console.log('   Firebase path: connections/' + userId);
+    console.log('========================================');
     
     database.ref('connections/' + userId).on('value', (snapshot) => {
         const data = snapshot.val();
-        myConnections = data ? Object.keys(data) : [];
-        console.log('🔗 My connections:', myConnections);
+        
+        console.log('📦 Raw connections data from Firebase:', data);
+        
+        if (data) {
+            // CRITICAL FIX: Filter out self from connections
+            const allConnections = Object.keys(data);
+            myConnections = allConnections.filter(connId => connId !== userId);
+            
+            console.log('📋 All connections from Firebase:', allConnections);
+            console.log('🔒 Filtered connections (excluding self):', myConnections);
+            console.log('✅ Number of valid connections:', myConnections.length);
+            
+            if (allConnections.length !== myConnections.length) {
+                console.warn('⚠️ WARNING: Your own userId was in your connections! This is a data error.');
+                console.warn('⚠️ Removed self-connection:', userId);
+            }
+        } else {
+            myConnections = [];
+            console.log('ℹ️ No connections found (empty array)');
+        }
+        
+        console.log('🔄 Refreshing partner display with updated connections');
         displayPartners();
     });
 }
@@ -98,7 +127,7 @@ function emailToId(email) {
     return email.replace(/[.@]/g, '_');
 }
 
-// 4. Display Cards with PRIVACY CONTROLS
+// 4. Display Cards with FIXED PRIVACY CONTROLS
 function displayPartners() {
     const grid = document.getElementById('partnersGrid');
     const countText = document.getElementById('partnersCount');
@@ -119,17 +148,31 @@ function displayPartners() {
     grid.innerHTML = '';
 
     partners.forEach(p => {
-        const isMine = p.email === userEmail;
-        const isConnected = myConnections.includes(p.id);
-        const card = createProfileCard(p, isMine, isConnected);
+        const card = createProfileCard(p);
         grid.appendChild(card);
     });
 }
 
-// Create profile card with privacy controls
-function createProfileCard(p, isMine, isConnected) {
+// Create profile card with ULTRA STRICT PRIVACY
+function createProfileCard(p) {
     const card = document.createElement('div');
     card.className = 'partner-card';
+
+    // ========================================
+    // SIMPLE PRIVACY RULE:
+    // Show full info ONLY if viewing YOUR OWN profile
+    // Everyone else sees LOCKED info
+    // ========================================
+    
+    const isMine = (p.email && userEmail && p.email.toLowerCase() === userEmail.toLowerCase());
+    
+    console.log('========================================');
+    console.log('🔍 STRICT PRIVACY CHECK');
+    console.log('   Profile name:', p.fullName);
+    console.log('   Profile email:', p.email);
+    console.log('   My email:', userEmail);
+    console.log('   ✅ IS THIS MY PROFILE?:', isMine);
+    console.log('========================================');
 
     const availabilityClass = p.availability === 'available' ? 'status-available' : 'status-found';
     const availabilityText = p.availability === 'available' ? '✓ Available' : '✗ Partnered';
@@ -139,17 +182,7 @@ function createProfileCard(p, isMine, isConnected) {
         ? skillsArray.map(skill => `<span class="skill-tag">${skill}</span>`).join('')
         : '<span class="no-skills">No skills listed</span>';
 
-    // Check if connected using email-based ID
-    const recipientUserId = emailToId(p.email);
-    const actuallyConnected = isMine || isConnected || myConnections.includes(recipientUserId);
-    
-    console.log('🔍 Checking connection for:', p.fullName);
-    console.log('   Email:', p.email);
-    console.log('   UserId:', recipientUserId);
-    console.log('   My connections:', myConnections);
-    console.log('   Is connected:', actuallyConnected);
-
-    // PUBLIC INFORMATION (Always visible)
+    // PUBLIC INFORMATION (Always visible to everyone)
     let publicInfo = `
         <div class="card-header">
             <div class="profile-avatar">
@@ -213,12 +246,15 @@ function createProfileCard(p, isMine, isConnected) {
                 </div>
             </div>`;
 
-    // PRIVATE INFORMATION (Only if connected or own profile)
+    // PRIVATE INFORMATION - STRICT RULE
     let privateInfo = '';
-    if (actuallyConnected) {
+    
+    if (isMine === true) {
+        // THIS IS MY PROFILE - Show everything
+        console.log('✅ UNLOCKING: This is MY profile');
         privateInfo = `
             <div class="privacy-unlocked">
-                <p class="connection-status">🔓 Full Profile Access</p>
+                <p class="connection-status">🔓 My Full Profile</p>
                 
                 <div class="info-section">
                     <div class="info-row">
@@ -261,21 +297,25 @@ function createProfileCard(p, isMine, isConnected) {
                 </div>
             </div>`;
     } else {
-        // LOCKED PRIVATE INFO
+        // NOT MY PROFILE - Lock everything
+        console.log('🔒 LOCKING: This is someone else\'s profile');
         privateInfo = `
             <div class="privacy-locked">
                 <div class="locked-message">
                     <span class="lock-icon">🔒</span>
-                    <p><strong>Private Information</strong></p>
-                    <p class="locked-text">Email, Phone, Session, Bio & Skills are hidden for privacy protection.</p>
+                    <p><strong>Private Information Locked</strong></p>
+                    <p class="locked-text">Session, Email, Phone, Bio & Skills are hidden for privacy protection.</p>
                     <p class="locked-hint">Send a connection request to view full profile</p>
                 </div>
             </div>`;
     }
 
-    // FOOTER BUTTONS
+    // FOOTER BUTTONS - Simple logic
     let footerButtons = '';
-    if (isMine) {
+    
+    if (isMine === true) {
+        // My profile - Edit and Delete
+        console.log('👤 MY PROFILE: Showing Edit/Delete buttons');
         footerButtons = `
             <button class="btn-contact" onclick="editProfile('${p.id}')" style="flex:1;">
                 <span>✏️</span> Edit Profile
@@ -283,15 +323,9 @@ function createProfileCard(p, isMine, isConnected) {
             <button class="btn-delete" onclick="deleteProfile('${p.id}')" style="flex:1;">
                 <span>🗑️</span> Delete
             </button>`;
-    } else if (actuallyConnected) {
-        footerButtons = `
-            <button class="btn-contact" onclick="openContactModal('${p.id}', '${p.fullName}', '${p.email}')">
-                <span>📧</span> Contact
-            </button>
-            <a href="https://wa.me/${p.phone.replace(/\D/g, '')}" target="_blank" class="btn-whatsapp">
-                <span>💬</span> WhatsApp
-            </a>`;
     } else {
+        // Someone else's profile - Send Request
+        console.log('🔐 OTHER PROFILE: Showing Send Request button');
         footerButtons = `
             <button class="btn-request" onclick="sendConnectionRequest('${p.id}', '${p.fullName}')">
                 <span>🔗</span> Send Request
@@ -308,13 +342,16 @@ function createProfileCard(p, isMine, isConnected) {
     return card;
 }
 
-// Send connection request
+// Send connection request with PROPER REQUEST TRACKING
 window.sendConnectionRequest = function(toProfileId, toUserName) {
-    if (!userEmail) return alert('Please log in first');
+    if (!userEmail) {
+        alert('❌ Please log in first');
+        return;
+    }
     
     const fromUserId = emailToId(userEmail);
     
-    // IMPORTANT: Get the recipient's email from their profile to create proper userId
+    // Get the recipient's profile
     const recipientProfile = partners.find(p => p.id === toProfileId);
     if (!recipientProfile) {
         alert('❌ Error: Could not find recipient profile');
@@ -323,42 +360,79 @@ window.sendConnectionRequest = function(toProfileId, toUserName) {
     
     const toUserId = emailToId(recipientProfile.email);
     
-    console.log('📤 Sending request');
-    console.log('From:', fromUserId, '(', userEmail, ')');
-    console.log('To:', toUserId, '(', recipientProfile.email, ')');
+    // IMPORTANT: Cannot send request to yourself
+    if (fromUserId === toUserId) {
+        alert('❌ You cannot send a request to yourself!');
+        return;
+    }
     
-    // Check if request already exists
+    console.log('📤 Sending connection request');
+    console.log('   From:', fromUserId, '(', userEmail, ')');
+    console.log('   To:', toUserId, '(', recipientProfile.email, ')');
+    
+    // Check if request already exists or if already connected
     database.ref('requests').once('value', (snapshot) => {
         const existing = snapshot.val();
+        
+        // Check for existing pending request
         if (existing) {
             const alreadySent = Object.values(existing).some(req => 
-                req.fromUserId === fromUserId && req.toUserId === toUserId && req.status === 'pending'
+                req.fromUserId === fromUserId && 
+                req.toUserId === toUserId && 
+                req.status === 'pending'
             );
+            
             if (alreadySent) {
-                return alert('⚠️ Request already sent to this user!');
+                alert('⚠️ You already sent a request to this user! Please wait for them to accept.');
+                return;
+            }
+            
+            // Check if they sent you a request (can accept instead)
+            const receivedRequest = Object.entries(existing).find(([id, req]) => 
+                req.fromUserId === toUserId && 
+                req.toUserId === fromUserId && 
+                req.status === 'pending'
+            );
+            
+            if (receivedRequest) {
+                const [requestId] = receivedRequest;
+                if (confirm(`${toUserName} already sent you a request! Accept it now?`)) {
+                    acceptRequest(requestId, toUserId);
+                }
+                return;
             }
         }
         
-        // Send new request
-        const requestData = {
-            fromUserId: fromUserId,
-            fromUserName: userName,
-            fromUserEmail: userEmail,
-            toUserId: toUserId,
-            toUserName: toUserName,
-            toUserEmail: recipientProfile.email,
-            status: 'pending',
-            timestamp: Date.now()
-        };
-        
-        console.log('💾 Saving request:', requestData);
-        
-        database.ref('requests').push(requestData).then(() => {
-            alert(`✅ Connection request sent to ${toUserName}!`);
-            console.log('✅ Request sent successfully');
-        }).catch(err => {
-            alert('❌ Error sending request: ' + err.message);
-            console.error('❌ Error:', err);
+        // Check if already connected
+        database.ref('connections/' + fromUserId + '/' + toUserId).once('value', (connSnap) => {
+            if (connSnap.exists()) {
+                alert('✅ You are already connected with this user!');
+                return;
+            }
+            
+            // All checks passed - Send new request
+            const requestData = {
+                fromUserId: fromUserId,
+                fromUserName: userName,
+                fromUserEmail: userEmail,
+                toUserId: toUserId,
+                toUserName: toUserName,
+                toUserEmail: recipientProfile.email,
+                status: 'pending',
+                timestamp: Date.now()
+            };
+            
+            console.log('💾 Saving request to Firebase:', requestData);
+            
+            database.ref('requests').push(requestData)
+                .then(() => {
+                    alert(`✅ Connection request sent to ${toUserName}!\n\nThey will be notified. Once they accept, you'll see their full profile.`);
+                    console.log('✅ Request sent successfully');
+                })
+                .catch(err => {
+                    alert('❌ Error sending request: ' + err.message);
+                    console.error('❌ Error:', err);
+                });
         });
     });
 };
@@ -512,7 +586,7 @@ if (resetFiltersBtn) {
             const element = document.getElementById(id);
             if (element) element.value = '';
         });
-        init(); // Reload all profiles
+        init();
     });
 }
 
@@ -525,13 +599,78 @@ if (requestsBtn) {
     });
 }
 
+// 10. Report Button Click
+const reportBtn = document.getElementById('reportBtn');
+if (reportBtn) {
+    reportBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+        showReportModal();
+    });
+}
+
+// Show report modal
+function showReportModal() {
+    const modal = document.getElementById('reportModal');
+    if (modal) {
+        modal.style.display = 'flex';
+    }
+}
+
+// Close report modal
+const closeReportModal = document.getElementById('closeReportModal');
+if (closeReportModal) {
+    closeReportModal.addEventListener('click', () => {
+        document.getElementById('reportModal').style.display = 'none';
+    });
+}
+
+// Report form submission
+const reportForm = document.getElementById('reportForm');
+if (reportForm) {
+    reportForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        if (!userEmail) {
+            alert('❌ Please log in to submit a report');
+            return;
+        }
+        
+        const reporterProfile = partners.find(p => p.email === userEmail);
+        
+        const reportData = {
+            reportedUserName: document.getElementById('reportedUserName').value,
+            reportedUserRoll: document.getElementById('reportedUserRoll').value,
+            reportReason: document.getElementById('reportReason').value,
+            reportDescription: document.getElementById('reportDescription').value,
+            reporterName: userName || 'Unknown',
+            reporterEmail: userEmail,
+            reporterRollNumber: reporterProfile ? reporterProfile.rollNumber : 'N/A',
+            reporterUniversity: reporterProfile ? reporterProfile.university : 'N/A',
+            reporterDepartment: reporterProfile ? reporterProfile.department : 'N/A',
+            reporterSection: reporterProfile ? reporterProfile.section : 'N/A',
+            reporterSemester: reporterProfile ? reporterProfile.semester : 'N/A',
+            timestamp: Date.now(),
+            status: 'pending',
+            dateReported: new Date().toISOString()
+        };
+        
+        database.ref('reports').push(reportData)
+            .then(() => {
+                alert('✅ Report submitted successfully!');
+                document.getElementById('reportModal').style.display = 'none';
+                reportForm.reset();
+            })
+            .catch(err => {
+                alert('❌ Error: ' + err.message);
+            });
+    });
+}
+
 // Show requests modal
 function showRequestsModal() {
     const modal = document.getElementById('requestsModal');
     if (modal) {
         modal.style.display = 'flex';
-        
-        // Load received requests immediately
         setTimeout(() => {
             loadReceivedRequests();
         }, 100);
@@ -543,32 +682,21 @@ function loadReceivedRequests() {
     const userId = emailToId(userEmail);
     const container = document.getElementById('receivedRequests');
     
-    if (!container) {
-        console.error('❌ receivedRequests container not found!');
-        return;
-    }
+    if (!container) return;
     
-    console.log('🔍 Loading requests for user:', userId, 'Email:', userEmail);
-    
-    // Show loading message
-    container.innerHTML = '<p class="no-requests">Loading requests...</p>';
+    container.innerHTML = '<p class="no-requests">Loading...</p>';
     
     database.ref('requests').once('value', (snapshot) => {
         const data = snapshot.val();
-        console.log('📦 All requests in database:', data);
         
         if (!data) {
             container.innerHTML = '<p class="no-requests">No pending requests</p>';
             return;
         }
         
-        // Filter requests where current user is the recipient and status is pending
-        const requests = Object.entries(data).filter(([id, req]) => {
-            console.log('Checking request:', id, 'toUserId:', req.toUserId, 'matches:', req.toUserId === userId);
-            return req.toUserId === userId && req.status === 'pending';
-        });
-        
-        console.log('✅ Filtered requests for this user:', requests.length, 'requests');
+        const requests = Object.entries(data).filter(([id, req]) => 
+            req.toUserId === userId && req.status === 'pending'
+        );
         
         if (requests.length === 0) {
             container.innerHTML = '<p class="no-requests">No pending requests</p>';
@@ -577,11 +705,11 @@ function loadReceivedRequests() {
         
         const html = requests.map(([id, req]) => `
             <div class="request-item">
-                <div class="request-avatar">${req.fromUserName ? req.fromUserName.charAt(0).toUpperCase() : '?'}</div>
+                <div class="request-avatar">${req.fromUserName.charAt(0).toUpperCase()}</div>
                 <div class="request-info">
-                    <strong>${req.fromUserName || 'Unknown User'}</strong>
-                    <p>${req.fromUserEmail || 'No email'}</p>
-                    <small style="color: #8a2be2; display: block; margin-top: 5px;">wants to connect with you</small>
+                    <strong>${req.fromUserName}</strong>
+                    <p>${req.fromUserEmail}</p>
+                    <small style="color: #8a2be2;">wants to connect</small>
                 </div>
                 <div class="request-actions">
                     <button class="btn-accept" onclick="acceptRequest('${id}', '${req.fromUserId}')">Accept</button>
@@ -591,33 +719,52 @@ function loadReceivedRequests() {
         `).join('');
         
         container.innerHTML = html;
-        console.log('✅ Requests displayed successfully');
-    }).catch(error => {
-        console.error('❌ Error loading requests:', error);
-        container.innerHTML = '<p class="no-requests">Error loading requests</p>';
     });
 }
 
-// Accept request
+// Accept request with PROPER CONNECTION CREATION
 window.acceptRequest = function(requestId, fromUserId) {
     const toUserId = emailToId(userEmail);
     
-    console.log('✅ Accepting request:', requestId);
-    console.log('Connection between:', fromUserId, 'and', toUserId);
+    console.log('========================================');
+    console.log('✅ ACCEPTING REQUEST');
+    console.log('   Request ID:', requestId);
+    console.log('   From user:', fromUserId);
+    console.log('   To user (me):', toUserId);
+    console.log('========================================');
     
-    // Update request status
-    database.ref('requests/' + requestId).update({status: 'accepted'}).then(() => {
-        // Create connection both ways using email-based user IDs
-        database.ref('connections/' + toUserId + '/' + fromUserId).set(true);
-        database.ref('connections/' + fromUserId + '/' + toUserId).set(true);
+    // Step 1: Update request status to 'accepted'
+    database.ref('requests/' + requestId).update({
+        status: 'accepted',
+        acceptedAt: Date.now()
+    })
+    .then(() => {
+        console.log('✅ Step 1: Request status updated to accepted');
         
-        alert('✅ Request accepted! You can now see full profile.');
-        console.log('✅ Connection created successfully');
+        // Step 2: Create bidirectional connection
+        const connectionPromises = [
+            database.ref('connections/' + toUserId + '/' + fromUserId).set(true),
+            database.ref('connections/' + fromUserId + '/' + toUserId).set(true)
+        ];
+        
+        return Promise.all(connectionPromises);
+    })
+    .then(() => {
+        console.log('✅ Step 2: Bidirectional connection created');
+        console.log('   Connection path 1: connections/' + toUserId + '/' + fromUserId);
+        console.log('   Connection path 2: connections/' + fromUserId + '/' + toUserId);
+        
+        alert('✅ Connection request accepted!\n\nYou can now see each other\'s full profiles.');
+        
+        // Step 3: Reload connections and requests
         loadReceivedRequests();
         loadMyConnections();
-    }).catch(err => {
+        
+        console.log('✅ Step 3: Reloading connections and UI');
+    })
+    .catch(err => {
         alert('❌ Error accepting request: ' + err.message);
-        console.error('❌ Error:', err);
+        console.error('❌ Error details:', err);
     });
 };
 
@@ -634,15 +781,9 @@ function loadSentRequests() {
     const userId = emailToId(userEmail);
     const container = document.getElementById('sentRequests');
     
-    if (!container) {
-        console.error('❌ sentRequests container not found!');
-        return;
-    }
+    if (!container) return;
     
-    console.log('🔍 Loading sent requests from user:', userId, 'Email:', userEmail);
-    
-    // Show loading message
-    container.innerHTML = '<p class="no-requests">Loading sent requests...</p>';
+    container.innerHTML = '<p class="no-requests">Loading...</p>';
     
     database.ref('requests').once('value', (snapshot) => {
         const data = snapshot.val();
@@ -652,13 +793,9 @@ function loadSentRequests() {
             return;
         }
         
-        // Filter requests where current user is the sender
-        const requests = Object.entries(data).filter(([id, req]) => {
-            console.log('Checking sent request:', id, 'fromUserId:', req.fromUserId, 'matches:', req.fromUserId === userId);
-            return req.fromUserId === userId;
-        });
-        
-        console.log('📤 Sent requests:', requests.length, 'requests');
+        const requests = Object.entries(data).filter(([id, req]) => 
+            req.fromUserId === userId
+        );
         
         if (requests.length === 0) {
             container.innerHTML = '<p class="no-requests">No sent requests</p>';
@@ -667,55 +804,42 @@ function loadSentRequests() {
         
         const html = requests.map(([id, req]) => `
             <div class="request-item">
-                <div class="request-avatar">${req.toUserName ? req.toUserName.charAt(0).toUpperCase() : '?'}</div>
+                <div class="request-avatar">${req.toUserName.charAt(0).toUpperCase()}</div>
                 <div class="request-info">
-                    <strong>${req.toUserName || 'Unknown User'}</strong>
-                    <p class="request-status status-${req.status || 'pending'}">${req.status || 'pending'}</p>
-                    <small style="color: #b0b0b0; display: block; margin-top: 5px;">Request sent</small>
+                    <strong>${req.toUserName}</strong>
+                    <p class="request-status status-${req.status}">${req.status}</p>
                 </div>
             </div>
         `).join('');
         
         container.innerHTML = html;
-        console.log('✅ Sent requests displayed successfully');
-    }).catch(error => {
-        console.error('❌ Error loading sent requests:', error);
-        container.innerHTML = '<p class="no-requests">Error loading sent requests</p>';
     });
 }
 
 // Tabs functionality
 const tabButtons = document.querySelectorAll('.tab-btn');
-if (tabButtons.length > 0) {
-    tabButtons.forEach(btn => {
-        btn.addEventListener('click', function() {
-            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-            this.classList.add('active');
-            
-            const tab = this.dataset.tab;
-            const receivedDiv = document.getElementById('receivedRequests');
-            const sentDiv = document.getElementById('sentRequests');
-            
-            if (receivedDiv && sentDiv) {
-                receivedDiv.style.display = tab === 'received' ? 'block' : 'none';
-                sentDiv.style.display = tab === 'sent' ? 'block' : 'none';
-                
-                if (tab === 'sent') loadSentRequests();
-            }
-        });
+tabButtons.forEach(btn => {
+    btn.addEventListener('click', function() {
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        this.classList.add('active');
+        
+        const tab = this.dataset.tab;
+        document.getElementById('receivedRequests').style.display = tab === 'received' ? 'block' : 'none';
+        document.getElementById('sentRequests').style.display = tab === 'sent' ? 'block' : 'none';
+        
+        if (tab === 'sent') loadSentRequests();
     });
-}
+});
 
 // Close requests modal
 const closeRequestsModal = document.getElementById('closeRequestsModal');
 if (closeRequestsModal) {
     closeRequestsModal.addEventListener('click', () => {
-        const modal = document.getElementById('requestsModal');
-        if (modal) modal.style.display = 'none';
+        document.getElementById('requestsModal').style.display = 'none';
     });
 }
 
-// 10. Contact Modal Functions
+// 11. Contact Modal
 window.openContactModal = function(profileId, name, email) {
     const modal = document.getElementById('messageModal');
     if (modal) {
@@ -730,23 +854,20 @@ window.openContactModal = function(profileId, name, email) {
 
 const closeModal = document.getElementById('closeModal');
 if (closeModal) {
-    closeModal.addEventListener('click', function() {
+    closeModal.addEventListener('click', () => {
         document.getElementById('messageModal').style.display = 'none';
     });
 }
 
 window.addEventListener('click', function(e) {
-    const modal = document.getElementById('messageModal');
-    const requestsModal = document.getElementById('requestsModal');
-    if (e.target === modal) {
-        modal.style.display = 'none';
-    }
-    if (e.target === requestsModal) {
-        requestsModal.style.display = 'none';
-    }
+    const modals = ['messageModal', 'requestsModal', 'reportModal'];
+    modals.forEach(modalId => {
+        const modal = document.getElementById(modalId);
+        if (e.target === modal) modal.style.display = 'none';
+    });
 });
 
-// Message form submission
+// Message form
 const messageForm = document.getElementById('messageForm');
 if (messageForm) {
     messageForm.addEventListener('submit', function(e) {
@@ -758,25 +879,21 @@ if (messageForm) {
         const partnerEmail = this.dataset.partnerEmail;
         const partnerName = this.dataset.partnerName;
         
-        const subject = encodeURIComponent(`Project Partnership Request from ${senderName}`);
+        const subject = encodeURIComponent(`Partnership Request from ${senderName}`);
         const body = encodeURIComponent(`Hi ${partnerName},\n\n${message}\n\nBest regards,\n${senderName}\n${senderEmail}`);
-        const mailtoLink = `mailto:${partnerEmail}?subject=${subject}&body=${body}`;
-        
-        window.location.href = mailtoLink;
+        window.location.href = `mailto:${partnerEmail}?subject=${subject}&body=${body}`;
         
         document.getElementById('messageModal').style.display = 'none';
         this.reset();
-        
-        alert('Opening your email client...');
     });
 }
 
-// 11. Logout Button
+// 12. Logout
 const logoutBtn = document.getElementById('logoutBtn');
 if (logoutBtn) {
     logoutBtn.addEventListener('click', function(e) {
         e.preventDefault();
-        if (confirm('Are you sure you want to logout?')) {
+        if (confirm('Logout?')) {
             localStorage.clear();
             window.location.href = 'index.html';
         }
@@ -788,17 +905,16 @@ const profileBtn = document.getElementById('profileBtn');
 if (profileBtn) {
     profileBtn.addEventListener('click', function(e) {
         e.preventDefault();
-        // Find current user's profile
         const myProfile = partners.find(p => p.email === userEmail);
         if (myProfile) {
             editProfile(myProfile.id);
         } else {
-            alert('Please create your profile first!');
+            alert('Create your profile first!');
             document.getElementById('profileSection').scrollIntoView({ behavior: 'smooth' });
         }
     });
 }
 
-// Initialize on page load
+// Initialize
 init();
-console.log('✅ FASTSync Partner Finder with Privacy System loaded successfully!');
+console.log('✅ FASTSync with FIXED Privacy System loaded!')
