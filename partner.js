@@ -369,7 +369,9 @@ window.sendConnectionRequest = function(toProfileId, toUserName) {
     console.log('📤 Sending connection request');
     console.log('   From:', fromUserId, '(', userEmail, ')');
     console.log('   To:', toUserId, '(', recipientProfile.email, ')');
-    
+     // Check if request already exists or if already connected
+    database.ref('requests').once('value', (snapshot) => {
+        const existing = snapshot.val();
    
         
         // Check for existing pending request
@@ -916,4 +918,5 @@ if (profileBtn) {
 // Initialize
 init();
 console.log('✅ FASTSync with FIXED Privacy System loaded!')
+
 
