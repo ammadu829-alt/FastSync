@@ -98,7 +98,7 @@ function emailToId(email) {
     return email.replace(/[.@]/g, '_');
 }
 
-// 4. Display Cards with PRIVACY CONTROLS
+// 4. Display Cards with FIXED PRIVACY CONTROLS
 function displayPartners() {
     const grid = document.getElementById('partnersGrid');
     const countText = document.getElementById('partnersCount');
@@ -119,17 +119,32 @@ function displayPartners() {
     grid.innerHTML = '';
 
     partners.forEach(p => {
-        const isMine = p.email === userEmail;
-        const isConnected = myConnections.includes(p.id);
-        const card = createProfileCard(p, isMine, isConnected);
+        const card = createProfileCard(p);
         grid.appendChild(card);
     });
 }
 
-// Create profile card with privacy controls
-function createProfileCard(p, isMine, isConnected) {
+// Create profile card with FIXED privacy controls
+function createProfileCard(p) {
     const card = document.createElement('div');
     card.className = 'partner-card';
+
+    // Check if this is MY profile
+    const isMine = p.email === userEmail;
+    
+    // Check if I'm connected with this user
+    const recipientUserId = emailToId(p.email);
+    const isConnected = myConnections.includes(recipientUserId);
+    
+    // PRIVACY RULE: Show full info ONLY if it's my profile OR we're connected
+    const showPrivateInfo = isMine || isConnected;
+    
+    console.log('🔍 Profile Check:', p.fullName);
+    console.log('   My email:', userEmail);
+    console.log('   Profile email:', p.email);
+    console.log('   Is mine:', isMine);
+    console.log('   Is connected:', isConnected);
+    console.log('   Show private info:', showPrivateInfo);
 
     const availabilityClass = p.availability === 'available' ? 'status-available' : 'status-found';
     const availabilityText = p.availability === 'available' ? '✓ Available' : '✗ Partnered';
@@ -139,17 +154,7 @@ function createProfileCard(p, isMine, isConnected) {
         ? skillsArray.map(skill => `<span class="skill-tag">${skill}</span>`).join('')
         : '<span class="no-skills">No skills listed</span>';
 
-    // Check if connected using email-based ID
-    const recipientUserId = emailToId(p.email);
-    const actuallyConnected = isMine || isConnected || myConnections.includes(recipientUserId);
-    
-    console.log('🔍 Checking connection for:', p.fullName);
-    console.log('   Email:', p.email);
-    console.log('   UserId:', recipientUserId);
-    console.log('   My connections:', myConnections);
-    console.log('   Is connected:', actuallyConnected);
-
-    // PUBLIC INFORMATION (Always visible)
+    // PUBLIC INFORMATION (Always visible to everyone)
     let publicInfo = `
         <div class="card-header">
             <div class="profile-avatar">
@@ -213,9 +218,10 @@ function createProfileCard(p, isMine, isConnected) {
                 </div>
             </div>`;
 
-    // PRIVATE INFORMATION (Only if connected or own profile)
+    // PRIVATE INFORMATION - ONLY show if it's MY profile OR we're connected
     let privateInfo = '';
-    if (actuallyConnected) {
+    if (showPrivateInfo) {
+        // UNLOCKED - Show full private information
         privateInfo = `
             <div class="privacy-unlocked">
                 <p class="connection-status">🔓 Full Profile Access</p>
@@ -261,13 +267,13 @@ function createProfileCard(p, isMine, isConnected) {
                 </div>
             </div>`;
     } else {
-        // LOCKED PRIVATE INFO
+        // LOCKED - Hide private information
         privateInfo = `
             <div class="privacy-locked">
                 <div class="locked-message">
                     <span class="lock-icon">🔒</span>
-                    <p><strong>Private Information</strong></p>
-                    <p class="locked-text">Email, Phone, Session, Bio & Skills are hidden for privacy protection.</p>
+                    <p><strong>Private Information Locked</strong></p>
+                    <p class="locked-text">Session, Email, Phone, Bio & Skills are hidden for privacy protection.</p>
                     <p class="locked-hint">Send a connection request to view full profile</p>
                 </div>
             </div>`;
@@ -276,6 +282,7 @@ function createProfileCard(p, isMine, isConnected) {
     // FOOTER BUTTONS
     let footerButtons = '';
     if (isMine) {
+        // My own profile - Show Edit and Delete
         footerButtons = `
             <button class="btn-contact" onclick="editProfile('${p.id}')" style="flex:1;">
                 <span>✏️</span> Edit Profile
@@ -283,7 +290,8 @@ function createProfileCard(p, isMine, isConnected) {
             <button class="btn-delete" onclick="deleteProfile('${p.id}')" style="flex:1;">
                 <span>🗑️</span> Delete
             </button>`;
-    } else if (actuallyConnected) {
+    } else if (showPrivateInfo) {
+        // Connected user - Show Contact and WhatsApp
         footerButtons = `
             <button class="btn-contact" onclick="openContactModal('${p.id}', '${p.fullName}', '${p.email}')">
                 <span>📧</span> Contact
@@ -292,6 +300,7 @@ function createProfileCard(p, isMine, isConnected) {
                 <span>💬</span> WhatsApp
             </a>`;
     } else {
+        // Not connected - Show Send Request button
         footerButtons = `
             <button class="btn-request" onclick="sendConnectionRequest('${p.id}', '${p.fullName}')">
                 <span>🔗</span> Send Request
@@ -314,7 +323,7 @@ window.sendConnectionRequest = function(toProfileId, toUserName) {
     
     const fromUserId = emailToId(userEmail);
     
-    // IMPORTANT: Get the recipient's email from their profile to create proper userId
+    // Get the recipient's email from their profile
     const recipientProfile = partners.find(p => p.id === toProfileId);
     if (!recipientProfile) {
         alert('❌ Error: Could not find recipient profile');
@@ -512,7 +521,7 @@ if (resetFiltersBtn) {
             const element = document.getElementById(id);
             if (element) element.value = '';
         });
-        init(); // Reload all profiles
+        init();
     });
 }
 
@@ -561,17 +570,13 @@ if (reportForm) {
             return;
         }
         
-        // Get reporter's profile information
         const reporterProfile = partners.find(p => p.email === userEmail);
         
         const reportData = {
-            // Reported user info
             reportedUserName: document.getElementById('reportedUserName').value,
             reportedUserRoll: document.getElementById('reportedUserRoll').value,
             reportReason: document.getElementById('reportReason').value,
             reportDescription: document.getElementById('reportDescription').value,
-            
-            // Reporter's info (automatically included)
             reporterName: userName || 'Unknown',
             reporterEmail: userEmail,
             reporterRollNumber: reporterProfile ? reporterProfile.rollNumber : 'N/A',
@@ -579,25 +584,19 @@ if (reportForm) {
             reporterDepartment: reporterProfile ? reporterProfile.department : 'N/A',
             reporterSection: reporterProfile ? reporterProfile.section : 'N/A',
             reporterSemester: reporterProfile ? reporterProfile.semester : 'N/A',
-            
-            // Metadata
             timestamp: Date.now(),
             status: 'pending',
             dateReported: new Date().toISOString()
         };
         
-        console.log('📝 Submitting report:', reportData);
-        
-        // Save to Firebase
         database.ref('reports').push(reportData)
             .then(() => {
-                alert('✅ Report submitted successfully! The admin will review it shortly.');
+                alert('✅ Report submitted successfully!');
                 document.getElementById('reportModal').style.display = 'none';
                 reportForm.reset();
             })
             .catch(err => {
-                alert('❌ Error submitting report: ' + err.message);
-                console.error('Error:', err);
+                alert('❌ Error: ' + err.message);
             });
     });
 }
@@ -607,8 +606,6 @@ function showRequestsModal() {
     const modal = document.getElementById('requestsModal');
     if (modal) {
         modal.style.display = 'flex';
-        
-        // Load received requests immediately
         setTimeout(() => {
             loadReceivedRequests();
         }, 100);
@@ -620,32 +617,21 @@ function loadReceivedRequests() {
     const userId = emailToId(userEmail);
     const container = document.getElementById('receivedRequests');
     
-    if (!container) {
-        console.error('❌ receivedRequests container not found!');
-        return;
-    }
+    if (!container) return;
     
-    console.log('🔍 Loading requests for user:', userId, 'Email:', userEmail);
-    
-    // Show loading message
-    container.innerHTML = '<p class="no-requests">Loading requests...</p>';
+    container.innerHTML = '<p class="no-requests">Loading...</p>';
     
     database.ref('requests').once('value', (snapshot) => {
         const data = snapshot.val();
-        console.log('📦 All requests in database:', data);
         
         if (!data) {
             container.innerHTML = '<p class="no-requests">No pending requests</p>';
             return;
         }
         
-        // Filter requests where current user is the recipient and status is pending
-        const requests = Object.entries(data).filter(([id, req]) => {
-            console.log('Checking request:', id, 'toUserId:', req.toUserId, 'matches:', req.toUserId === userId);
-            return req.toUserId === userId && req.status === 'pending';
-        });
-        
-        console.log('✅ Filtered requests for this user:', requests.length, 'requests');
+        const requests = Object.entries(data).filter(([id, req]) => 
+            req.toUserId === userId && req.status === 'pending'
+        );
         
         if (requests.length === 0) {
             container.innerHTML = '<p class="no-requests">No pending requests</p>';
@@ -654,11 +640,11 @@ function loadReceivedRequests() {
         
         const html = requests.map(([id, req]) => `
             <div class="request-item">
-                <div class="request-avatar">${req.fromUserName ? req.fromUserName.charAt(0).toUpperCase() : '?'}</div>
+                <div class="request-avatar">${req.fromUserName.charAt(0).toUpperCase()}</div>
                 <div class="request-info">
-                    <strong>${req.fromUserName || 'Unknown User'}</strong>
-                    <p>${req.fromUserEmail || 'No email'}</p>
-                    <small style="color: #8a2be2; display: block; margin-top: 5px;">wants to connect with you</small>
+                    <strong>${req.fromUserName}</strong>
+                    <p>${req.fromUserEmail}</p>
+                    <small style="color: #8a2be2;">wants to connect</small>
                 </div>
                 <div class="request-actions">
                     <button class="btn-accept" onclick="acceptRequest('${id}', '${req.fromUserId}')">Accept</button>
@@ -668,10 +654,6 @@ function loadReceivedRequests() {
         `).join('');
         
         container.innerHTML = html;
-        console.log('✅ Requests displayed successfully');
-    }).catch(error => {
-        console.error('❌ Error loading requests:', error);
-        container.innerHTML = '<p class="no-requests">Error loading requests</p>';
     });
 }
 
@@ -679,22 +661,13 @@ function loadReceivedRequests() {
 window.acceptRequest = function(requestId, fromUserId) {
     const toUserId = emailToId(userEmail);
     
-    console.log('✅ Accepting request:', requestId);
-    console.log('Connection between:', fromUserId, 'and', toUserId);
-    
-    // Update request status
     database.ref('requests/' + requestId).update({status: 'accepted'}).then(() => {
-        // Create connection both ways using email-based user IDs
         database.ref('connections/' + toUserId + '/' + fromUserId).set(true);
         database.ref('connections/' + fromUserId + '/' + toUserId).set(true);
         
-        alert('✅ Request accepted! You can now see full profile.');
-        console.log('✅ Connection created successfully');
+        alert('✅ Request accepted!');
         loadReceivedRequests();
         loadMyConnections();
-    }).catch(err => {
-        alert('❌ Error accepting request: ' + err.message);
-        console.error('❌ Error:', err);
     });
 };
 
@@ -711,15 +684,9 @@ function loadSentRequests() {
     const userId = emailToId(userEmail);
     const container = document.getElementById('sentRequests');
     
-    if (!container) {
-        console.error('❌ sentRequests container not found!');
-        return;
-    }
+    if (!container) return;
     
-    console.log('🔍 Loading sent requests from user:', userId, 'Email:', userEmail);
-    
-    // Show loading message
-    container.innerHTML = '<p class="no-requests">Loading sent requests...</p>';
+    container.innerHTML = '<p class="no-requests">Loading...</p>';
     
     database.ref('requests').once('value', (snapshot) => {
         const data = snapshot.val();
@@ -729,13 +696,9 @@ function loadSentRequests() {
             return;
         }
         
-        // Filter requests where current user is the sender
-        const requests = Object.entries(data).filter(([id, req]) => {
-            console.log('Checking sent request:', id, 'fromUserId:', req.fromUserId, 'matches:', req.fromUserId === userId);
-            return req.fromUserId === userId;
-        });
-        
-        console.log('📤 Sent requests:', requests.length, 'requests');
+        const requests = Object.entries(data).filter(([id, req]) => 
+            req.fromUserId === userId
+        );
         
         if (requests.length === 0) {
             container.innerHTML = '<p class="no-requests">No sent requests</p>';
@@ -744,55 +707,42 @@ function loadSentRequests() {
         
         const html = requests.map(([id, req]) => `
             <div class="request-item">
-                <div class="request-avatar">${req.toUserName ? req.toUserName.charAt(0).toUpperCase() : '?'}</div>
+                <div class="request-avatar">${req.toUserName.charAt(0).toUpperCase()}</div>
                 <div class="request-info">
-                    <strong>${req.toUserName || 'Unknown User'}</strong>
-                    <p class="request-status status-${req.status || 'pending'}">${req.status || 'pending'}</p>
-                    <small style="color: #b0b0b0; display: block; margin-top: 5px;">Request sent</small>
+                    <strong>${req.toUserName}</strong>
+                    <p class="request-status status-${req.status}">${req.status}</p>
                 </div>
             </div>
         `).join('');
         
         container.innerHTML = html;
-        console.log('✅ Sent requests displayed successfully');
-    }).catch(error => {
-        console.error('❌ Error loading sent requests:', error);
-        container.innerHTML = '<p class="no-requests">Error loading sent requests</p>';
     });
 }
 
 // Tabs functionality
 const tabButtons = document.querySelectorAll('.tab-btn');
-if (tabButtons.length > 0) {
-    tabButtons.forEach(btn => {
-        btn.addEventListener('click', function() {
-            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-            this.classList.add('active');
-            
-            const tab = this.dataset.tab;
-            const receivedDiv = document.getElementById('receivedRequests');
-            const sentDiv = document.getElementById('sentRequests');
-            
-            if (receivedDiv && sentDiv) {
-                receivedDiv.style.display = tab === 'received' ? 'block' : 'none';
-                sentDiv.style.display = tab === 'sent' ? 'block' : 'none';
-                
-                if (tab === 'sent') loadSentRequests();
-            }
-        });
+tabButtons.forEach(btn => {
+    btn.addEventListener('click', function() {
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        this.classList.add('active');
+        
+        const tab = this.dataset.tab;
+        document.getElementById('receivedRequests').style.display = tab === 'received' ? 'block' : 'none';
+        document.getElementById('sentRequests').style.display = tab === 'sent' ? 'block' : 'none';
+        
+        if (tab === 'sent') loadSentRequests();
     });
-}
+});
 
 // Close requests modal
 const closeRequestsModal = document.getElementById('closeRequestsModal');
 if (closeRequestsModal) {
     closeRequestsModal.addEventListener('click', () => {
-        const modal = document.getElementById('requestsModal');
-        if (modal) modal.style.display = 'none';
+        document.getElementById('requestsModal').style.display = 'none';
     });
 }
 
-// 11. Contact Modal Functions
+// 11. Contact Modal
 window.openContactModal = function(profileId, name, email) {
     const modal = document.getElementById('messageModal');
     if (modal) {
@@ -807,27 +757,20 @@ window.openContactModal = function(profileId, name, email) {
 
 const closeModal = document.getElementById('closeModal');
 if (closeModal) {
-    closeModal.addEventListener('click', function() {
+    closeModal.addEventListener('click', () => {
         document.getElementById('messageModal').style.display = 'none';
     });
 }
 
 window.addEventListener('click', function(e) {
-    const modal = document.getElementById('messageModal');
-    const requestsModal = document.getElementById('requestsModal');
-    const reportModal = document.getElementById('reportModal');
-    if (e.target === modal) {
-        modal.style.display = 'none';
-    }
-    if (e.target === requestsModal) {
-        requestsModal.style.display = 'none';
-    }
-    if (e.target === reportModal) {
-        reportModal.style.display = 'none';
-    }
+    const modals = ['messageModal', 'requestsModal', 'reportModal'];
+    modals.forEach(modalId => {
+        const modal = document.getElementById(modalId);
+        if (e.target === modal) modal.style.display = 'none';
+    });
 });
 
-// Message form submission
+// Message form
 const messageForm = document.getElementById('messageForm');
 if (messageForm) {
     messageForm.addEventListener('submit', function(e) {
@@ -839,25 +782,21 @@ if (messageForm) {
         const partnerEmail = this.dataset.partnerEmail;
         const partnerName = this.dataset.partnerName;
         
-        const subject = encodeURIComponent(`Project Partnership Request from ${senderName}`);
+        const subject = encodeURIComponent(`Partnership Request from ${senderName}`);
         const body = encodeURIComponent(`Hi ${partnerName},\n\n${message}\n\nBest regards,\n${senderName}\n${senderEmail}`);
-        const mailtoLink = `mailto:${partnerEmail}?subject=${subject}&body=${body}`;
-        
-        window.location.href = mailtoLink;
+        window.location.href = `mailto:${partnerEmail}?subject=${subject}&body=${body}`;
         
         document.getElementById('messageModal').style.display = 'none';
         this.reset();
-        
-        alert('Opening your email client...');
     });
 }
 
-// 12. Logout Button
+// 12. Logout
 const logoutBtn = document.getElementById('logoutBtn');
 if (logoutBtn) {
     logoutBtn.addEventListener('click', function(e) {
         e.preventDefault();
-        if (confirm('Are you sure you want to logout?')) {
+        if (confirm('Logout?')) {
             localStorage.clear();
             window.location.href = 'index.html';
         }
@@ -869,17 +808,16 @@ const profileBtn = document.getElementById('profileBtn');
 if (profileBtn) {
     profileBtn.addEventListener('click', function(e) {
         e.preventDefault();
-        // Find current user's profile
         const myProfile = partners.find(p => p.email === userEmail);
         if (myProfile) {
             editProfile(myProfile.id);
         } else {
-            alert('Please create your profile first!');
+            alert('Create your profile first!');
             document.getElementById('profileSection').scrollIntoView({ behavior: 'smooth' });
         }
     });
 }
 
-// Initialize on page load
+// Initialize
 init();
-console.log('✅ FASTSync Partner Finder with Privacy System loaded successfully!');
+console.log('✅ FASTSync with FIXED Privacy System loaded!')
