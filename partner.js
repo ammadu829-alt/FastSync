@@ -44,44 +44,21 @@ function init() {
 
 // Load my connections (accepted requests) - FILTER OUT SELF
 function loadMyConnections() {
-    if (!userEmail) {
-        console.log('❌ No userEmail found, cannot load connections');
-        return;
-    }
+    if (!userEmail) return;
     
     const userId = emailToId(userEmail);
-    
-    console.log('========================================');
-    console.log('🔗 LOADING MY CONNECTIONS');
-    console.log('   My email:', userEmail);
-    console.log('   My userId:', userId);
-    console.log('   Firebase path: connections/' + userId);
-    console.log('========================================');
     
     database.ref('connections/' + userId).on('value', (snapshot) => {
         const data = snapshot.val();
         
-        console.log('📦 Raw connections data from Firebase:', data);
-        
         if (data) {
-            // CRITICAL FIX: Filter out self from connections
             const allConnections = Object.keys(data);
             myConnections = allConnections.filter(connId => connId !== userId);
-            
-            console.log('📋 All connections from Firebase:', allConnections);
-            console.log('🔒 Filtered connections (excluding self):', myConnections);
-            console.log('✅ Number of valid connections:', myConnections.length);
-            
-            if (allConnections.length !== myConnections.length) {
-                console.warn('⚠️ WARNING: Your own userId was in your connections! This is a data error.');
-                console.warn('⚠️ Removed self-connection:', userId);
-            }
         } else {
             myConnections = [];
-            console.log('ℹ️ No connections found (empty array)');
         }
         
-        console.log('🔄 Refreshing partner display with updated connections');
+        // Refresh display to apply "Unlocked" status to connected partners
         displayPartners();
     });
 }
@@ -91,7 +68,6 @@ function loadPendingRequests() {
     if (!userEmail) return;
     const userId = emailToId(userEmail);
     
-    // Listen for all requests and filter for this user
     database.ref('requests').on('value', (snapshot) => {
         const data = snapshot.val();
         if (!data) {
@@ -99,17 +75,14 @@ function loadPendingRequests() {
             return;
         }
         
-        // Filter requests where current user is the recipient
         const received = Object.entries(data).filter(([id, req]) => 
             req.toUserId === userId && req.status === 'pending'
         );
         
         updateRequestBadge(received.length);
-        console.log(`📬 You have ${received.length} pending requests`);
     });
 }
 
-// Update request badge
 function updateRequestBadge(count) {
     const badge = document.getElementById('requestBadge');
     if (badge) {
@@ -124,7 +97,7 @@ function updateRequestBadge(count) {
 
 // Helper function to convert email to ID
 function emailToId(email) {
-    return email.replace(/[.@]/g, '_');
+    return email ? email.replace(/[.@]/g, '_') : '';
 }
 
 // 4. Display Cards with FIXED PRIVACY CONTROLS
@@ -153,26 +126,17 @@ function displayPartners() {
     });
 }
 
-// Create profile card with ULTRA STRICT PRIVACY
+// Create profile card - FIX: Unlock if connected
 function createProfileCard(p) {
     const card = document.createElement('div');
     card.className = 'partner-card';
 
-    // ========================================
-    // SIMPLE PRIVACY RULE:
-    // Show full info ONLY if viewing YOUR OWN profile
-    // Everyone else sees LOCKED info
-    // ========================================
-    
+    const profileId = emailToId(p.email);
     const isMine = (p.email && userEmail && p.email.toLowerCase() === userEmail.toLowerCase());
     
-    console.log('========================================');
-    console.log('🔍 STRICT PRIVACY CHECK');
-    console.log('   Profile name:', p.fullName);
-    console.log('   Profile email:', p.email);
-    console.log('   My email:', userEmail);
-    console.log('   ✅ IS THIS MY PROFILE?:', isMine);
-    console.log('========================================');
+    // NEW LOGIC: This profile is unlocked if it's yours OR you are connected
+    const isConnected = myConnections.includes(profileId);
+    const hasAccess = isMine || isConnected;
 
     const availabilityClass = p.availability === 'available' ? 'status-available' : 'status-found';
     const availabilityText = p.availability === 'available' ? '✓ Available' : '✗ Partnered';
@@ -182,123 +146,41 @@ function createProfileCard(p) {
         ? skillsArray.map(skill => `<span class="skill-tag">${skill}</span>`).join('')
         : '<span class="no-skills">No skills listed</span>';
 
-    // PUBLIC INFORMATION (Always visible to everyone)
+    // PUBLIC INFORMATION
     let publicInfo = `
         <div class="card-header">
-            <div class="profile-avatar">
-                ${p.fullName.charAt(0).toUpperCase()}
-            </div>
+            <div class="profile-avatar">${p.fullName.charAt(0).toUpperCase()}</div>
             <div class="profile-info">
                 <h3 class="profile-name">${p.fullName}</h3>
                 <p class="profile-roll">${p.rollNumber}</p>
             </div>
             <span class="availability-badge ${availabilityClass}">${availabilityText}</span>
         </div>
-        
         <div class="card-body">
             <div class="info-section">
-                <div class="info-row">
-                    <span class="info-icon">🎓</span>
-                    <div class="info-content">
-                        <strong>University</strong>
-                        <p>${p.university || 'Not specified'}</p>
-                    </div>
-                </div>
-                
-                <div class="info-row">
-                    <span class="info-icon">💼</span>
-                    <div class="info-content">
-                        <strong>Department</strong>
-                        <p>${p.department || 'Not specified'}</p>
-                    </div>
-                </div>
-                
-                <div class="info-row">
-                    <span class="info-icon">📅</span>
-                    <div class="info-content">
-                        <strong>Batch</strong>
-                        <p>${p.batch || 'N/A'}</p>
-                    </div>
-                </div>
-                
-                <div class="info-row">
-                    <span class="info-icon">🔖</span>
-                    <div class="info-content">
-                        <strong>Section</strong>
-                        <p>Section ${p.section || 'N/A'}</p>
-                    </div>
-                </div>
-                
-                <div class="info-row">
-                    <span class="info-icon">📚</span>
-                    <div class="info-content">
-                        <strong>Semester</strong>
-                        <p>${getOrdinalSemester(p.semester)}</p>
-                    </div>
-                </div>
-                
-                <div class="info-row">
-                    <span class="info-icon">📖</span>
-                    <div class="info-content">
-                        <strong>Course</strong>
-                        <p>${p.course || 'Not specified'}</p>
-                    </div>
-                </div>
+                <div class="info-row"><span class="info-icon">🎓</span><div class="info-content"><strong>University</strong><p>${p.university || 'Not specified'}</p></div></div>
+                <div class="info-row"><span class="info-icon">💼</span><div class="info-content"><strong>Department</strong><p>${p.department || 'Not specified'}</p></div></div>
+                <div class="info-row"><span class="info-icon">📅</span><div class="info-content"><strong>Batch</strong><p>${p.batch || 'N/A'}</p></div></div>
+                <div class="info-row"><span class="info-icon">🔖</span><div class="info-content"><strong>Section</strong><p>Section ${p.section || 'N/A'}</p></div></div>
+                <div class="info-row"><span class="info-icon">📚</span><div class="info-content"><strong>Semester</strong><p>${getOrdinalSemester(p.semester)}</p></div></div>
+                <div class="info-row"><span class="info-icon">📖</span><div class="info-content"><strong>Course</strong><p>${p.course || 'Not specified'}</p></div></div>
             </div>`;
 
-    // PRIVATE INFORMATION - STRICT RULE
+    // PRIVATE INFORMATION - Unlock based on access
     let privateInfo = '';
-    
-    if (isMine === true) {
-        // THIS IS MY PROFILE - Show everything
-        console.log('✅ UNLOCKING: This is MY profile');
+    if (hasAccess) {
         privateInfo = `
             <div class="privacy-unlocked">
-                <p class="connection-status">🔓 My Full Profile</p>
-                
+                <p class="connection-status">${isMine ? '🔓 My Full Profile' : '✅ Connected'}</p>
                 <div class="info-section">
-                    <div class="info-row">
-                        <span class="info-icon">🗓️</span>
-                        <div class="info-content">
-                            <strong>Session</strong>
-                            <p>${p.session || 'Not specified'}</p>
-                        </div>
-                    </div>
-
-                    <div class="info-row">
-                        <span class="info-icon">📧</span>
-                        <div class="info-content">
-                            <strong>Email</strong>
-                            <p>${p.email}</p>
-                        </div>
-                    </div>
-
-                    <div class="info-row">
-                        <span class="info-icon">📱</span>
-                        <div class="info-content">
-                            <strong>Phone</strong>
-                            <p>${p.phone}</p>
-                        </div>
-                    </div>
+                    <div class="info-row"><span class="info-icon">🗓️</span><div class="info-content"><strong>Session</strong><p>${p.session || 'Not specified'}</p></div></div>
+                    <div class="info-row"><span class="info-icon">📧</span><div class="info-content"><strong>Email</strong><p>${p.email}</p></div></div>
+                    <div class="info-row"><span class="info-icon">📱</span><div class="info-content"><strong>Phone</strong><p>${p.phone}</p></div></div>
                 </div>
-                
-                ${p.bio ? `
-                    <div class="bio-section">
-                        <strong>About:</strong>
-                        <p>${p.bio}</p>
-                    </div>
-                ` : ''}
-                
-                <div class="skills-section">
-                    <strong>Skills:</strong>
-                    <div class="skills-container">
-                        ${skillsHTML}
-                    </div>
-                </div>
+                ${p.bio ? `<div class="bio-section"><strong>About:</strong><p>${p.bio}</p></div>` : ''}
+                <div class="skills-section"><strong>Skills:</strong><div class="skills-container">${skillsHTML}</div></div>
             </div>`;
     } else {
-        // NOT MY PROFILE - Lock everything
-        console.log('🔒 LOCKING: This is someone else\'s profile');
         privateInfo = `
             <div class="privacy-locked">
                 <div class="locked-message">
@@ -310,134 +192,62 @@ function createProfileCard(p) {
             </div>`;
     }
 
-    // FOOTER BUTTONS - Simple logic
+    // FOOTER BUTTONS
     let footerButtons = '';
-    
-    if (isMine === true) {
-        // My profile - Edit and Delete
-        console.log('👤 MY PROFILE: Showing Edit/Delete buttons');
+    if (isMine) {
         footerButtons = `
-            <button class="btn-contact" onclick="editProfile('${p.id}')" style="flex:1;">
-                <span>✏️</span> Edit Profile
-            </button>
-            <button class="btn-delete" onclick="deleteProfile('${p.id}')" style="flex:1;">
-                <span>🗑️</span> Delete
+            <button class="btn-contact" onclick="editProfile('${p.id}')" style="flex:1;"><span>✏️</span> Edit Profile</button>
+            <button class="btn-delete" onclick="deleteProfile('${p.id}')" style="flex:1;"><span>🗑️</span> Delete</button>`;
+    } else if (isConnected) {
+        footerButtons = `
+            <button class="btn-contact" onclick="openContactModal('${p.id}', '${p.fullName}', '${p.email}')" style="flex:1; background-color: #28a745;">
+                <span>💬</span> Message Partner
             </button>`;
     } else {
-        // Someone else's profile - Send Request
-        console.log('🔐 OTHER PROFILE: Showing Send Request button');
         footerButtons = `
-            <button class="btn-request" onclick="sendConnectionRequest('${p.id}', '${p.fullName}')">
-                <span>🔗</span> Send Request
-            </button>`;
+            <button class="btn-request" onclick="sendConnectionRequest('${p.id}', '${p.fullName}')"><span>🔗</span> Send Request</button>`;
     }
 
-    card.innerHTML = publicInfo + privateInfo + `
-        </div>
-        <div class="card-footer">
-            ${footerButtons}
-        </div>
-    `;
-    
+    card.innerHTML = publicInfo + privateInfo + `</div><div class="card-footer">${footerButtons}</div>`;
     return card;
 }
 
-// Send connection request with PROPER REQUEST TRACKING
+// Send request
 window.sendConnectionRequest = function(toProfileId, toUserName) {
-    if (!userEmail) {
-        alert('❌ Please log in first');
-        return;
-    }
+    if (!userEmail) { alert('❌ Please log in first'); return; }
     
     const fromUserId = emailToId(userEmail);
-    
-    // Get the recipient's profile
     const recipientProfile = partners.find(p => p.id === toProfileId);
-    if (!recipientProfile) {
-        alert('❌ Error: Could not find recipient profile');
-        return;
-    }
+    if (!recipientProfile) return;
     
     const toUserId = emailToId(recipientProfile.email);
+    if (fromUserId === toUserId) { alert('❌ You cannot send a request to yourself!'); return; }
     
-    // IMPORTANT: Cannot send request to yourself
-    if (fromUserId === toUserId) {
-        alert('❌ You cannot send a request to yourself!');
-        return;
-    }
-    
-    console.log('📤 Sending connection request');
-    console.log('   From:', fromUserId, '(', userEmail, ')');
-    console.log('   To:', toUserId, '(', recipientProfile.email, ')');
-    
-    // Check if request already exists or if already connected
     database.ref('requests').once('value', (snapshot) => {
         const existing = snapshot.val();
-        
-        // Check for existing pending request
         if (existing) {
             const alreadySent = Object.values(existing).some(req => 
-                req.fromUserId === fromUserId && 
-                req.toUserId === toUserId && 
-                req.status === 'pending'
+                req.fromUserId === fromUserId && req.toUserId === toUserId && req.status === 'pending'
             );
-            
-            if (alreadySent) {
-                alert('⚠️ You already sent a request to this user! Please wait for them to accept.');
-                return;
-            }
-            
-            // Check if they sent you a request (can accept instead)
-            const receivedRequest = Object.entries(existing).find(([id, req]) => 
-                req.fromUserId === toUserId && 
-                req.toUserId === fromUserId && 
-                req.status === 'pending'
-            );
-            
-            if (receivedRequest) {
-                const [requestId] = receivedRequest;
-                if (confirm(`${toUserName} already sent you a request! Accept it now?`)) {
-                    acceptRequest(requestId, toUserId);
-                }
-                return;
-            }
+            if (alreadySent) { alert('⚠️ Request already pending.'); return; }
         }
         
-        // Check if already connected
         database.ref('connections/' + fromUserId + '/' + toUserId).once('value', (connSnap) => {
-            if (connSnap.exists()) {
-                alert('✅ You are already connected with this user!');
-                return;
-            }
+            if (connSnap.exists()) { alert('✅ Already connected!'); return; }
             
-            // All checks passed - Send new request
             const requestData = {
-                fromUserId: fromUserId,
-                fromUserName: userName,
-                fromUserEmail: userEmail,
-                toUserId: toUserId,
-                toUserName: toUserName,
-                toUserEmail: recipientProfile.email,
-                status: 'pending',
-                timestamp: Date.now()
+                fromUserId: fromUserId, fromUserName: userName, fromUserEmail: userEmail,
+                toUserId: toUserId, toUserName: toUserName, toUserEmail: recipientProfile.email,
+                status: 'pending', timestamp: Date.now()
             };
             
-            console.log('💾 Saving request to Firebase:', requestData);
-            
-            database.ref('requests').push(requestData)
-                .then(() => {
-                    alert(`✅ Connection request sent to ${toUserName}!\n\nThey will be notified. Once they accept, you'll see their full profile.`);
-                    console.log('✅ Request sent successfully');
-                })
-                .catch(err => {
-                    alert('❌ Error sending request: ' + err.message);
-                    console.error('❌ Error:', err);
-                });
+            database.ref('requests').push(requestData).then(() => {
+                alert(`✅ Request sent to ${toUserName}!`);
+            });
         });
     });
 };
 
-// Helper function for ordinal semester
 function getOrdinalSemester(num) {
     if (!num) return 'Not specified';
     const suffixes = ['th', 'st', 'nd', 'rd'];
@@ -449,10 +259,8 @@ function getOrdinalSemester(num) {
 window.editProfile = function(id) {
     const p = partners.find(item => item.id === id);
     if (!p) return;
-
     const formSection = document.getElementById('profileSection');
     if (formSection) formSection.scrollIntoView({ behavior: 'smooth' });
-
     document.getElementById('profileId').value = p.id;
     document.getElementById('fullName').value = p.fullName || '';
     document.getElementById('email').value = p.email || '';
@@ -463,47 +271,30 @@ window.editProfile = function(id) {
     document.getElementById('batch').value = p.batch || '';
     document.getElementById('section').value = p.section || '';
     document.getElementById('semester').value = p.semester || '';
-    
-    // Trigger semester change to populate courses
-    const semesterSelect = document.getElementById('semester');
-    const event = new Event('change');
-    semesterSelect.dispatchEvent(event);
-    
-    setTimeout(() => {
-        document.getElementById('course').value = p.course || '';
-    }, 100);
-    
+    document.getElementById('semester').dispatchEvent(new Event('change'));
+    setTimeout(() => { document.getElementById('course').value = p.course || ''; }, 100);
     document.getElementById('session').value = p.session || '';
     document.getElementById('skills').value = p.skills || '';
     document.getElementById('bio').value = p.bio || '';
     document.getElementById('availability').value = p.availability || 'available';
-
     document.getElementById('formTitle').textContent = 'Edit Your Profile';
     document.getElementById('submitBtn').textContent = 'Update My Profile';
 };
 
 // 6. Delete Profile Function
 window.deleteProfile = function(id) {
-    if (confirm("⚠️ Are you sure you want to delete your profile? This action cannot be undone!")) {
-        database.ref('profiles/' + id).remove()
-            .then(() => {
-                alert("✅ Profile deleted successfully!");
-            })
-            .catch(err => {
-                alert("❌ Error deleting profile: " + err.message);
-            });
+    if (confirm("⚠️ Are you sure you want to delete your profile?")) {
+        database.ref('profiles/' + id).remove().then(() => { alert("✅ Profile deleted!"); });
     }
 };
 
-// 7. Handle Form Submission (Add or Update)
+// 7. Form Submission
 const profileForm = document.getElementById('profileForm');
 if (profileForm) {
     profileForm.addEventListener('submit', function(e) {
         e.preventDefault();
-        
         const existingId = document.getElementById('profileId').value;
         const id = existingId || Date.now().toString();
-        
         const profileData = {
             fullName: document.getElementById('fullName').value,
             email: document.getElementById('email').value,
@@ -521,400 +312,107 @@ if (profileForm) {
             availability: document.getElementById('availability').value,
             timestamp: Date.now()
         };
-
         database.ref('profiles/' + id).set(profileData).then(() => {
-            alert(existingId ? "✅ Profile Updated Successfully!" : "✅ Profile Added Successfully!");
+            alert("✅ Success!");
             profileForm.reset();
             document.getElementById('profileId').value = '';
-            document.getElementById('formTitle').textContent = 'Create Your Partner Profile';
-            document.getElementById('submitBtn').textContent = 'Add My Profile';
-            document.getElementById('course').disabled = true;
-            document.getElementById('course').innerHTML = '<option value="">Select Semester First</option>';
-        }).catch((error) => {
-            alert("❌ Error: " + error.message);
         });
     });
 }
 
-// 8. Filter Profiles
+// 8. Filters
 function filterProfiles() {
-    const filterUniversity = document.getElementById('filterUniversity')?.value || '';
-    const filterDepartment = document.getElementById('filterDepartment')?.value || '';
-    const filterBatch = document.getElementById('filterBatch')?.value || '';
-    const filterSection = document.getElementById('filterSection')?.value || '';
-    const filterSemester = document.getElementById('filterSemester')?.value || '';
-    const filterSession = document.getElementById('filterSession')?.value || '';
-    const filterCourse = document.getElementById('filterCourse')?.value || '';
-    const filterAvailability = document.getElementById('filterAvailability')?.value || '';
-    
+    const filterIds = ['filterUniversity', 'filterDepartment', 'filterBatch', 'filterSection', 'filterSemester', 'filterSession', 'filterCourse', 'filterAvailability'];
+    const filters = {};
+    filterIds.forEach(id => { filters[id.replace('filter', '').toLowerCase()] = document.getElementById(id)?.value || ''; });
     database.ref('profiles').once('value', (snapshot) => {
         const data = snapshot.val();
         let allPartners = data ? Object.entries(data).map(([id, val]) => ({...val, id})) : [];
-        
-        partners = allPartners.filter(profile => {
-            if (filterUniversity && profile.university !== filterUniversity) return false;
-            if (filterDepartment && profile.department !== filterDepartment) return false;
-            if (filterBatch && profile.batch !== filterBatch) return false;
-            if (filterSection && profile.section !== filterSection) return false;
-            if (filterSemester && profile.semester !== filterSemester) return false;
-            if (filterSession && profile.session !== filterSession) return false;
-            if (filterCourse && profile.course !== filterCourse) return false;
-            if (filterAvailability && profile.availability !== filterAvailability) return false;
+        partners = allPartners.filter(p => {
+            for (let key in filters) { if (filters[key] && p[key] !== filters[key]) return false; }
             return true;
         });
-        
         displayPartners();
     });
 }
-
-// Add filter event listeners
-const filterIds = ['filterUniversity', 'filterDepartment', 'filterBatch', 'filterSection', 
-                   'filterSemester', 'filterSession', 'filterCourse', 'filterAvailability'];
-
-filterIds.forEach(id => {
-    const element = document.getElementById(id);
-    if (element) {
-        element.addEventListener('change', filterProfiles);
-    }
+['filterUniversity', 'filterDepartment', 'filterBatch', 'filterSection', 'filterSemester', 'filterSession', 'filterCourse', 'filterAvailability'].forEach(id => {
+    document.getElementById(id)?.addEventListener('change', filterProfiles);
 });
 
-// Reset filters
-const resetFiltersBtn = document.getElementById('resetFilters');
-if (resetFiltersBtn) {
-    resetFiltersBtn.addEventListener('click', function() {
-        filterIds.forEach(id => {
-            const element = document.getElementById(id);
-            if (element) element.value = '';
-        });
-        init();
-    });
-}
-
-// 9. Requests Button Click
-const requestsBtn = document.getElementById('requestsBtn');
-if (requestsBtn) {
-    requestsBtn.addEventListener('click', function(e) {
-        e.preventDefault();
-        showRequestsModal();
-    });
-}
-
-// 10. Report Button Click
-const reportBtn = document.getElementById('reportBtn');
-if (reportBtn) {
-    reportBtn.addEventListener('click', function(e) {
-        e.preventDefault();
-        showReportModal();
-    });
-}
-
-// Show report modal
-function showReportModal() {
-    const modal = document.getElementById('reportModal');
-    if (modal) {
-        modal.style.display = 'flex';
-    }
-}
-
-// Close report modal
-const closeReportModal = document.getElementById('closeReportModal');
-if (closeReportModal) {
-    closeReportModal.addEventListener('click', () => {
-        document.getElementById('reportModal').style.display = 'none';
-    });
-}
-
-// Report form submission
-const reportForm = document.getElementById('reportForm');
-if (reportForm) {
-    reportForm.addEventListener('submit', function(e) {
-        e.preventDefault();
-        
-        if (!userEmail) {
-            alert('❌ Please log in to submit a report');
-            return;
-        }
-        
-        const reporterProfile = partners.find(p => p.email === userEmail);
-        
-        const reportData = {
-            reportedUserName: document.getElementById('reportedUserName').value,
-            reportedUserRoll: document.getElementById('reportedUserRoll').value,
-            reportReason: document.getElementById('reportReason').value,
-            reportDescription: document.getElementById('reportDescription').value,
-            reporterName: userName || 'Unknown',
-            reporterEmail: userEmail,
-            reporterRollNumber: reporterProfile ? reporterProfile.rollNumber : 'N/A',
-            reporterUniversity: reporterProfile ? reporterProfile.university : 'N/A',
-            reporterDepartment: reporterProfile ? reporterProfile.department : 'N/A',
-            reporterSection: reporterProfile ? reporterProfile.section : 'N/A',
-            reporterSemester: reporterProfile ? reporterProfile.semester : 'N/A',
-            timestamp: Date.now(),
-            status: 'pending',
-            dateReported: new Date().toISOString()
-        };
-        
-        database.ref('reports').push(reportData)
-            .then(() => {
-                alert('✅ Report submitted successfully!');
-                document.getElementById('reportModal').style.display = 'none';
-                reportForm.reset();
-            })
-            .catch(err => {
-                alert('❌ Error: ' + err.message);
-            });
-    });
-}
-
-// Show requests modal
+// 9. Modals Logic (Requests & Reports)
 function showRequestsModal() {
     const modal = document.getElementById('requestsModal');
-    if (modal) {
-        modal.style.display = 'flex';
-        setTimeout(() => {
-            loadReceivedRequests();
-        }, 100);
-    }
+    if (modal) { modal.style.display = 'flex'; loadReceivedRequests(); }
 }
+document.getElementById('requestsBtn')?.addEventListener('click', showRequestsModal);
+document.getElementById('closeRequestsModal')?.addEventListener('click', () => { document.getElementById('requestsModal').style.display = 'none'; });
 
-// Load received requests
 function loadReceivedRequests() {
     const userId = emailToId(userEmail);
     const container = document.getElementById('receivedRequests');
-    
     if (!container) return;
-    
-    container.innerHTML = '<p class="no-requests">Loading...</p>';
-    
     database.ref('requests').once('value', (snapshot) => {
         const data = snapshot.val();
-        
-        if (!data) {
-            container.innerHTML = '<p class="no-requests">No pending requests</p>';
-            return;
-        }
-        
-        const requests = Object.entries(data).filter(([id, req]) => 
-            req.toUserId === userId && req.status === 'pending'
-        );
-        
-        if (requests.length === 0) {
-            container.innerHTML = '<p class="no-requests">No pending requests</p>';
-            return;
-        }
-        
-        const html = requests.map(([id, req]) => `
+        const requests = data ? Object.entries(data).filter(([id, req]) => req.toUserId === userId && req.status === 'pending') : [];
+        if (requests.length === 0) { container.innerHTML = '<p>No pending requests</p>'; return; }
+        container.innerHTML = requests.map(([id, req]) => `
             <div class="request-item">
-                <div class="request-avatar">${req.fromUserName.charAt(0).toUpperCase()}</div>
-                <div class="request-info">
-                    <strong>${req.fromUserName}</strong>
-                    <p>${req.fromUserEmail}</p>
-                    <small style="color: #8a2be2;">wants to connect</small>
-                </div>
+                <div class="request-info"><strong>${req.fromUserName}</strong><p>${req.fromUserEmail}</p></div>
                 <div class="request-actions">
                     <button class="btn-accept" onclick="acceptRequest('${id}', '${req.fromUserId}')">Accept</button>
                     <button class="btn-reject" onclick="rejectRequest('${id}')">Reject</button>
                 </div>
-            </div>
-        `).join('');
-        
-        container.innerHTML = html;
+            </div>`).join('');
     });
 }
 
-// Accept request with PROPER CONNECTION CREATION
 window.acceptRequest = function(requestId, fromUserId) {
     const toUserId = emailToId(userEmail);
-    
-    console.log('========================================');
-    console.log('✅ ACCEPTING REQUEST');
-    console.log('   Request ID:', requestId);
-    console.log('   From user:', fromUserId);
-    console.log('   To user (me):', toUserId);
-    console.log('========================================');
-    
-    // Step 1: Update request status to 'accepted'
-    database.ref('requests/' + requestId).update({
-        status: 'accepted',
-        acceptedAt: Date.now()
-    })
+    database.ref('requests/' + requestId).update({ status: 'accepted', acceptedAt: Date.now() })
     .then(() => {
-        console.log('✅ Step 1: Request status updated to accepted');
-        
-        // Step 2: Create bidirectional connection
         const connectionPromises = [
             database.ref('connections/' + toUserId + '/' + fromUserId).set(true),
             database.ref('connections/' + fromUserId + '/' + toUserId).set(true)
         ];
-        
         return Promise.all(connectionPromises);
     })
-    .then(() => {
-        console.log('✅ Step 2: Bidirectional connection created');
-        console.log('   Connection path 1: connections/' + toUserId + '/' + fromUserId);
-        console.log('   Connection path 2: connections/' + fromUserId + '/' + toUserId);
-        
-        alert('✅ Connection request accepted!\n\nYou can now see each other\'s full profiles.');
-        
-        // Step 3: Reload connections and requests
-        loadReceivedRequests();
-        loadMyConnections();
-        
-        console.log('✅ Step 3: Reloading connections and UI');
-    })
-    .catch(err => {
-        alert('❌ Error accepting request: ' + err.message);
-        console.error('❌ Error details:', err);
-    });
+    .then(() => { alert('✅ Accepted!'); loadReceivedRequests(); loadMyConnections(); });
 };
 
-// Reject request
 window.rejectRequest = function(requestId) {
-    database.ref('requests/' + requestId).update({status: 'rejected'}).then(() => {
-        alert('❌ Request rejected');
-        loadReceivedRequests();
-    });
+    database.ref('requests/' + requestId).update({status: 'rejected'}).then(() => { loadReceivedRequests(); });
 };
 
-// Load sent requests
-function loadSentRequests() {
-    const userId = emailToId(userEmail);
-    const container = document.getElementById('sentRequests');
-    
-    if (!container) return;
-    
-    container.innerHTML = '<p class="no-requests">Loading...</p>';
-    
-    database.ref('requests').once('value', (snapshot) => {
-        const data = snapshot.val();
-        
-        if (!data) {
-            container.innerHTML = '<p class="no-requests">No sent requests</p>';
-            return;
-        }
-        
-        const requests = Object.entries(data).filter(([id, req]) => 
-            req.fromUserId === userId
-        );
-        
-        if (requests.length === 0) {
-            container.innerHTML = '<p class="no-requests">No sent requests</p>';
-            return;
-        }
-        
-        const html = requests.map(([id, req]) => `
-            <div class="request-item">
-                <div class="request-avatar">${req.toUserName.charAt(0).toUpperCase()}</div>
-                <div class="request-info">
-                    <strong>${req.toUserName}</strong>
-                    <p class="request-status status-${req.status}">${req.status}</p>
-                </div>
-            </div>
-        `).join('');
-        
-        container.innerHTML = html;
-    });
-}
-
-// Tabs functionality
-const tabButtons = document.querySelectorAll('.tab-btn');
-tabButtons.forEach(btn => {
-    btn.addEventListener('click', function() {
-        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-        this.classList.add('active');
-        
-        const tab = this.dataset.tab;
-        document.getElementById('receivedRequests').style.display = tab === 'received' ? 'block' : 'none';
-        document.getElementById('sentRequests').style.display = tab === 'sent' ? 'block' : 'none';
-        
-        if (tab === 'sent') loadSentRequests();
+// 10. Reports
+document.getElementById('reportBtn')?.addEventListener('click', () => { document.getElementById('reportModal').style.display = 'flex'; });
+document.getElementById('closeReportModal')?.addEventListener('click', () => { document.getElementById('reportModal').style.display = 'none'; });
+document.getElementById('reportForm')?.addEventListener('submit', function(e) {
+    e.preventDefault();
+    const reportData = {
+        reportedUserName: document.getElementById('reportedUserName').value,
+        reportedUserRoll: document.getElementById('reportedUserRoll').value,
+        reportReason: document.getElementById('reportReason').value,
+        reportDescription: document.getElementById('reportDescription').value,
+        reporterEmail: userEmail, timestamp: Date.now()
+    };
+    database.ref('reports').push(reportData).then(() => {
+        alert('✅ Report submitted!');
+        document.getElementById('reportModal').style.display = 'none';
+        this.reset();
     });
 });
 
-// Close requests modal
-const closeRequestsModal = document.getElementById('closeRequestsModal');
-if (closeRequestsModal) {
-    closeRequestsModal.addEventListener('click', () => {
-        document.getElementById('requestsModal').style.display = 'none';
-    });
-}
-
 // 11. Contact Modal
-window.openContactModal = function(profileId, name, email) {
+window.openContactModal = function(id, name, email) {
     const modal = document.getElementById('messageModal');
     if (modal) {
         document.getElementById('partnerNameModal').textContent = name;
         modal.style.display = 'flex';
-        
         const messageForm = document.getElementById('messageForm');
         messageForm.dataset.partnerEmail = email;
-        messageForm.dataset.partnerName = name;
     }
 };
+document.getElementById('closeModal')?.addEventListener('click', () => { document.getElementById('messageModal').style.display = 'none'; });
 
-const closeModal = document.getElementById('closeModal');
-if (closeModal) {
-    closeModal.addEventListener('click', () => {
-        document.getElementById('messageModal').style.display = 'none';
-    });
-}
-
-window.addEventListener('click', function(e) {
-    const modals = ['messageModal', 'requestsModal', 'reportModal'];
-    modals.forEach(modalId => {
-        const modal = document.getElementById(modalId);
-        if (e.target === modal) modal.style.display = 'none';
-    });
-});
-
-// Message form
-const messageForm = document.getElementById('messageForm');
-if (messageForm) {
-    messageForm.addEventListener('submit', function(e) {
-        e.preventDefault();
-        
-        const senderName = document.getElementById('senderName').value;
-        const senderEmail = document.getElementById('senderEmail').value;
-        const message = document.getElementById('messageText').value;
-        const partnerEmail = this.dataset.partnerEmail;
-        const partnerName = this.dataset.partnerName;
-        
-        const subject = encodeURIComponent(`Partnership Request from ${senderName}`);
-        const body = encodeURIComponent(`Hi ${partnerName},\n\n${message}\n\nBest regards,\n${senderName}\n${senderEmail}`);
-        window.location.href = `mailto:${partnerEmail}?subject=${subject}&body=${body}`;
-        
-        document.getElementById('messageModal').style.display = 'none';
-        this.reset();
-    });
-}
-
-// 12. Logout
-const logoutBtn = document.getElementById('logoutBtn');
-if (logoutBtn) {
-    logoutBtn.addEventListener('click', function(e) {
-        e.preventDefault();
-        if (confirm('Logout?')) {
-            localStorage.clear();
-            window.location.href = 'index.html';
-        }
-    });
-}
-
-// Profile button
-const profileBtn = document.getElementById('profileBtn');
-if (profileBtn) {
-    profileBtn.addEventListener('click', function(e) {
-        e.preventDefault();
-        const myProfile = partners.find(p => p.email === userEmail);
-        if (myProfile) {
-            editProfile(myProfile.id);
-        } else {
-            alert('Create your profile first!');
-            document.getElementById('profileSection').scrollIntoView({ behavior: 'smooth' });
-        }
-    });
-}
-
-// Initialize
+// Start
 init();
-console.log('✅ FASTSync with FIXED Privacy System loaded!')
