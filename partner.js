@@ -64,18 +64,30 @@ function loadMyConnections() {
         console.log('📦 Raw connections data from Firebase:', data);
         
         if (data) {
-            // CRITICAL FIX: Filter out self from connections
+            // Get all connection IDs and filter out invalid ones
             const allConnections = Object.keys(data);
-            myConnections = allConnections.filter(connId => connId !== userId);
+            
+            // Filter out:
+            // 1. Self connections (userId === connId)
+            // 2. Connections with false/null values
+            // 3. Keep only connections with value === true
+            myConnections = allConnections.filter(connId => {
+                const isNotSelf = connId !== userId;
+                const isTrue = data[connId] === true;
+                return isNotSelf && isTrue;
+            });
             
             console.log('📋 All connections from Firebase:', allConnections);
-            console.log('🔒 Filtered connections (excluding self):', myConnections);
+            console.log('🔒 Filtered valid connections:', myConnections);
             console.log('✅ Number of valid connections:', myConnections.length);
             
-            if (allConnections.length !== myConnections.length) {
-                console.warn('⚠️ WARNING: Your own userId was in your connections! This is a data error.');
-                console.warn('⚠️ Removed self-connection:', userId);
-            }
+            // Clean up invalid connections automatically
+            allConnections.forEach(connId => {
+                if (connId === userId || data[connId] !== true) {
+                    console.warn('🧹 Cleaning up invalid connection:', connId);
+                    database.ref('connections/' + userId + '/' + connId).remove();
+                }
+            });
         } else {
             myConnections = [];
             console.log('ℹ️ No connections found (empty array)');
@@ -159,19 +171,31 @@ function createProfileCard(p) {
     card.className = 'partner-card';
 
     // ========================================
-    // SIMPLE PRIVACY RULE:
-    // Show full info ONLY if viewing YOUR OWN profile
-    // Everyone else sees LOCKED info
+    // PRIVACY RULES:
+    // 1. Show full info if viewing YOUR OWN profile
+    // 2. Show full info if you're CONNECTED with this user
+    // 3. Everyone else sees LOCKED info
     // ========================================
     
     const isMine = (p.email && userEmail && p.email.toLowerCase() === userEmail.toLowerCase());
     
+    // Check if connected - get their userId from their email
+    const theirUserId = p.email ? emailToId(p.email) : null;
+    const isConnected = theirUserId && myConnections.includes(theirUserId);
+    
+    // Show full profile if it's mine OR if we're connected
+    const showFullProfile = isMine || isConnected;
+    
     console.log('========================================');
-    console.log('🔍 STRICT PRIVACY CHECK');
+    console.log('🔍 PRIVACY CHECK');
     console.log('   Profile name:', p.fullName);
     console.log('   Profile email:', p.email);
+    console.log('   Their userId:', theirUserId);
     console.log('   My email:', userEmail);
+    console.log('   My connections:', myConnections);
     console.log('   ✅ IS THIS MY PROFILE?:', isMine);
+    console.log('   🔗 AM I CONNECTED?:', isConnected);
+    console.log('   🔓 SHOW FULL PROFILE?:', showFullProfile);
     console.log('========================================');
 
     const availabilityClass = p.availability === 'available' ? 'status-available' : 'status-found';
@@ -246,15 +270,17 @@ function createProfileCard(p) {
                 </div>
             </div>`;
 
-    // PRIVATE INFORMATION - STRICT RULE
+    // PRIVATE INFORMATION - Show if mine OR connected
     let privateInfo = '';
     
-    if (isMine === true) {
-        // THIS IS MY PROFILE - Show everything
-        console.log('✅ UNLOCKING: This is MY profile');
+    if (showFullProfile) {
+        // Show full profile (either mine or connected)
+        const statusText = isMine ? '🔓 My Full Profile' : '🔗 Connected - Full Profile';
+        console.log('✅ UNLOCKING: Showing full profile -', statusText);
+        
         privateInfo = `
             <div class="privacy-unlocked">
-                <p class="connection-status">🔓 My Full Profile</p>
+                <p class="connection-status">${statusText}</p>
                 
                 <div class="info-section">
                     <div class="info-row">
@@ -297,8 +323,8 @@ function createProfileCard(p) {
                 </div>
             </div>`;
     } else {
-        // NOT MY PROFILE - Lock everything
-        console.log('🔒 LOCKING: This is someone else\'s profile');
+        // NOT connected - Lock everything
+        console.log('🔒 LOCKING: This is someone else\'s profile (not connected)');
         privateInfo = `
             <div class="privacy-locked">
                 <div class="locked-message">
@@ -310,7 +336,7 @@ function createProfileCard(p) {
             </div>`;
     }
 
-    // FOOTER BUTTONS - Simple logic
+    // FOOTER BUTTONS
     let footerButtons = '';
     
     if (isMine === true) {
@@ -323,8 +349,15 @@ function createProfileCard(p) {
             <button class="btn-delete" onclick="deleteProfile('${p.id}')" style="flex:1;">
                 <span>🗑️</span> Delete
             </button>`;
+    } else if (isConnected) {
+        // Connected user - Show contact button
+        console.log('🔗 CONNECTED USER: Showing Contact button');
+        footerButtons = `
+            <button class="btn-contact" onclick="openContactModal('${p.id}', '${p.fullName}', '${p.email}')">
+                <span>📧</span> Contact
+            </button>`;
     } else {
-        // Someone else's profile - Send Request
+        // Not connected - Send Request
         console.log('🔐 OTHER PROFILE: Showing Send Request button');
         footerButtons = `
             <button class="btn-request" onclick="sendConnectionRequest('${p.id}', '${p.fullName}')">
@@ -376,7 +409,7 @@ window.sendConnectionRequest = function(toProfileId, toUserName) {
     database.ref('requests').once('value', (requestSnapshot) => {
         const existingRequests = requestSnapshot.val();
         
-        console.log('🔍 Checking existing requests...');
+        console.log('🔍 Step 1: Checking existing requests...');
         
         // Check for existing pending request (sent by me)
         if (existingRequests) {
@@ -409,23 +442,30 @@ window.sendConnectionRequest = function(toProfileId, toUserName) {
             }
         }
         
-        console.log('✅ No existing requests found');
+        console.log('✅ Step 1 passed: No existing requests');
         
-        // Step 2: Check if already connected
-        database.ref('connections/' + fromUserId).once('value', (connSnap) => {
-            const myConnections = connSnap.val();
+        // Step 2: Check BOTH users' connections thoroughly
+        const checkBothConnections = Promise.all([
+            database.ref('connections/' + fromUserId + '/' + toUserId).once('value'),
+            database.ref('connections/' + toUserId + '/' + fromUserId).once('value')
+        ]);
+        
+        checkBothConnections.then(([myConnSnap, theirConnSnap]) => {
+            const myConnection = myConnSnap.val();
+            const theirConnection = theirConnSnap.val();
             
-            console.log('🔍 Checking my connections:', myConnections);
-            console.log('   Looking for userId:', toUserId);
+            console.log('🔍 Step 2: Checking bidirectional connections...');
+            console.log('   My connection to them:', myConnection);
+            console.log('   Their connection to me:', theirConnection);
             
-            // CRITICAL: Check if connection exists AND is true, AND not self
-            if (myConnections && myConnections[toUserId] === true && toUserId !== fromUserId) {
+            // Check if EITHER connection exists and is true
+            if (myConnection === true || theirConnection === true) {
                 console.log('⚠️ Already connected with this user');
                 alert('✅ You are already connected with this user!');
                 return;
             }
             
-            console.log('✅ Not connected yet - proceeding to send request');
+            console.log('✅ Step 2 passed: Not connected yet');
             
             // Step 3: All checks passed - Send new request
             const requestData = {
@@ -439,17 +479,20 @@ window.sendConnectionRequest = function(toProfileId, toUserName) {
                 timestamp: Date.now()
             };
             
-            console.log('💾 Saving request to Firebase:', requestData);
+            console.log('💾 Step 3: Saving request to Firebase:', requestData);
             
             database.ref('requests').push(requestData)
                 .then(() => {
-                    console.log('✅ Request sent successfully!');
+                    console.log('✅ SUCCESS: Request sent!');
                     alert(`✅ Connection request sent to ${toUserName}!\n\nThey will be notified. Once they accept, you'll see their full profile.`);
                 })
                 .catch(err => {
                     console.error('❌ Error sending request:', err);
                     alert('❌ Error sending request: ' + err.message);
                 });
+        }).catch(err => {
+            console.error('❌ Error checking connections:', err);
+            alert('❌ Error checking connections: ' + err.message);
         });
     });
 };
