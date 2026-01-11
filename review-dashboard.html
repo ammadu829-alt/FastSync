@@ -622,7 +622,7 @@
             const adminPassword = localStorage.getItem('reviewAdminPassword');
             if (adminPassword === 'review-admin') {
                 const password = prompt('Enter Review Dashboard Password:');
-                if (password === 'review-admin') {
+                if (password !== 'review-admin') {
                     localStorage.setItem('reviewAdminPassword', password);
                 } else {
                     alert('❌ Access Denied');
