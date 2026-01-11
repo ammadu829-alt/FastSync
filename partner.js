@@ -369,12 +369,12 @@ window.sendConnectionRequest = function(toProfileId, toUserName) {
     console.log('📤 Sending connection request');
     console.log('   From:', fromUserId, '(', userEmail, ')');
     console.log('   To:', toUserId, '(', recipientProfile.email, ')');
-     // Check if request already exists or if already connected
+    
+    // Check if request already exists
     database.ref('requests').once('value', (snapshot) => {
         const existing = snapshot.val();
-   
         
-        // Check for existing pending request
+        // Check for existing pending request (sent by me)
         if (existing) {
             const alreadySent = Object.values(existing).some(req => 
                 req.fromUserId === fromUserId && 
@@ -403,9 +403,12 @@ window.sendConnectionRequest = function(toProfileId, toUserName) {
             }
         }
         
-        // Check if already connected
-        database.ref('connections/' + fromUserId + '/' + toUserId).once('value', (connSnap) => {
-            if (connSnap.exists()) {
+        // Check if already connected (only check valid connections, not self)
+        database.ref('connections/' + fromUserId).once('value', (connSnap) => {
+            const connections = connSnap.val();
+            
+            // Check if toUserId exists in my connections (excluding self)
+            if (connections && connections[toUserId] === true) {
                 alert('✅ You are already connected with this user!');
                 return;
             }
@@ -917,6 +920,4 @@ if (profileBtn) {
 
 // Initialize
 init();
-console.log('✅ FASTSync with FIXED Privacy System loaded!')
-
-
+console.log('✅ FASTSync with FIXED Privacy & Request System loaded!')
