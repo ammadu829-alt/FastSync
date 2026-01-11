@@ -37,9 +37,41 @@ function init() {
     const profileBtn = document.getElementById('profileBtn');
     if (profileBtn && userName) profileBtn.textContent = userName;
     
+    // CRITICAL: Clean up self-connections on startup
+    cleanupSelfConnections();
+    
     // Load connections and requests
     loadMyConnections();
     loadPendingRequests();
+}
+
+// Clean up any self-connections (where userId is connected to itself)
+function cleanupSelfConnections() {
+    if (!userEmail) return;
+    
+    const userId = emailToId(userEmail);
+    
+    console.log('🧹 Checking for self-connections to clean up...');
+    
+    database.ref('connections/' + userId).once('value', (snapshot) => {
+        const connections = snapshot.val();
+        
+        if (connections) {
+            // Check if user is connected to themselves
+            if (connections[userId] !== undefined) {
+                console.warn('⚠️ Found self-connection! Removing:', userId);
+                database.ref('connections/' + userId + '/' + userId).remove()
+                    .then(() => {
+                        console.log('✅ Self-connection removed successfully');
+                    })
+                    .catch(err => {
+                        console.error('❌ Error removing self-connection:', err);
+                    });
+            } else {
+                console.log('✅ No self-connections found');
+            }
+        }
+    });
 }
 
 // Load my connections (accepted requests) - FILTER OUT SELF
@@ -786,11 +818,19 @@ function loadReceivedRequests() {
 window.acceptRequest = function(requestId, fromUserId) {
     const toUserId = emailToId(userEmail);
     
+    // CRITICAL CHECK: Prevent self-connection
+    if (fromUserId === toUserId) {
+        console.error('❌ ERROR: Cannot create self-connection!');
+        alert('❌ Error: Cannot connect with yourself!');
+        return;
+    }
+    
     console.log('========================================');
     console.log('✅ ACCEPTING REQUEST');
     console.log('   Request ID:', requestId);
     console.log('   From user:', fromUserId);
     console.log('   To user (me):', toUserId);
+    console.log('   Self-check passed:', fromUserId !== toUserId);
     console.log('========================================');
     
     // Step 1: Update request status to 'accepted'
@@ -801,11 +841,18 @@ window.acceptRequest = function(requestId, fromUserId) {
     .then(() => {
         console.log('✅ Step 1: Request status updated to accepted');
         
-        // Step 2: Create bidirectional connection
-        const connectionPromises = [
-            database.ref('connections/' + toUserId + '/' + fromUserId).set(true),
+        // Step 2: Create bidirectional connection (only if not self)
+        const connectionPromises = [];
+        
+        // Add connection from me to them
+        connectionPromises.push(
+            database.ref('connections/' + toUserId + '/' + fromUserId).set(true)
+        );
+        
+        // Add connection from them to me
+        connectionPromises.push(
             database.ref('connections/' + fromUserId + '/' + toUserId).set(true)
-        ];
+        );
         
         return Promise.all(connectionPromises);
     })
