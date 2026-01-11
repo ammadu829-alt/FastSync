@@ -366,35 +366,41 @@ window.sendConnectionRequest = function(toProfileId, toUserName) {
         return;
     }
     
-    console.log('📤 Sending connection request');
+    console.log('========================================');
+    console.log('📤 SENDING CONNECTION REQUEST');
     console.log('   From:', fromUserId, '(', userEmail, ')');
     console.log('   To:', toUserId, '(', recipientProfile.email, ')');
+    console.log('========================================');
     
-    // Check if request already exists
-    database.ref('requests').once('value', (snapshot) => {
-        const existing = snapshot.val();
+    // Step 1: Check existing requests
+    database.ref('requests').once('value', (requestSnapshot) => {
+        const existingRequests = requestSnapshot.val();
+        
+        console.log('🔍 Checking existing requests...');
         
         // Check for existing pending request (sent by me)
-        if (existing) {
-            const alreadySent = Object.values(existing).some(req => 
+        if (existingRequests) {
+            const alreadySent = Object.values(existingRequests).some(req => 
                 req.fromUserId === fromUserId && 
                 req.toUserId === toUserId && 
                 req.status === 'pending'
             );
             
             if (alreadySent) {
+                console.log('⚠️ Already sent pending request');
                 alert('⚠️ You already sent a request to this user! Please wait for them to accept.');
                 return;
             }
             
             // Check if they sent you a request (can accept instead)
-            const receivedRequest = Object.entries(existing).find(([id, req]) => 
+            const receivedRequest = Object.entries(existingRequests).find(([id, req]) => 
                 req.fromUserId === toUserId && 
                 req.toUserId === fromUserId && 
                 req.status === 'pending'
             );
             
             if (receivedRequest) {
+                console.log('📨 Found incoming request from this user');
                 const [requestId] = receivedRequest;
                 if (confirm(`${toUserName} already sent you a request! Accept it now?`)) {
                     acceptRequest(requestId, toUserId);
@@ -403,17 +409,25 @@ window.sendConnectionRequest = function(toProfileId, toUserName) {
             }
         }
         
-        // Check if already connected (only check valid connections, not self)
+        console.log('✅ No existing requests found');
+        
+        // Step 2: Check if already connected
         database.ref('connections/' + fromUserId).once('value', (connSnap) => {
-            const connections = connSnap.val();
+            const myConnections = connSnap.val();
             
-            // Check if toUserId exists in my connections (excluding self)
-            if (connections && connections[toUserId] === true) {
+            console.log('🔍 Checking my connections:', myConnections);
+            console.log('   Looking for userId:', toUserId);
+            
+            // CRITICAL: Check if connection exists AND is true, AND not self
+            if (myConnections && myConnections[toUserId] === true && toUserId !== fromUserId) {
+                console.log('⚠️ Already connected with this user');
                 alert('✅ You are already connected with this user!');
                 return;
             }
             
-            // All checks passed - Send new request
+            console.log('✅ Not connected yet - proceeding to send request');
+            
+            // Step 3: All checks passed - Send new request
             const requestData = {
                 fromUserId: fromUserId,
                 fromUserName: userName,
@@ -429,12 +443,12 @@ window.sendConnectionRequest = function(toProfileId, toUserName) {
             
             database.ref('requests').push(requestData)
                 .then(() => {
+                    console.log('✅ Request sent successfully!');
                     alert(`✅ Connection request sent to ${toUserName}!\n\nThey will be notified. Once they accept, you'll see their full profile.`);
-                    console.log('✅ Request sent successfully');
                 })
                 .catch(err => {
+                    console.error('❌ Error sending request:', err);
                     alert('❌ Error sending request: ' + err.message);
-                    console.error('❌ Error:', err);
                 });
         });
     });
