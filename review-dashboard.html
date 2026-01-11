@@ -620,9 +620,9 @@
         // Check admin access
         function checkAdminAccess() {
             const adminPassword = localStorage.getItem('reviewAdminPassword');
-            if (adminPassword !== 'review-admin') {
+            if (adminPassword === 'review-admin') {
                 const password = prompt('Enter Review Dashboard Password:');
-                if (password === 'review_admin') {
+                if (password === 'review-admin') {
                     localStorage.setItem('reviewAdminPassword', password);
                 } else {
                     alert('❌ Access Denied');
