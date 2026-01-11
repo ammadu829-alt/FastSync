@@ -1,494 +1,518 @@
-/* responsive.css - Add this file to your project */
+/* responsive.css - Works on ALL devices */
 
 /* ============================================
-   MOBILE RESPONSIVE STYLES FOR FASTSYNC
+   BASE STYLES - All Devices
    ============================================ */
-
-/* Base responsive setup */
 * {
     box-sizing: border-box;
 }
 
 body {
     overflow-x: hidden;
+    width: 100%;
+}
+
+img {
+    max-width: 100%;
+    height: auto;
+}
+
+/* Containers adapt to screen */
+.container,
+.dashboard-container {
+    width: 100%;
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 20px;
 }
 
 /* ============================================
-   TABLET DEVICES (768px - 1024px)
+   LARGE DESKTOPS (1400px and above)
    ============================================ */
-@media screen and (max-width: 1024px) {
-    /* Container adjustments */
+@media screen and (min-width: 1400px) {
     .container {
-        width: 95%;
+        max-width: 1320px;
+    }
+    
+    .partners-grid,
+    #partnersGrid {
+        grid-template-columns: repeat(4, 1fr);
+    }
+    
+    .stats-grid {
+        grid-template-columns: repeat(5, 1fr);
+    }
+}
+
+/* ============================================
+   DESKTOPS (1200px - 1399px)
+   ============================================ */
+@media screen and (min-width: 1200px) and (max-width: 1399px) {
+    .container {
+        max-width: 1140px;
+        padding: 20px;
+    }
+    
+    .partners-grid,
+    #partnersGrid {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 20px;
+    }
+    
+    .stats-grid {
+        grid-template-columns: repeat(4, 1fr);
+    }
+    
+    .header h1 {
+        font-size: 32px;
+    }
+}
+
+/* ============================================
+   LAPTOPS (992px - 1199px)
+   ============================================ */
+@media screen and (min-width: 992px) and (max-width: 1199px) {
+    .container {
+        max-width: 960px;
+        padding: 20px;
+    }
+    
+    .partners-grid,
+    #partnersGrid {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 20px;
+    }
+    
+    .stats-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+    
+    .header h1 {
+        font-size: 28px;
+    }
+    
+    /* Slightly smaller buttons */
+    button,
+    .btn {
+        padding: 10px 18px;
+        font-size: 15px;
+    }
+}
+
+/* ============================================
+   TABLETS (768px - 991px)
+   ============================================ */
+@media screen and (min-width: 768px) and (max-width: 991px) {
+    .container {
+        max-width: 720px;
         padding: 15px;
     }
-
+    
+    .partners-grid,
+    #partnersGrid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 15px;
+    }
+    
+    .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 15px;
+    }
+    
     /* Header adjustments */
     .header {
         flex-direction: column;
         text-align: center;
         gap: 15px;
     }
-
+    
     .header h1 {
-        font-size: 28px;
+        font-size: 26px;
     }
-
-    /* Navigation */
-    .nav-buttons {
-        flex-direction: column;
+    
+    .header-buttons {
+        display: flex;
+        gap: 10px;
         width: 100%;
+        justify-content: center;
     }
-
+    
+    /* Navigation buttons side by side */
+    .nav-buttons {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        justify-content: center;
+    }
+    
     .nav-buttons button,
     .nav-buttons a {
-        width: 100%;
-        margin: 5px 0;
+        flex: 1 1 45%;
+        min-width: 150px;
     }
-
-    /* Grid layouts */
-    .stats-grid,
-    .partners-grid {
-        grid-template-columns: repeat(2, 1fr);
-        gap: 15px;
-    }
-
-    /* Forms */
-    .form-row {
-        flex-direction: column;
-    }
-
-    .form-group {
-        width: 100%;
-    }
-
-    /* Tables */
+    
+    /* Tables scroll */
     .data-table {
         overflow-x: auto;
-        display: block;
     }
-
-    .data-table table {
+    
+    table {
         min-width: 600px;
+        font-size: 13px;
+    }
+    
+    /* Forms in rows */
+    .form-row {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 15px;
     }
 }
 
 /* ============================================
-   MOBILE DEVICES (max-width: 767px)
+   MOBILE LANDSCAPE (576px - 767px)
    ============================================ */
-@media screen and (max-width: 767px) {
-    /* Body and container */
-    body {
-        padding: 10px;
-    }
-
-    .container,
-    .dashboard-container {
-        width: 100%;
-        padding: 10px;
-        margin: 0;
-    }
-
-    /* Headers */
-    .header {
+@media screen and (min-width: 576px) and (max-width: 767px) {
+    .container {
         padding: 15px;
-        flex-direction: column;
     }
-
+    
+    .partners-grid,
+    #partnersGrid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+    }
+    
+    .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+    }
+    
     .header h1 {
         font-size: 22px;
     }
-
+    
+    /* Buttons in rows */
+    .nav-buttons,
     .header-buttons {
-        flex-direction: column;
-        width: 100%;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
     }
-
+    
+    .nav-buttons button,
     .header-buttons button {
-        width: 100%;
-        margin: 5px 0;
-    }
-
-    /* Statistics cards */
-    .stats-grid {
-        grid-template-columns: 1fr;
-        gap: 10px;
-    }
-
-    .stat-card {
-        padding: 15px;
-    }
-
-    .stat-number {
-        font-size: 32px;
-    }
-
-    .stat-label {
+        flex: 1 1 48%;
+        min-width: 120px;
         font-size: 14px;
     }
+    
+    /* Cards slightly smaller */
+    .partner-card,
+    .card {
+        padding: 15px;
+    }
+    
+    /* Tables scroll */
+    .data-table {
+        overflow-x: auto;
+    }
+    
+    table {
+        font-size: 12px;
+    }
+}
 
-    /* Partner cards grid */
+/* ============================================
+   MOBILE PORTRAIT (Up to 575px)
+   ============================================ */
+@media screen and (max-width: 575px) {
+    body {
+        font-size: 14px;
+    }
+    
+    .container,
+    .dashboard-container {
+        padding: 10px;
+    }
+    
+    /* Single column layout */
     .partners-grid,
     #partnersGrid {
         grid-template-columns: 1fr !important;
         gap: 15px;
     }
-
-    .partner-card {
-        width: 100%;
-    }
-
-    /* Card headers */
-    .card-header {
-        flex-direction: column;
-        align-items: flex-start;
+    
+    .stats-grid {
+        grid-template-columns: 1fr !important;
         gap: 10px;
     }
-
-    .profile-info {
-        width: 100%;
-    }
-
-    .availability-badge {
-        align-self: flex-start;
-    }
-
-    /* Info sections */
-    .info-row {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 8px;
-    }
-
-    .info-content {
-        width: 100%;
-    }
-
-    /* Card footer buttons */
-    .card-footer {
-        flex-direction: column;
+    
+    /* Header stack vertically */
+    .header {
+        flex-direction: column !important;
+        align-items: stretch !important;
+        padding: 15px 10px;
         gap: 10px;
     }
-
-    .card-footer button {
-        width: 100%;
-        margin: 0;
+    
+    .header h1 {
+        font-size: 20px !important;
+        text-align: center;
     }
-
-    /* Forms */
-    .form-section,
-    .profile-section {
+    
+    /* All buttons full width */
+    .nav-buttons,
+    .header-buttons,
+    .action-buttons {
+        display: flex !important;
+        flex-direction: column !important;
+        width: 100% !important;
+        gap: 8px !important;
+    }
+    
+    button,
+    .btn,
+    .nav-buttons button,
+    .header-buttons button,
+    .action-btn {
+        width: 100% !important;
+        display: block !important;
+        padding: 12px !important;
+        font-size: 14px !important;
+        margin: 0 !important;
+    }
+    
+    /* Cards full width */
+    .partner-card,
+    .card,
+    .review-card,
+    .report-card {
+        width: 100% !important;
         padding: 15px;
-    }
-
-    .form-row {
-        flex-direction: column;
-    }
-
-    .form-group {
-        width: 100%;
         margin-bottom: 15px;
     }
-
+    
+    /* Card header stack */
+    .card-header {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: 10px;
+    }
+    
+    /* Card footer buttons stack */
+    .card-footer {
+        flex-direction: column !important;
+        gap: 8px;
+    }
+    
+    .card-footer button {
+        width: 100% !important;
+    }
+    
+    /* Forms full width */
+    .form-group,
+    .form-row {
+        width: 100%;
+    }
+    
+    .form-row {
+        flex-direction: column !important;
+        gap: 15px;
+    }
+    
     input,
     select,
     textarea {
-        width: 100%;
-        font-size: 16px; /* Prevents zoom on iOS */
+        width: 100% !important;
+        padding: 12px;
+        font-size: 16px; /* Prevents iOS zoom */
     }
-
-    /* Search and filter section */
+    
+    /* Search and filters */
     .search-filter,
     .filters-grid {
-        grid-template-columns: 1fr;
+        display: flex;
+        flex-direction: column !important;
         gap: 10px;
     }
-
+    
     .search-filter input,
     .search-filter select {
-        width: 100%;
-        min-width: unset;
+        width: 100% !important;
     }
-
-    /* Tabs */
+    
+    /* Tabs stack */
     .tabs {
-        flex-direction: column;
-        gap: 8px;
+        flex-direction: column !important;
+        gap: 5px;
     }
-
+    
     .tab-btn {
-        width: 100%;
+        width: 100% !important;
         padding: 12px;
-        font-size: 14px;
     }
-
-    /* Tables */
+    
+    /* Tables scroll */
     .data-table {
         overflow-x: auto;
-        font-size: 12px;
+        display: block;
+        width: 100%;
     }
-
-    .data-table table {
-        min-width: 100%;
+    
+    table {
+        width: 100%;
+        font-size: 11px;
     }
-
-    .data-table th,
-    .data-table td {
+    
+    th, td {
         padding: 8px 5px;
         font-size: 11px;
     }
-
-    /* Hide some columns on mobile */
-    .data-table th:nth-child(n+5),
-    .data-table td:nth-child(n+5) {
+    
+    /* Hide extra columns */
+    .data-table th:nth-child(n+6),
+    .data-table td:nth-child(n+6) {
         display: none;
     }
-
-    /* Modals */
+    
+    /* Modals fit screen */
     .modal-content {
-        width: 95%;
-        max-width: 95%;
+        width: 95vw !important;
         margin: 20px auto;
-        padding: 20px;
-    }
-
-    .modal-header h2 {
-        font-size: 20px;
-    }
-
-    /* Review cards */
-    .review-card {
         padding: 15px;
     }
-
+    
+    /* Review cards */
     .review-header {
-        flex-direction: column;
-        align-items: flex-start;
+        flex-direction: column !important;
+        gap: 15px;
     }
-
+    
     .review-users {
-        flex-direction: column;
+        flex-direction: column !important;
         width: 100%;
     }
-
-    .user-badge {
-        width: 100%;
-    }
-
-    .review-arrow {
-        transform: rotate(90deg);
-        margin: 10px 0;
-    }
-
+    
     .review-score {
         text-align: left;
-        margin-top: 15px;
     }
-
+    
     .rating-breakdown {
-        grid-template-columns: 1fr;
+        grid-template-columns: 1fr !important;
     }
-
-    .review-actions {
-        flex-direction: column;
+    
+    /* Stats */
+    .stat-number {
+        font-size: 36px;
     }
-
-    .review-actions button {
-        width: 100%;
+    
+    .stat-label {
+        font-size: 13px;
     }
-
-    /* Report cards */
-    .report-card {
-        padding: 15px;
+    
+    /* Avatars */
+    .user-avatar,
+    .profile-avatar {
+        width: 40px;
+        height: 40px;
+        font-size: 18px;
     }
-
-    .report-header {
-        flex-direction: column;
-        align-items: flex-start;
-    }
-
-    .report-actions {
-        flex-direction: column;
-    }
-
-    .report-actions button {
-        width: 100%;
-    }
-
-    /* Connection info */
-    .connection-info {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 8px;
-    }
-
-    /* Buttons */
-    .action-btn {
-        padding: 8px 12px;
-        font-size: 12px;
-        margin: 3px;
-    }
-
-    .btn,
-    button {
-        padding: 10px 15px;
-        font-size: 14px;
-    }
-
-    /* Skills tags */
-    .skills-container {
-        flex-wrap: wrap;
-    }
-
-    .skill-tag {
-        font-size: 12px;
-        padding: 5px 10px;
-    }
-
-    /* Star ratings */
-    .star-rating {
-        gap: 5px;
-    }
-
-    .star {
-        font-size: 22px;
-    }
-
-    /* Filters section */
-    .filters-section {
-        padding: 15px;
-    }
-
-    .filter-actions {
-        flex-direction: column;
-    }
-
-    .filter-actions button {
-        width: 100%;
-    }
-
+    
     /* Request items */
     .request-item {
         flex-direction: column;
-        align-items: flex-start;
         gap: 10px;
     }
-
+    
     .request-actions {
         width: 100%;
         display: flex;
-        gap: 10px;
+        gap: 8px;
     }
-
+    
     .request-actions button {
         flex: 1;
     }
-
-    /* Login/Signup forms */
-    .auth-container {
-        padding: 20px;
-        margin: 20px 10px;
-    }
-
-    .auth-form {
-        width: 100%;
-    }
-
-    /* No results message */
-    .no-data,
-    .no-results,
-    .no-reviews {
-        padding: 30px 15px;
-        font-size: 16px;
-    }
 }
 
 /* ============================================
-   SMALL MOBILE DEVICES (max-width: 480px)
+   EXTRA SMALL MOBILE (Up to 375px)
    ============================================ */
-@media screen and (max-width: 480px) {
-    /* Extra small adjustments */
+@media screen and (max-width: 375px) {
+    body {
+        font-size: 13px;
+    }
+    
     .header h1 {
-        font-size: 20px;
+        font-size: 18px !important;
     }
-
+    
+    button,
+    .btn {
+        padding: 10px !important;
+        font-size: 13px !important;
+    }
+    
     .stat-number {
-        font-size: 28px;
-    }
-
-    .stat-icon {
         font-size: 32px;
     }
-
-    .user-avatar {
-        width: 35px;
-        height: 35px;
-        font-size: 16px;
-    }
-
-    .profile-avatar {
-        width: 50px;
-        height: 50px;
-        font-size: 24px;
-    }
-
-    /* Smaller fonts */
-    body {
-        font-size: 14px;
-    }
-
-    h2 {
-        font-size: 22px;
-    }
-
-    h3 {
-        font-size: 18px;
-    }
-
-    /* Compact padding */
+    
     .partner-card,
-    .review-card,
-    .report-card {
+    .card {
         padding: 12px;
     }
-
-    .content-section {
-        padding: 15px;
+    
+    table {
+        font-size: 10px;
+    }
+    
+    th, td {
+        padding: 6px 3px;
     }
 }
 
 /* ============================================
-   LANDSCAPE MODE (mobile/tablet)
+   LANDSCAPE MODE (Any device)
    ============================================ */
 @media screen and (max-height: 500px) and (orientation: landscape) {
+    .header {
+        padding: 10px 20px;
+    }
+    
     .modal-content {
         max-height: 90vh;
         overflow-y: auto;
     }
-
-    .header {
-        padding: 10px 15px;
-    }
-
+    
     .stat-card {
-        padding: 10px;
+        padding: 15px 10px;
+    }
+    
+    .stat-number {
+        font-size: 28px;
     }
 }
 
 /* ============================================
-   PRINT STYLES (optional)
+   PRINT (For reports/documents)
    ============================================ */
 @media print {
     .header-buttons,
+    .nav-buttons,
     .action-btn,
     .btn-delete,
     .tabs,
     .filters-section {
-        display: none;
+        display: none !important;
     }
-
+    
     .partner-card,
     .review-card {
         page-break-inside: avoid;
+    }
+    
+    body {
+        background: white;
     }
 }
