@@ -1,0 +1,279 @@
+/* scroll-mobile.css - Smooth scrolling for mobile */
+
+/* ============================================
+   SMOOTH SCROLLING - ALL DEVICES
+   ============================================ */
+
+html {
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch; /* iOS smooth scrolling */
+}
+
+body {
+    overflow-x: hidden; /* Prevent horizontal scroll */
+    overflow-y: auto; /* Allow vertical scroll */
+}
+
+/* ============================================
+   MOBILE SCROLL IMPROVEMENTS
+   ============================================ */
+
+@media screen and (max-width: 768px) {
+    
+    /* Enable smooth momentum scrolling on iOS */
+    body, 
+    .modal-content,
+    .content-section,
+    .data-table,
+    .scrollable {
+        -webkit-overflow-scrolling: touch;
+        overflow-scrolling: touch;
+    }
+    
+    /* Fix body scroll */
+    body {
+        position: relative;
+        overflow-x: hidden;
+        overflow-y: scroll;
+        height: 100%;
+    }
+    
+    html {
+        height: 100%;
+        overflow: hidden;
+    }
+    
+    /* Container scroll */
+    .container,
+    .dashboard-container {
+        overflow-x: hidden;
+        overflow-y: auto;
+        max-height: 100vh;
+    }
+    
+    /* Scrollable sections */
+    .content-section {
+        overflow-y: auto;
+        max-height: calc(100vh - 200px);
+    }
+    
+    /* Table horizontal scroll */
+    .data-table {
+        overflow-x: auto;
+        overflow-y: visible;
+        -webkit-overflow-scrolling: touch;
+        white-space: nowrap;
+    }
+    
+    .data-table table {
+        min-width: 600px;
+    }
+    
+    /* Modal scroll */
+    .modal {
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+    
+    .modal-content {
+        max-height: 90vh;
+        overflow-y: auto;
+    }
+    
+    /* Reviews container scroll */
+    #reviewsContainer,
+    #reportsContainer {
+        max-height: 70vh;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+    
+    /* Partners grid scroll */
+    #partnersGrid {
+        overflow-y: visible;
+    }
+    
+    /* Fix for stuck scroll */
+    .partner-card,
+    .review-card,
+    .report-card {
+        position: relative;
+        overflow: visible;
+    }
+}
+
+/* ============================================
+   SCROLL TO TOP BUTTON
+   ============================================ */
+
+#scrollToTop {
+    display: none;
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 99;
+    border: none;
+    outline: none;
+    background-color: #8a2be2;
+    color: white;
+    cursor: pointer;
+    padding: 15px;
+    border-radius: 50%;
+    font-size: 18px;
+    width: 50px;
+    height: 50px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+    transition: all 0.3s;
+}
+
+#scrollToTop:hover {
+    background-color: #6a0dad;
+    transform: scale(1.1);
+}
+
+#scrollToTop:active {
+    transform: scale(0.95);
+}
+
+@media screen and (max-width: 768px) {
+    #scrollToTop {
+        bottom: 15px;
+        right: 15px;
+        width: 45px;
+        height: 45px;
+        font-size: 16px;
+    }
+}
+
+/* ============================================
+   PULL TO REFRESH INDICATOR (iOS style)
+   ============================================ */
+
+.pull-to-refresh {
+    position: fixed;
+    top: -60px;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 10px 20px;
+    background: rgba(138, 43, 226, 0.9);
+    color: white;
+    border-radius: 20px;
+    font-size: 14px;
+    transition: top 0.3s;
+    z-index: 1000;
+    display: none;
+}
+
+.pull-to-refresh.active {
+    top: 10px;
+    display: block;
+}
+
+/* ============================================
+   STICKY HEADER ON SCROLL
+   ============================================ */
+
+.header.sticky {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+    from {
+        transform: translateY(-100%);
+    }
+    to {
+        transform: translateY(0);
+    }
+}
+
+@media screen and (max-width: 768px) {
+    .header.sticky {
+        position: sticky;
+        top: 0;
+    }
+}
+
+/* ============================================
+   SMOOTH ANCHOR SCROLL
+   ============================================ */
+
+a[href^="#"] {
+    scroll-behavior: smooth;
+}
+
+/* ============================================
+   PREVENT OVERSCROLL BOUNCE (Optional)
+   ============================================ */
+
+/* Uncomment if you want to disable iOS bounce effect */
+/*
+body {
+    overscroll-behavior-y: contain;
+}
+*/
+
+/* ============================================
+   CUSTOM SCROLLBAR (Desktop)
+   ============================================ */
+
+@media screen and (min-width: 769px) {
+    /* Webkit browsers (Chrome, Safari, Edge) */
+    ::-webkit-scrollbar {
+        width: 10px;
+        height: 10px;
+    }
+
+    ::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        border-radius: 10px;
+    }
+
+    ::-webkit-scrollbar-thumb {
+        background: #8a2be2;
+        border-radius: 10px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+        background: #6a0dad;
+    }
+
+    /* Firefox */
+    * {
+        scrollbar-width: thin;
+        scrollbar-color: #8a2be2 #f1f1f1;
+    }
+}
+
+/* ============================================
+   LOADING SPINNER FOR SCROLL
+   ============================================ */
+
+.scroll-loading {
+    text-align: center;
+    padding: 20px;
+    display: none;
+}
+
+.scroll-loading.active {
+    display: block;
+}
+
+.scroll-loading::after {
+    content: '';
+    display: inline-block;
+    width: 30px;
+    height: 30px;
+    border: 3px solid #f3f3f3;
+    border-top: 3px solid #8a2be2;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
