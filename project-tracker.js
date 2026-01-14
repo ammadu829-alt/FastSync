@@ -4,7 +4,7 @@
 const firebaseConfig = {
     apiKey: "YOUR_API_KEY",
     authDomain: "fastsync.firebaseapp.com",
-   databaseURL: "https://fastsync-8b20e-default-rtdb.firebaseio.com/", 
+    databaseURL: "https://fastsync-8b20e-default-rtdb.firebaseio.com/",
     projectId: "fastsync",
     storageBucket: "fastsync.appspot.com",
     messagingSenderId: "123456789",
@@ -12,10 +12,17 @@ const firebaseConfig = {
 };
 
 // Initialize Firebase
-if (!firebase.apps.length) {
-    firebase.initializeApp(firebaseConfig);
+let database;
+try {
+    if (!firebase.apps.length) {
+        firebase.initializeApp(firebaseConfig);
+    }
+    database = firebase.database();
+    console.log('✅ Firebase initialized successfully');
+} catch (error) {
+    console.error('❌ Firebase initialization error:', error);
+    alert('Error connecting to database. Please check your Firebase configuration.');
 }
-const database = firebase.database();
 
 // Get user info
 const userEmail = localStorage.getItem('userEmail');
@@ -49,9 +56,11 @@ function loadUserConnections() {
     database.ref('connections/' + userId).on('value', (snapshot) => {
         const data = snapshot.val();
         if (data) {
-            myConnections = Object.keys(data).filter(id => id !== userId);
+            myConnections = Object.keys(data).filter(id => id !== userId && data[id] === true);
         }
         loadPartnerOptions();
+    }, (error) => {
+        console.error('Error loading connections:', error);
     });
 }
 
@@ -88,9 +97,17 @@ function loadPartnerOptions() {
 function loadProjects() {
     if (!userId) return;
 
-    database.ref('projects').orderByChild('userId').equalTo(userId).on('value', (snapshot) => {
+    // Load all projects and filter client-side to avoid index requirement
+    database.ref('projects').on('value', (snapshot) => {
         const data = snapshot.val();
-        allProjects = data ? Object.entries(data).map(([id, val]) => ({...val, id})) : [];
+        if (data) {
+            // Filter only current user's projects
+            allProjects = Object.entries(data)
+                .map(([id, val]) => ({...val, id}))
+                .filter(project => project.userId === userId);
+        } else {
+            allProjects = [];
+        }
         displayProjects();
     });
 }
