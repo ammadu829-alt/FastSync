@@ -4,7 +4,7 @@
 const firebaseConfig = {
     apiKey: "YOUR_API_KEY",
     authDomain: "fastsync.firebaseapp.com",
-    databaseURL: "https://fastsync-8b20e-default-rtdb.firebaseio.com/",
+   databaseURL: "https://fastsync-8b20e-default-rtdb.firebaseio.com/", 
     projectId: "fastsync",
     storageBucket: "fastsync.appspot.com",
     messagingSenderId: "123456789",
