@@ -1099,4 +1099,23 @@ html {
 .logo {
     font-size: 24px;
 }
+/* Group Badge on Profile Card */
+.group-indicator {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 5px 10px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 15px;
+    font-size: 12px;
+    font-weight: 600;
+    margin-top: 10px;
+}
+
+.group-indicator i {
+    font-size: 14px;
+}    
+    
+
 
