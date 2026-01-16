@@ -17,6 +17,7 @@ const database = firebase.database();
 
 let partners = [];
 let myConnections = [];
+let myGroups = []; // NEW: Store user's groups
 const userEmail = localStorage.getItem('userEmail');
 const userName = localStorage.getItem('userName');
 
@@ -43,6 +44,7 @@ function init() {
     // Load connections and requests
     loadMyConnections();
     loadPendingRequests();
+    loadMyGroups(); // NEW: Load user's groups
 }
 
 // Clean up any self-connections (where userId is connected to itself)
@@ -71,6 +73,53 @@ function cleanupSelfConnections() {
                 console.log('✅ No self-connections found');
             }
         }
+    });
+}
+
+// NEW: Load user's groups
+function loadMyGroups() {
+    if (!userEmail) return;
+    
+    const userId = emailToId(userEmail);
+    
+    console.log('👥 Loading my groups for user:', userId);
+    
+    database.ref('groups').on('value', (snapshot) => {
+        const data = snapshot.val();
+        
+        if (!data) {
+            myGroups = [];
+            console.log('ℹ️ No groups found');
+            return;
+        }
+        
+        // Filter groups where user is a member
+        myGroups = Object.entries(data)
+            .filter(([groupId, group]) => {
+                return group.members && group.members[userId];
+            })
+            .map(([groupId, group]) => ({
+                id: groupId,
+                ...group
+            }));
+        
+        console.log('✅ Found', myGroups.length, 'groups for user');
+        
+        // Refresh display to show group indicators
+        displayPartners();
+    });
+}
+
+// NEW: Check if user has a group with another user
+function hasGroupWith(otherUserId) {
+    if (!userEmail) return false;
+    
+    const userId = emailToId(userEmail);
+    
+    return myGroups.some(group => {
+        return group.members && 
+               group.members[userId] && 
+               group.members[otherUserId];
     });
 }
 
@@ -197,7 +246,7 @@ function displayPartners() {
     });
 }
 
-// Create profile card with ULTRA STRICT PRIVACY
+// Create profile card with ULTRA STRICT PRIVACY + GROUP INDICATOR
 function createProfileCard(p) {
     const card = document.createElement('div');
     card.className = 'partner-card';
@@ -215,6 +264,9 @@ function createProfileCard(p) {
     const theirUserId = p.email ? emailToId(p.email) : null;
     const isConnected = theirUserId && myConnections.includes(theirUserId);
     
+    // NEW: Check if has group with this user
+    const hasGroup = theirUserId && hasGroupWith(theirUserId);
+    
     // Show full profile if it's mine OR if we're connected
     const showFullProfile = isMine || isConnected;
     
@@ -227,6 +279,7 @@ function createProfileCard(p) {
     console.log('   My connections:', myConnections);
     console.log('   ✅ IS THIS MY PROFILE?:', isMine);
     console.log('   🔗 AM I CONNECTED?:', isConnected);
+    console.log('   👥 HAS GROUP?:', hasGroup);
     console.log('   🔓 SHOW FULL PROFILE?:', showFullProfile);
     console.log('========================================');
 
@@ -300,6 +353,19 @@ function createProfileCard(p) {
                         <p>${p.course || 'Not specified'}</p>
                     </div>
                 </div>
+                
+                ${isConnected ? `
+                    <div class="info-row">
+                        <span class="info-icon">👥</span>
+                        <div class="info-content">
+                            <strong>Partnership Status</strong>
+                            <div class="group-indicator" style="display: flex; align-items: center; gap: 8px; padding: 8px 12px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 8px; color: white; font-size: 14px; margin-top: 4px;">
+                                <span style="font-size: 18px;">👥</span>
+                                <span style="font-weight: 600;">${hasGroup ? 'Active Group Member' : 'Connected Partner'}</span>
+                            </div>
+                        </div>
+                    </div>
+                ` : ''}
             </div>`;
 
     // PRIVATE INFORMATION - Show if mine OR connected
@@ -814,7 +880,9 @@ function loadReceivedRequests() {
     });
 }
 
-// Accept request with PROPER CONNECTION CREATION
+// ============================================
+// ACCEPT REQUEST WITH AUTO-GROUP CREATION
+// ============================================
 window.acceptRequest = function(requestId, fromUserId) {
     const toUserId = emailToId(userEmail);
     
@@ -826,11 +894,10 @@ window.acceptRequest = function(requestId, fromUserId) {
     }
     
     console.log('========================================');
-    console.log('✅ ACCEPTING REQUEST');
+    console.log('✅ ACCEPTING REQUEST & CREATING GROUP');
     console.log('   Request ID:', requestId);
     console.log('   From user:', fromUserId);
     console.log('   To user (me):', toUserId);
-    console.log('   Self-check passed:', fromUserId !== toUserId);
     console.log('========================================');
     
     // Step 1: Update request status to 'accepted'
@@ -841,18 +908,11 @@ window.acceptRequest = function(requestId, fromUserId) {
     .then(() => {
         console.log('✅ Step 1: Request status updated to accepted');
         
-        // Step 2: Create bidirectional connection (only if not self)
-        const connectionPromises = [];
-        
-        // Add connection from me to them
-        connectionPromises.push(
-            database.ref('connections/' + toUserId + '/' + fromUserId).set(true)
-        );
-        
-        // Add connection from them to me
-        connectionPromises.push(
+        // Step 2: Create bidirectional connection
+        const connectionPromises = [
+            database.ref('connections/' + toUserId + '/' + fromUserId).set(true),
             database.ref('connections/' + fromUserId + '/' + toUserId).set(true)
-        );
+        ];
         
         return Promise.all(connectionPromises);
     })
@@ -861,19 +921,82 @@ window.acceptRequest = function(requestId, fromUserId) {
         console.log('   Connection path 1: connections/' + toUserId + '/' + fromUserId);
         console.log('   Connection path 2: connections/' + fromUserId + '/' + toUserId);
         
-        alert('✅ Connection request accepted!\n\nYou can now see each other\'s full profiles.');
+        // Step 3: Auto-create group
+        return createAutoGroup(fromUserId, toUserId);
+    })
+    .then(() => {
+        console.log('✅ Step 3: Group created successfully');
         
-        // Step 3: Reload connections and requests
+        alert('✅ Connection accepted & Group created!\n\nYou can now see each other\'s full profiles and collaborate on projects together.');
+        
+        // Step 4: Reload connections and requests
         loadReceivedRequests();
         loadMyConnections();
-        
-        console.log('✅ Step 3: Reloading connections and UI');
+        loadMyGroups();
     })
     .catch(err => {
         alert('❌ Error accepting request: ' + err.message);
         console.error('❌ Error details:', err);
     });
 };
+
+// ============================================
+// AUTO-CREATE GROUP FUNCTION
+// ============================================
+function createAutoGroup(user1Id, user2Id) {
+    console.log('🔨 Creating auto-group for users:', user1Id, user2Id);
+    
+    // Get both users' profiles
+    return database.ref('profiles').once('value').then((snapshot) => {
+        const profiles = snapshot.val();
+        
+        if (!profiles) {
+            console.log('⚠️ No profiles found');
+            return;
+        }
+        
+        const user1Profile = Object.values(profiles).find(p => emailToId(p.email) === user1Id);
+        const user2Profile = Object.values(profiles).find(p => emailToId(p.email) === user2Id);
+        
+        if (!user1Profile || !user2Profile) {
+            console.log('⚠️ Could not create auto-group: one or both profiles not found');
+            return;
+        }
+        
+        // Create group name
+        const groupName = `${user1Profile.fullName} & ${user2Profile.fullName}`;
+        
+        console.log('📝 Creating group:', groupName);
+        
+        const groupData = {
+            name: groupName,
+            course: user1Profile.course || user2Profile.course || 'General Studies',
+            description: 'Auto-created partnership group',
+            createdBy: user1Id,
+            createdAt: Date.now(),
+            autoCreated: true,
+            members: {
+                [user1Id]: {
+                    name: user1Profile.fullName,
+                    email: user1Profile.email,
+                    role: 'creator',
+                    joinedAt: Date.now()
+                },
+                [user2Id]: {
+                    name: user2Profile.fullName,
+                    email: user2Profile.email,
+                    role: 'member',
+                    joinedAt: Date.now()
+                }
+            },
+            memberCount: 2
+        };
+        
+        return database.ref('groups').push(groupData).then(() => {
+            console.log('✅ Auto-group created successfully');
+        });
+    });
+}
 
 // Reject request
 window.rejectRequest = function(requestId) {
@@ -1024,178 +1147,5 @@ if (profileBtn) {
 
 // Initialize
 init();
-// ============================================
-// GROUP AUTO-CREATION SYSTEM
-// ============================================
 
-// Auto-create group when accepting request (UPDATE THE EXISTING acceptRequest FUNCTION)
-// Accept request with PROPER CONNECTION CREATION + AUTO GROUP
-window.acceptRequest = function(requestId, fromUserId) {
-    const toUserId = emailToId(userEmail);
-    
-    // CRITICAL CHECK: Prevent self-connection
-    if (fromUserId === toUserId) {
-        console.error('❌ ERROR: Cannot create self-connection!');
-        alert('❌ Error: Cannot connect with yourself!');
-        return;
-    }
-    
-    console.log('========================================');
-    console.log('✅ ACCEPTING REQUEST & CREATING GROUP');
-    console.log('   Request ID:', requestId);
-    console.log('   From user:', fromUserId);
-    console.log('   To user (me):', toUserId);
-    console.log('========================================');
-    
-    // Step 1: Update request status to 'accepted'
-    database.ref('requests/' + requestId).update({
-        status: 'accepted',
-        acceptedAt: Date.now()
-    })
-    .then(() => {
-        console.log('✅ Step 1: Request status updated to accepted');
-        
-        // Step 2: Create bidirectional connection
-        const connectionPromises = [
-            database.ref('connections/' + toUserId + '/' + fromUserId).set(true),
-            database.ref('connections/' + fromUserId + '/' + toUserId).set(true)
-        ];
-        
-        return Promise.all(connectionPromises);
-    })
-    .then(() => {
-        console.log('✅ Step 2: Bidirectional connection created');
-        
-        // Step 3: Auto-create group
-        return createAutoGroup(fromUserId, toUserId);
-    })
-    .then(() => {
-        console.log('✅ Step 3: Group created successfully');
-        
-        alert('✅ Connection accepted & Group created!\n\nYou can now see each other\'s full profiles and collaborate on projects together.');
-        
-        // Step 4: Reload connections and requests
-        loadReceivedRequests();
-        loadMyConnections();
-    })
-    .catch(err => {
-        alert('❌ Error accepting request: ' + err.message);
-        console.error('❌ Error details:', err);
-    });
-};
-
-// Auto-create group function
-function createAutoGroup(user1Id, user2Id) {
-    console.log('🔨 Creating auto-group for users:', user1Id, user2Id);
-    
-    // Get both users' profiles
-    return database.ref('profiles').once('value').then((snapshot) => {
-        const profiles = snapshot.val();
-        
-        if (!profiles) {
-            console.log('⚠️ No profiles found');
-            return;
-        }
-        
-        const user1Profile = Object.values(profiles).find(p => emailToId(p.email) === user1Id);
-        const user2Profile = Object.values(profiles).find(p => emailToId(p.email) === user2Id);
-        
-        if (!user1Profile || !user2Profile) {
-            console.log('⚠️ Could not create auto-group: one or both profiles not found');
-            return;
-        }
-        
-        // Create group name
-        const groupName = `${user1Profile.fullName} & ${user2Profile.fullName}`;
-        
-        console.log('📝 Creating group:', groupName);
-        
-        const groupData = {
-            name: groupName,
-            course: user1Profile.course || user2Profile.course || 'General Studies',
-            description: 'Auto-created partnership group',
-            createdBy: user1Id,
-            createdAt: Date.now(),
-            autoCreated: true,
-            members: {
-                [user1Id]: {
-                    name: user1Profile.fullName,
-                    email: user1Profile.email,
-                    role: 'creator',
-                    joinedAt: Date.now()
-                },
-                [user2Id]: {
-                    name: user2Profile.fullName,
-                    email: user2Profile.email,
-                    role: 'member',
-                    joinedAt: Date.now()
-                }
-            },
-            memberCount: 2
-        };
-        
-        return database.ref('groups').push(groupData).then(() => {
-            console.log('✅ Auto-group created successfully');
-        });
-    });
-}
-
-// Auto-create group function
-function createAutoGroup(user1Id, user2Id) {
-    console.log('🔨 Creating auto-group for users:', user1Id, user2Id);
-    
-    // Get both users' profiles
-    return database.ref('profiles').once('value').then((snapshot) => {
-        const profiles = snapshot.val();
-        
-        if (!profiles) {
-            console.log('⚠️ No profiles found');
-            return;
-        }
-        
-        const user1Profile = Object.values(profiles).find(p => emailToId(p.email) === user1Id);
-        const user2Profile = Object.values(profiles).find(p => emailToId(p.email) === user2Id);
-        
-        if (!user1Profile || !user2Profile) {
-            console.log('⚠️ Could not create auto-group: one or both profiles not found');
-            return;
-        }
-        
-        // Create group name
-        const groupName = `${user1Profile.fullName} & ${user2Profile.fullName}`;
-        
-        console.log('📝 Creating group:', groupName);
-        
-        const groupData = {
-            name: groupName,
-            course: user1Profile.course || user2Profile.course || 'General Studies',
-            description: 'Auto-created partnership group',
-            createdBy: user1Id,
-            createdAt: Date.now(),
-            autoCreated: true,
-            members: {
-                [user1Id]: {
-                    name: user1Profile.fullName,
-                    email: user1Profile.email,
-                    role: 'creator',
-                    joinedAt: Date.now()
-                },
-                [user2Id]: {
-                    name: user2Profile.fullName,
-                    email: user2Profile.email,
-                    role: 'member',
-                    joinedAt: Date.now()
-                }
-            },
-            memberCount: 2
-        };
-        
-        return database.ref('groups').push(groupData).then(() => {
-            console.log('✅ Auto-group created successfully');
-        });
-    });
-}
-
-// Add at the very end, before the final console.log
-console.log('✅ FASTSync with FIXED Privacy & Request System loaded!')
-
+console.log('✅ FASTSync with Privacy, Requests & Auto-Group System loaded!');
