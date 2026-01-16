@@ -64,19 +64,41 @@ function loadUserConnections() {
     });
 }
 
-// Load partner options in dropdown
+// Load partner options in dropdown - UPDATED WITH GROUP SUPPORT
 function loadPartnerOptions() {
     const partnerSelect = document.getElementById('projectPartner');
     if (!partnerSelect) return;
 
-    partnerSelect.innerHTML = '<option value="">Select Partner (Optional)</option>';
+    partnerSelect.innerHTML = '<option value="">Individual Project</option>';
 
-    if (myConnections.length === 0) {
-        partnerSelect.innerHTML += '<option value="" disabled>No connections yet</option>';
-        return;
-    }
+    // Load groups
+    database.ref('groups').once('value', (snapshot) => {
+        const groups = snapshot.val();
+        if (groups) {
+            const myGroups = Object.entries(groups)
+                .filter(([id, group]) => {
+                    return group.members && Object.keys(group.members).includes(userId);
+                })
+                .map(([id, group]) => ({...group, id}));
 
-    // Load partner profiles
+            if (myGroups.length > 0) {
+                myGroups.forEach(group => {
+                    const option = document.createElement('option');
+                    option.value = `group_${group.id}`;
+                    option.textContent = `📁 ${group.name} (${group.memberCount} members)`;
+                    partnerSelect.appendChild(option);
+                });
+            }
+        }
+
+        // Also load individual connections
+        loadIndividualConnections(partnerSelect);
+    });
+}
+
+function loadIndividualConnections(selectElement) {
+    if (myConnections.length === 0) return;
+
     database.ref('profiles').once('value', (snapshot) => {
         const profiles = snapshot.val();
         if (!profiles) return;
@@ -86,8 +108,8 @@ function loadPartnerOptions() {
             if (profile) {
                 const option = document.createElement('option');
                 option.value = connId;
-                option.textContent = `${profile.fullName} (${profile.rollNumber})`;
-                partnerSelect.appendChild(option);
+                option.textContent = `👤 ${profile.fullName} (${profile.rollNumber})`;
+                selectElement.appendChild(option);
             }
         });
     });
@@ -517,4 +539,4 @@ window.addEventListener('click', function(e) {
 
 // Initialize
 init();
-console.log('✅ Project Tracker loaded!');
+console.log('✅ Project Tracker with Group Support loaded!');
