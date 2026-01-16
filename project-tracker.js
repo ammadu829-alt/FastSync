@@ -1,4 +1,4 @@
-// project-tracker.js - Project Timeline & Milestone Tracker
+// project-tracker.js - Shared Project Timeline & Milestone Tracker
 
 // Firebase Configuration
 const firebaseConfig = {
@@ -46,7 +46,7 @@ function init() {
     }
 
     loadUserConnections();
-    loadProjects();
+    loadSharedProjects(); // Changed from loadProjects
 }
 
 // Load user's connections for partner selection
@@ -64,14 +64,14 @@ function loadUserConnections() {
     });
 }
 
-// Load partner options in dropdown - UPDATED WITH GROUP SUPPORT
+// Load partner options in dropdown - WITH GROUP SUPPORT
 function loadPartnerOptions() {
     const partnerSelect = document.getElementById('projectPartner');
     if (!partnerSelect) return;
 
     partnerSelect.innerHTML = '<option value="">Individual Project</option>';
 
-    // Load groups
+    // Load groups first
     database.ref('groups').once('value', (snapshot) => {
         const groups = snapshot.val();
         if (groups) {
@@ -91,7 +91,7 @@ function loadPartnerOptions() {
             }
         }
 
-        // Also load individual connections
+        // Then load individual connections
         loadIndividualConnections(partnerSelect);
     });
 }
@@ -115,23 +115,59 @@ function loadIndividualConnections(selectElement) {
     });
 }
 
-// Load all projects
-function loadProjects() {
+// ============================================
+// LOAD SHARED PROJECTS - Only projects where user has access
+// ============================================
+function loadSharedProjects() {
     if (!userId) return;
 
-    // Load all projects and filter client-side to avoid index requirement
+    console.log('🔍 Loading shared projects for user:', userId);
+
     database.ref('projects').on('value', (snapshot) => {
         const data = snapshot.val();
+        allProjects = [];
+
         if (data) {
-            // Filter only current user's projects
-            allProjects = Object.entries(data)
-                .map(([id, val]) => ({...val, id}))
-                .filter(project => project.userId === userId);
-        } else {
-            allProjects = [];
+            Object.entries(data).forEach(([id, project]) => {
+                // Check if user has access to this project
+                if (hasProjectAccess(project)) {
+                    allProjects.push({...project, id});
+                }
+            });
         }
+
+        console.log('✅ Found', allProjects.length, 'accessible projects');
         displayProjects();
     });
+}
+
+// ============================================
+// CHECK PROJECT ACCESS - Core permission system
+// ============================================
+function hasProjectAccess(project) {
+    // 1. Creator always has access
+    if (project.userId === userId) {
+        return true;
+    }
+
+    // 2. If project has sharedWith array, check if user is in it
+    if (project.sharedWith && project.sharedWith.includes(userId)) {
+        return true;
+    }
+
+    // 3. If project is assigned to a group, check if user is in that group
+    if (project.groupId && project.groupMembers) {
+        if (project.groupMembers.includes(userId)) {
+            return true;
+        }
+    }
+
+    // 4. If individual partner, check if user is the partner
+    if (project.partnerId === userId) {
+        return true;
+    }
+
+    return false;
 }
 
 // Display projects
@@ -175,6 +211,10 @@ function createProjectCard(project) {
         statusText = 'Overdue';
     }
 
+    // Determine if user is creator
+    const isCreator = project.userId === userId;
+    const roleText = isCreator ? '👑 Created by You' : '🤝 Shared with You';
+
     return `
         <div class="project-card ${cardClass}" onclick="viewProject('${project.id}')">
             <div class="project-header">
@@ -182,10 +222,21 @@ function createProjectCard(project) {
                 <span class="project-status ${statusClass}">${statusText}</span>
             </div>
             
+            <div class="project-partner" style="font-size: 12px; color: #666; margin-bottom: 8px;">
+                ${roleText}
+            </div>
+            
             ${project.partnerName ? `
                 <div class="project-partner">
                     <div class="partner-avatar">${project.partnerName.charAt(0)}</div>
                     <span>With ${project.partnerName}</span>
+                </div>
+            ` : ''}
+            
+            ${project.groupName ? `
+                <div class="project-partner">
+                    <i class="bi bi-people-fill"></i>
+                    <span>Group: ${project.groupName}</span>
                 </div>
             ` : ''}
             
@@ -210,9 +261,14 @@ function createProjectCard(project) {
                 <button class="btn btn-primary btn-sm" onclick="viewProject('${project.id}')">
                     <i class="bi bi-eye"></i> View
                 </button>
-                <button class="btn btn-danger btn-sm" onclick="deleteProject('${project.id}', '${project.title}')">
-                    <i class="bi bi-trash"></i> Delete
-                </button>
+                ${isCreator ? `
+                    <button class="btn btn-warning btn-sm" onclick="editProject('${project.id}')">
+                        <i class="bi bi-pencil"></i> Edit
+                    </button>
+                    <button class="btn btn-danger btn-sm" onclick="deleteProject('${project.id}', '${project.title}')">
+                        <i class="bi bi-trash"></i> Delete
+                    </button>
+                ` : ''}
             </div>
         </div>
     `;
@@ -266,7 +322,6 @@ function loadMilestones(projectId) {
 // Display milestones
 function displayMilestones(milestones) {
     const container = document.getElementById('timelineContainer');
-    const timeline = container.querySelector('.timeline-line');
     
     if (milestones.length === 0) {
         container.innerHTML = `
@@ -379,6 +434,11 @@ function formatDate(date) {
 function openCreateProjectModal() {
     document.getElementById('createProjectModal').classList.add('show');
     document.getElementById('createProjectForm').reset();
+    document.getElementById('editProjectId').value = '';
+    
+    // Update modal title
+    document.getElementById('projectModalTitle').textContent = 'Create New Project';
+    document.getElementById('projectSubmitBtn').textContent = 'Create Project';
     
     // Set min date to today
     const today = new Date().toISOString().split('T')[0];
@@ -402,57 +462,151 @@ function closeModal(modalId) {
     document.getElementById(modalId).classList.remove('show');
 }
 
-// Create project form submit
+// ============================================
+// EDIT PROJECT FUNCTION
+// ============================================
+window.editProject = function(projectId) {
+    const project = allProjects.find(p => p.id === projectId);
+    if (!project) return;
+    
+    // Check if user is creator
+    if (project.userId !== userId) {
+        alert('❌ Only the project creator can edit project details!');
+        return;
+    }
+    
+    // Fill form with existing data
+    document.getElementById('editProjectId').value = projectId;
+    document.getElementById('projectTitle').value = project.title;
+    document.getElementById('projectCourse').value = project.course;
+    document.getElementById('projectDeadline').value = project.deadline;
+    document.getElementById('projectDescription').value = project.description || '';
+    
+    // Set partner/group selection
+    if (project.groupId) {
+        document.getElementById('projectPartner').value = `group_${project.groupId}`;
+    } else if (project.partnerId) {
+        document.getElementById('projectPartner').value = project.partnerId;
+    } else {
+        document.getElementById('projectPartner').value = '';
+    }
+    
+    // Update modal title and button
+    document.getElementById('projectModalTitle').textContent = 'Edit Project';
+    document.getElementById('projectSubmitBtn').textContent = 'Update Project';
+    
+    // Open modal
+    document.getElementById('createProjectModal').classList.add('show');
+};
+
+// ============================================
+// CREATE/UPDATE PROJECT FORM SUBMIT
+// ============================================
 document.getElementById('createProjectForm')?.addEventListener('submit', function(e) {
     e.preventDefault();
     
+    const editProjectId = document.getElementById('editProjectId').value;
     const title = document.getElementById('projectTitle').value;
     const course = document.getElementById('projectCourse').value;
-    const partnerId = document.getElementById('projectPartner').value;
+    const partnerSelection = document.getElementById('projectPartner').value;
     const deadline = document.getElementById('projectDeadline').value;
     const description = document.getElementById('projectDescription').value;
+    
+    console.log('📝 Saving project...', {editProjectId, title, partnerSelection});
+    
+    // Determine if it's a group or individual project
+    let isGroup = partnerSelection.startsWith('group_');
+    let groupId = null;
+    let partnerId = null;
+    
+    if (isGroup) {
+        groupId = partnerSelection.replace('group_', '');
+    } else if (partnerSelection) {
+        partnerId = partnerSelection;
+    }
     
     const projectData = {
         userId: userId,
         userName: userName,
         title: title,
         course: course,
-        partnerId: partnerId || null,
-        partnerName: null,
         deadline: deadline,
         description: description || '',
         status: 'active',
-        createdAt: Date.now(),
-        milestones: {}
+        updatedAt: Date.now()
     };
     
-    // Get partner name if selected
-    if (partnerId) {
+    // Add creation timestamp only for new projects
+    if (!editProjectId) {
+        projectData.createdAt = Date.now();
+    }
+    
+    if (isGroup) {
+        // Load group data and set shared access
+        database.ref('groups/' + groupId).once('value', (snapshot) => {
+            const group = snapshot.val();
+            if (group) {
+                projectData.groupId = groupId;
+                projectData.groupName = group.name;
+                projectData.groupMembers = Object.keys(group.members);
+                projectData.sharedWith = Object.keys(group.members).filter(id => id !== userId);
+                projectData.partnerName = `Group: ${group.name}`;
+                projectData.partnerId = null;
+            }
+            saveOrUpdateProject(projectData, editProjectId);
+        });
+    } else if (partnerId) {
+        // Load individual partner data
         database.ref('profiles').once('value', (snapshot) => {
             const profiles = snapshot.val();
             if (profiles) {
                 const profile = Object.values(profiles).find(p => emailToId(p.email) === partnerId);
                 if (profile) {
+                    projectData.partnerId = partnerId;
                     projectData.partnerName = profile.fullName;
+                    projectData.sharedWith = [partnerId];
+                    projectData.groupId = null;
+                    projectData.groupName = null;
+                    projectData.groupMembers = null;
                 }
             }
-            saveProject(projectData);
+            saveOrUpdateProject(projectData, editProjectId);
         });
     } else {
-        saveProject(projectData);
+        // Individual project (no partner)
+        projectData.partnerId = null;
+        projectData.partnerName = null;
+        projectData.groupId = null;
+        projectData.groupName = null;
+        projectData.groupMembers = null;
+        projectData.sharedWith = [];
+        saveOrUpdateProject(projectData, editProjectId);
     }
 });
 
-// Save project
-function saveProject(projectData) {
-    database.ref('projects').push(projectData)
-        .then(() => {
-            alert('✅ Project created successfully!');
-            closeModal('createProjectModal');
-        })
-        .catch(err => {
-            alert('❌ Error: ' + err.message);
-        });
+// Save or update project
+function saveOrUpdateProject(projectData, editProjectId) {
+    if (editProjectId) {
+        // Update existing project
+        database.ref('projects/' + editProjectId).update(projectData)
+            .then(() => {
+                alert('✅ Project updated successfully!');
+                closeModal('createProjectModal');
+            })
+            .catch(err => {
+                alert('❌ Error updating project: ' + err.message);
+            });
+    } else {
+        // Create new project
+        database.ref('projects').push(projectData)
+            .then(() => {
+                alert('✅ Project created successfully!');
+                closeModal('createProjectModal');
+            })
+            .catch(err => {
+                alert('❌ Error creating project: ' + err.message);
+            });
+    }
 }
 
 // Add milestone form submit
@@ -473,7 +627,9 @@ document.getElementById('addMilestoneForm')?.addEventListener('submit', function
         deadline: deadline,
         priority: priority,
         status: status,
-        createdAt: Date.now()
+        createdAt: Date.now(),
+        createdBy: userId,
+        createdByName: userName
     };
     
     database.ref('projects/' + currentProjectId + '/milestones').push(milestoneData)
@@ -492,7 +648,8 @@ function updateMilestoneStatus(milestoneId, newStatus) {
     
     database.ref('projects/' + currentProjectId + '/milestones/' + milestoneId).update({
         status: newStatus,
-        updatedAt: Date.now()
+        updatedAt: Date.now(),
+        updatedBy: userId
     })
     .then(() => {
         console.log('✅ Milestone status updated');
@@ -519,7 +676,17 @@ function deleteMilestone(milestoneId, milestoneTitle) {
 
 // Delete project
 function deleteProject(projectId, projectTitle) {
-    if (confirm(`⚠️ Delete project "${projectTitle}" and all its milestones?`)) {
+    const project = allProjects.find(p => p.id === projectId);
+    
+    if (!project) return;
+    
+    // Only creator can delete
+    if (project.userId !== userId) {
+        alert('❌ Only the project creator can delete this project!');
+        return;
+    }
+    
+    if (confirm(`⚠️ Delete project "${projectTitle}" and all its milestones?\n\nThis will remove it for all shared members.`)) {
         database.ref('projects/' + projectId).remove()
             .then(() => {
                 alert('✅ Project deleted!');
@@ -539,4 +706,4 @@ window.addEventListener('click', function(e) {
 
 // Initialize
 init();
-console.log('✅ Project Tracker with Group Support loaded!');
+console.log('✅ Shared Project Tracker with Access Control loaded!');
