@@ -432,17 +432,38 @@ function formatDate(date) {
 
 // Open create project modal
 function openCreateProjectModal() {
-    document.getElementById('createProjectModal').classList.add('show');
-    document.getElementById('createProjectForm').reset();
-    document.getElementById('editProjectId').value = '';
+    const modal = document.getElementById('createProjectModal');
+    const form = document.getElementById('createProjectForm');
+    
+    if (!modal || !form) {
+        console.error('Modal or form not found!');
+        return;
+    }
+    
+    modal.classList.add('show');
+    form.reset();
+    
+    // Get or create editProjectId input and clear it
+    let editProjectIdInput = document.getElementById('editProjectId');
+    if (!editProjectIdInput) {
+        editProjectIdInput = document.createElement('input');
+        editProjectIdInput.type = 'hidden';
+        editProjectIdInput.id = 'editProjectId';
+        form.appendChild(editProjectIdInput);
+    }
+    editProjectIdInput.value = '';
     
     // Update modal title
-    document.getElementById('projectModalTitle').textContent = 'Create New Project';
-    document.getElementById('projectSubmitBtn').textContent = 'Create Project';
+    const modalTitle = document.getElementById('projectModalTitle');
+    const submitBtn = document.getElementById('projectSubmitBtn');
+    
+    if (modalTitle) modalTitle.textContent = 'Create New Project';
+    if (submitBtn) submitBtn.textContent = 'Create Project';
     
     // Set min date to today
     const today = new Date().toISOString().split('T')[0];
-    document.getElementById('projectDeadline').setAttribute('min', today);
+    const deadlineInput = document.getElementById('projectDeadline');
+    if (deadlineInput) deadlineInput.setAttribute('min', today);
 }
 
 // Open add milestone modal
@@ -467,7 +488,10 @@ function closeModal(modalId) {
 // ============================================
 window.editProject = function(projectId) {
     const project = allProjects.find(p => p.id === projectId);
-    if (!project) return;
+    if (!project) {
+        console.error('Project not found:', projectId);
+        return;
+    }
     
     // Check if user is creator
     if (project.userId !== userId) {
@@ -475,28 +499,56 @@ window.editProject = function(projectId) {
         return;
     }
     
+    console.log('📝 Editing project:', project);
+    
+    // Get or create editProjectId input
+    let editProjectIdInput = document.getElementById('editProjectId');
+    if (!editProjectIdInput) {
+        editProjectIdInput = document.createElement('input');
+        editProjectIdInput.type = 'hidden';
+        editProjectIdInput.id = 'editProjectId';
+        document.getElementById('createProjectForm').appendChild(editProjectIdInput);
+    }
+    
     // Fill form with existing data
-    document.getElementById('editProjectId').value = projectId;
-    document.getElementById('projectTitle').value = project.title;
-    document.getElementById('projectCourse').value = project.course;
-    document.getElementById('projectDeadline').value = project.deadline;
-    document.getElementById('projectDescription').value = project.description || '';
+    editProjectIdInput.value = projectId;
+    
+    const titleInput = document.getElementById('projectTitle');
+    const courseInput = document.getElementById('projectCourse');
+    const deadlineInput = document.getElementById('projectDeadline');
+    const descriptionInput = document.getElementById('projectDescription');
+    const partnerInput = document.getElementById('projectPartner');
+    
+    if (titleInput) titleInput.value = project.title;
+    if (courseInput) courseInput.value = project.course;
+    if (deadlineInput) deadlineInput.value = project.deadline;
+    if (descriptionInput) descriptionInput.value = project.description || '';
     
     // Set partner/group selection
-    if (project.groupId) {
-        document.getElementById('projectPartner').value = `group_${project.groupId}`;
-    } else if (project.partnerId) {
-        document.getElementById('projectPartner').value = project.partnerId;
-    } else {
-        document.getElementById('projectPartner').value = '';
+    if (partnerInput) {
+        if (project.groupId) {
+            partnerInput.value = `group_${project.groupId}`;
+        } else if (project.partnerId) {
+            partnerInput.value = project.partnerId;
+        } else {
+            partnerInput.value = '';
+        }
     }
     
     // Update modal title and button
-    document.getElementById('projectModalTitle').textContent = 'Edit Project';
-    document.getElementById('projectSubmitBtn').textContent = 'Update Project';
+    const modalTitle = document.getElementById('projectModalTitle');
+    const submitBtn = document.getElementById('projectSubmitBtn');
+    
+    if (modalTitle) modalTitle.textContent = 'Edit Project';
+    if (submitBtn) submitBtn.textContent = 'Update Project';
     
     // Open modal
-    document.getElementById('createProjectModal').classList.add('show');
+    const modal = document.getElementById('createProjectModal');
+    if (modal) {
+        modal.classList.add('show');
+    } else {
+        console.error('Modal not found!');
+    }
 };
 
 // ============================================
@@ -505,12 +557,27 @@ window.editProject = function(projectId) {
 document.getElementById('createProjectForm')?.addEventListener('submit', function(e) {
     e.preventDefault();
     
-    const editProjectId = document.getElementById('editProjectId').value;
-    const title = document.getElementById('projectTitle').value;
-    const course = document.getElementById('projectCourse').value;
-    const partnerSelection = document.getElementById('projectPartner').value;
-    const deadline = document.getElementById('projectDeadline').value;
-    const description = document.getElementById('projectDescription').value;
+    // Get or find editProjectId input
+    let editProjectIdInput = document.getElementById('editProjectId');
+    const editProjectId = editProjectIdInput ? editProjectIdInput.value : '';
+    
+    const titleInput = document.getElementById('projectTitle');
+    const courseInput = document.getElementById('projectCourse');
+    const partnerInput = document.getElementById('projectPartner');
+    const deadlineInput = document.getElementById('projectDeadline');
+    const descriptionInput = document.getElementById('projectDescription');
+    
+    if (!titleInput || !courseInput || !deadlineInput) {
+        console.error('Required form fields not found!');
+        alert('❌ Error: Form fields not found. Please refresh the page.');
+        return;
+    }
+    
+    const title = titleInput.value;
+    const course = courseInput.value;
+    const partnerSelection = partnerInput ? partnerInput.value : '';
+    const deadline = deadlineInput.value;
+    const description = descriptionInput ? descriptionInput.value : '';
     
     console.log('📝 Saving project...', {editProjectId, title, partnerSelection});
     
