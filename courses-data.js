@@ -4,19 +4,22 @@ const coursesBySemester = {
         "NS1001 Applied Physics",
         "MT1003 Calculus and Analytical Geometry",
         "SS1012 Functional English",
+         "SL1012 Functional English Lab",
         "SS1013 Ideology and Constitution of Pakistan",
+        "SS1007 Islamic Studies",
         "CL1000 Introduction to Information and Communication Technology",
-        "SS1015 Pakistan Studies",
-        "CS1002 Programming Fundamentals"
+        "CS1002 Programming Fundamentals",
+         "CL1002 Programming Fundamentals Lab",
     ],
     "2": [
         "SS3002 Civics and Community Engagement",
-        "EE1005 Digital Logic Design",
+        "SS1015 Pak-Studies",
         "SS1014 Expository Writing",
-        "SS1007 Islamic Studies/Ethics",
+        "SL1014 Expository Writing Lab",
+         "CL1004 Object Oriented Programming Lab",
         "MT1006 Multivariable Calculus",
         "CS1004 Object Oriented Programming",
-        "SS1019 Understanding Sirat-Un-Nabi (PBUH)"
+        "CS1005 Discrete Structure",
     ],
     "3": [
         "EE2003 Computer Organization and Assembly Language",
