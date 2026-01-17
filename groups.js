@@ -431,6 +431,20 @@ window.addEventListener('click', function(e) {
     }
 });
 
+// Fix back button navigation
+document.addEventListener('DOMContentLoaded', function() {
+    // Find all back buttons
+    const backButtons = document.querySelectorAll('.back-btn, button:contains("Back"), [onclick*="back"]');
+    
+    backButtons.forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            // Go back to partners page (main dashboard)
+            window.location.href = 'partners.html';
+        });
+    });
+});
+
 // Initialize
 init();
-console.log('✅ Groups system loaded!');
+console.log('✅ Groups system with fixed back button loaded!');
