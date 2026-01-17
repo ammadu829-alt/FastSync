@@ -24,7 +24,8 @@ const coursesBySemester = {
     "3": [
         "EE2003 Computer Organization and Assembly Language",
         "CS2001 Data Structures",
-        "CS1005 Discrete Structures",
+        "ES1005 Digital Logic Design",
+         "EL1005 Digital Logic Design Lab",
         "MT1004 Linear Algebra",
         "CS Elective-I",
         "SS1021 Understanding of Holy Quran - I"
