@@ -348,6 +348,24 @@ function backToProjects() {
     currentProjectId = null;
 }
 
+// Add back button click handler
+document.addEventListener('DOMContentLoaded', function() {
+    const backBtn = document.querySelector('.back-btn, [onclick*="back"], button:has(i.bi-arrow-left)');
+    if (backBtn) {
+        backBtn.onclick = function(e) {
+            e.preventDefault();
+            // Check if we're in timeline view
+            const timelineSection = document.getElementById('timelineSection');
+            if (timelineSection && timelineSection.classList.contains('active')) {
+                backToProjects();
+            } else {
+                // Go back to dashboard
+                window.location.href = 'partners.html';
+            }
+        };
+    }
+});
+
 // Load milestones
 function loadMilestones(projectId) {
     database.ref('projects/' + projectId + '/milestones').on('value', (snapshot) => {
@@ -811,6 +829,28 @@ window.addEventListener('click', function(e) {
     if (e.target.classList.contains('modal')) {
         e.target.classList.remove('show');
     }
+});
+
+// Fix back button navigation
+document.addEventListener('DOMContentLoaded', function() {
+    // Find all back buttons
+    const backButtons = document.querySelectorAll('.back-btn, button:contains("Back"), [onclick*="back"]');
+    
+    backButtons.forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            
+            // Check if we're in timeline view
+            const timelineSection = document.getElementById('timelineSection');
+            if (timelineSection && timelineSection.classList.contains('active')) {
+                // Go back to projects list
+                backToProjects();
+            } else {
+                // Go back to partners page (main dashboard)
+                window.location.href = 'partners.html';
+            }
+        });
+    });
 });
 
 // Initialize
