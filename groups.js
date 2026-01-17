@@ -31,6 +31,12 @@ function emailToId(email) {
     return email.replace(/[.@]/g, '_');
 }
 
+// Global back button function
+window.goBackToDashboard = function() {
+    console.log('🔙 Navigating back to partners.html');
+    window.location.href = 'partners.html';
+};
+
 // Initialize
 function init() {
     if (!localStorage.getItem('isLoggedIn')) {
@@ -431,20 +437,34 @@ window.addEventListener('click', function(e) {
     }
 });
 
-// Fix back button navigation
-document.addEventListener('DOMContentLoaded', function() {
-    // Find all back buttons
-    const backButtons = document.querySelectorAll('.back-btn, button:contains("Back"), [onclick*="back"]');
-    
-    backButtons.forEach(btn => {
-        btn.addEventListener('click', function(e) {
-            e.preventDefault();
-            // Go back to partners page (main dashboard)
-            window.location.href = 'partners.html';
-        });
-    });
-});
-
 // Initialize
 init();
+
+// Fix back button navigation - runs after DOM is fully loaded
+window.addEventListener('DOMContentLoaded', function() {
+    // Wait a bit for dynamic content to load
+    setTimeout(() => {
+        const backButtons = document.querySelectorAll('.back-btn, [class*="back"], button');
+        
+        backButtons.forEach(btn => {
+            const buttonText = btn.textContent.trim().toLowerCase();
+            if (buttonText.includes('back') || btn.classList.contains('back-btn')) {
+                // Remove any existing onclick
+                btn.removeAttribute('onclick');
+                
+                // Add new click handler
+                btn.onclick = function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    console.log('Back button clicked - navigating to partners.html');
+                    window.location.href = 'partners.html';
+                    return false;
+                };
+                
+                console.log('✅ Back button handler attached');
+            }
+        });
+    }, 500);
+});
+
 console.log('✅ Groups system with fixed back button loaded!');
