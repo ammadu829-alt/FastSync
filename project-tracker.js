@@ -865,8 +865,8 @@ init();
                         console.log('🔙 Going back to projects list');
                         backToProjects();
                     } else {
-                        console.log('🔙 Going back to partners.html');
-                        window.location.href = 'partners.html';
+                        console.log('🔙 Going back to find-partner.html');
+                        window.location.href = 'find-partner.html';
                     }
                     return false;
                 };
