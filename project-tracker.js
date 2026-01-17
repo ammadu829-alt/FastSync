@@ -189,6 +189,44 @@ function displayProjects() {
     }
 
     grid.innerHTML = allProjects.map(project => createProjectCard(project)).join('');
+    
+    // Load group member names for group projects
+    allProjects.forEach(project => {
+        if (project.groupId && project.groupMembers) {
+            loadGroupMemberNames(project.id, project.groupMembers);
+        }
+    });
+}
+
+// Load and display group member names
+function loadGroupMemberNames(projectId, memberIds) {
+    const container = document.getElementById(`members-${projectId}`);
+    if (!container) return;
+    
+    database.ref('profiles').once('value', (snapshot) => {
+        const profiles = snapshot.val();
+        if (!profiles) {
+            container.textContent = 'Unable to load members';
+            return;
+        }
+        
+        const memberNames = [];
+        memberIds.forEach(memberId => {
+            const profile = Object.values(profiles).find(p => emailToId(p.email) === memberId);
+            if (profile) {
+                const isYou = memberId === userId;
+                memberNames.push(isYou ? `${profile.fullName} (You)` : profile.fullName);
+            }
+        });
+        
+        if (memberNames.length > 0) {
+            container.innerHTML = memberNames.map(name => 
+                `<span style="display: inline-block; margin: 2px 4px 2px 0; padding: 3px 8px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 12px; font-size: 11px;">👤 ${name}</span>`
+            ).join('');
+        } else {
+            container.textContent = 'No members found';
+        }
+    });
 }
 
 // Create project card HTML
@@ -237,6 +275,10 @@ function createProjectCard(project) {
                 <div class="project-partner">
                     <i class="bi bi-people-fill"></i>
                     <span>Group: ${project.groupName}</span>
+                </div>
+                <div class="group-members-list" style="margin: 8px 0; padding: 8px; background: rgba(255,255,255,0.5); border-radius: 8px;">
+                    <div style="font-size: 11px; font-weight: 600; color: #666; margin-bottom: 4px;">👥 Group Members:</div>
+                    <div id="members-${project.id}" style="font-size: 12px; color: #333;">Loading members...</div>
                 </div>
             ` : ''}
             
@@ -773,4 +815,4 @@ window.addEventListener('click', function(e) {
 
 // Initialize
 init();
-console.log('✅ Shared Project Tracker with Access Control loaded!');
+console.log('✅ Shared Project Tracker with Group Members Display loaded!');
