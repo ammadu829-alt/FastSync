@@ -440,31 +440,53 @@ window.addEventListener('click', function(e) {
 // Initialize
 init();
 
-// Fix back button navigation - runs after DOM is fully loaded
-window.addEventListener('DOMContentLoaded', function() {
-    // Wait a bit for dynamic content to load
-    setTimeout(() => {
-        const backButtons = document.querySelectorAll('.back-btn, [class*="back"], button');
+// CRITICAL: Fix back button navigation - Multiple approaches
+(function() {
+    console.log('🔧 Initializing back button fix...');
+    
+    function setupBackButton() {
+        // Approach 1: Find and override all back buttons
+        const backButtons = document.querySelectorAll('button, a');
+        let fixed = 0;
         
         backButtons.forEach(btn => {
-            const buttonText = btn.textContent.trim().toLowerCase();
-            if (buttonText.includes('back') || btn.classList.contains('back-btn')) {
-                // Remove any existing onclick
-                btn.removeAttribute('onclick');
+            const text = btn.textContent || btn.innerText || '';
+            const hasBackClass = btn.className && btn.className.includes('back');
+            
+            if (text.toLowerCase().includes('back') || hasBackClass) {
+                console.log('✅ Found back button:', btn);
                 
-                // Add new click handler
-                btn.onclick = function(e) {
+                // Remove ALL existing event listeners by cloning
+                const newBtn = btn.cloneNode(true);
+                btn.parentNode.replaceChild(newBtn, btn);
+                
+                // Add our handler
+                newBtn.onclick = function(e) {
                     e.preventDefault();
                     e.stopPropagation();
-                    console.log('Back button clicked - navigating to partners.html');
+                    console.log('🔙 Back button clicked - redirecting...');
                     window.location.href = 'partners.html';
                     return false;
                 };
                 
-                console.log('✅ Back button handler attached');
+                fixed++;
             }
         });
-    }, 500);
-});
+        
+        console.log(`✅ Fixed ${fixed} back button(s)`);
+    }
+    
+    // Try immediately
+    setupBackButton();
+    
+    // Try after DOM loads
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', setupBackButton);
+    }
+    
+    // Try after a delay for dynamic content
+    setTimeout(setupBackButton, 500);
+    setTimeout(setupBackButton, 1000);
+})();
 
-console.log('✅ Groups system with fixed back button loaded!');
+console.log('✅ Groups system with enhanced back button fix loaded!');
