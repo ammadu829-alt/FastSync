@@ -831,28 +831,64 @@ window.addEventListener('click', function(e) {
     }
 });
 
-// Fix back button navigation
-document.addEventListener('DOMContentLoaded', function() {
-    // Find all back buttons
-    const backButtons = document.querySelectorAll('.back-btn, button:contains("Back"), [onclick*="back"]');
-    
-    backButtons.forEach(btn => {
-        btn.addEventListener('click', function(e) {
-            e.preventDefault();
-            
-            // Check if we're in timeline view
-            const timelineSection = document.getElementById('timelineSection');
-            if (timelineSection && timelineSection.classList.contains('active')) {
-                // Go back to projects list
-                backToProjects();
-            } else {
-                // Go back to partners page (main dashboard)
-                window.location.href = 'partners.html';
-            }
-        });
-    });
-});
-
 // Initialize
 init();
+
+// CRITICAL: Fix back button navigation for project tracker
+(function() {
+    console.log('🔧 Initializing project tracker back button fix...');
+    
+    function setupBackButton() {
+        // Find all buttons and links
+        const allButtons = document.querySelectorAll('button, a');
+        let fixed = 0;
+        
+        allButtons.forEach(btn => {
+            const text = (btn.textContent || btn.innerText || '').trim().toLowerCase();
+            const hasBackClass = btn.className && btn.className.includes('back');
+            
+            if (text.includes('back') || hasBackClass) {
+                console.log('✅ Found back button in project tracker:', btn);
+                
+                // Clone to remove all event listeners
+                const newBtn = btn.cloneNode(true);
+                btn.parentNode.replaceChild(newBtn, btn);
+                
+                // Add our handler
+                newBtn.onclick = function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    
+                    // Check if we're in timeline view
+                    const timelineSection = document.getElementById('timelineSection');
+                    if (timelineSection && timelineSection.classList.contains('active')) {
+                        console.log('🔙 Going back to projects list');
+                        backToProjects();
+                    } else {
+                        console.log('🔙 Going back to partners.html');
+                        window.location.href = 'partners.html';
+                    }
+                    return false;
+                };
+                
+                fixed++;
+            }
+        });
+        
+        console.log(`✅ Fixed ${fixed} back button(s) in project tracker`);
+    }
+    
+    // Try immediately
+    setupBackButton();
+    
+    // Try after DOM loads
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', setupBackButton);
+    }
+    
+    // Try after delays for dynamic content
+    setTimeout(setupBackButton, 500);
+    setTimeout(setupBackButton, 1000);
+})();
+
 console.log('✅ Shared Project Tracker with Group Members Display loaded!');
