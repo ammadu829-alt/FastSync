@@ -465,7 +465,7 @@ init();
                     e.preventDefault();
                     e.stopPropagation();
                     console.log('🔙 Back button clicked - redirecting...');
-                    window.location.href = 'partners.html';
+                    window.location.href = 'find-partner.html';
                     return false;
                 };
                 
