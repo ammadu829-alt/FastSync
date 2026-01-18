@@ -1,0 +1,14 @@
+# robots.txt for FASTSync
+
+User-agent: *
+Allow: /
+
+# Allow all search engines to crawl
+Disallow: /admin/
+Disallow: /private/
+
+# Sitemap location
+Sitemap: https://fastsyncconnect.vercel.app/sitemap.xml
+
+# Crawl-delay
+Crawl-delay: 1
