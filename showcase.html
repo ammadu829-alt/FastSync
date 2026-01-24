@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Project Showcase - FASTSync</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background: #000;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .navbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(10px);
+        }
+
+        .showcase-container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            overflow-y: scroll;
+            scroll-snap-type: y mandatory;
+            scroll-behavior: smooth;
+            padding-top: 60px;
+        }
+
+        .showcase-container::-webkit-scrollbar {
+            display: none;
+        }
+
+        .video-item {
+            position: relative;
+            width: 100%;
+            height: calc(100vh - 60px);
+            scroll-snap-align: start;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #000;
+        }
+
+        .video-wrapper {
+            position: relative;
+            width: 100%;
+            max-width: 500px;
+            height: 100%;
+            background: #000;
+        }
+
+        .project-video {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            cursor: pointer;
+        }
+
+        .video-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(to bottom, transparent 50%, rgba(0,0,0,0.7) 100%);
+            pointer-events: none;
+        }
+
+        .video-info {
+            position: absolute;
+            bottom: 80px;
+            left: 20px;
+            right: 80px;
+            color: white;
+            z-index: 10;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 15px;
+        }
+
+        .user-avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 20px;
+            border: 3px solid white;
+        }
+
+        .user-name {
+            font-weight: 600;
+            font-size: 16px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+
+        .project-title {
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 8px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+
+        .project-description {
+            font-size: 14px;
+            line-height: 1.4;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+
+        .project-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .tag {
+            padding: 4px 12px;
+            background: rgba(102, 126, 234, 0.8);
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .action-sidebar {
+            position: absolute;
+            right: 15px;
+            bottom: 100px;
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+            z-index: 10;
+        }
+
+        .action-btn {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .action-btn i {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            color: white;
+            transition: all 0.3s;
+        }
+
+        .action-btn:hover i {
+            transform: scale(1.1);
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .action-btn.liked i {
+            color: #ff2d55;
+            background: rgba(255, 45, 85, 0.2);
+        }
+
+        .action-count {
+            color: white;
+            font-size: 12px;
+            font-weight: 600;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+        }
+
+        .upload-fab {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 15px 30px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 50px;
+            font-weight: 600;
+            font-size: 16px;
+            box-shadow: 0 8px 30px rgba(102, 126, 234, 0.5);
+            cursor: pointer;
+            z-index: 100;
+            transition: all 0.3s;
+        }
+
+        .upload-fab:hover {
+            transform: translateX(-50%) scale(1.05);
+            box-shadow: 0 10px 40px rgba(102, 126, 234, 0.7);
+        }
+
+        .no-videos {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: calc(100vh - 60px);
+            color: white;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .no-videos i {
+            font-size: 80px;
+            margin-bottom: 20px;
+            opacity: 0.3;
+        }
+
+        .no-videos h3 {
+            margin-bottom: 10px;
+        }
+
+        .no-videos p {
+            opacity: 0.7;
+            margin-bottom: 30px;
+        }
+
+        .play-pause-overlay {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 80px;
+            height: 80px;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: opacity 0.3s;
+            pointer-events: none;
+        }
+
+        .play-pause-overlay.show {
+            opacity: 1;
+        }
+
+        .play-pause-overlay i {
+            font-size: 40px;
+            color: white;
+        }
+
+        .filter-bar {
+            position: fixed;
+            top: 60px;
+            left: 0;
+            right: 0;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(10px);
+            padding: 15px 20px;
+            display: flex;
+            gap: 10px;
+            overflow-x: auto;
+            z-index: 999;
+        }
+
+        .filter-bar::-webkit-scrollbar {
+            display: none;
+        }
+
+        .filter-chip {
+            padding: 8px 16px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 20px;
+            color: white;
+            font-size: 14px;
+            white-space: nowrap;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .filter-chip.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-color: transparent;
+        }
+
+        .filter-chip:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        @media (max-width: 768px) {
+            .video-info {
+                bottom: 60px;
+                left: 15px;
+                right: 70px;
+            }
+
+            .action-sidebar {
+                right: 10px;
+                bottom: 80px;
+                gap: 20px;
+            }
+
+            .action-btn i {
+                width: 45px;
+                height: 45px;
+                font-size: 22px;
+            }
+
+            .upload-fab {
+                bottom: 20px;
+                font-size: 14px;
+                padding: 12px 25px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar">
+        <div style="max-width: 1200px; margin: 0 auto; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center;">
+            <div style="color: white; font-weight: 700; font-size: 24px;">🎬 Project Showcase</div>
+            <button onclick="window.location.href='find-partner.html'" style="background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.3); padding: 8px 16px; border-radius: 8px; cursor: pointer;">
+                <i class="bi bi-arrow-left"></i> Back
+            </button>
+        </div>
+    </nav>
+
+    <!-- Filter Bar -->
+    <div class="filter-bar" id="filterBar">
+        <div class="filter-chip active" data-filter="all">🔥 All</div>
+        <div class="filter-chip" data-filter="trending">⭐ Trending</div>
+        <div class="filter-chip" data-filter="CS1005">💻 CS1005</div>
+        <div class="filter-chip" data-filter="CS1004">⚙️ CS1004</div>
+        <div class="filter-chip" data-filter="AI">🤖 AI</div>
+        <div class="filter-chip" data-filter="Web">🌐 Web</div>
+        <div class="filter-chip" data-filter="Mobile">📱 Mobile</div>
+    </div>
+
+    <!-- Showcase Container (TikTok-style scroll) -->
+    <div class="showcase-container" id="showcaseContainer">
+        <div class="no-videos">
+            <i class="bi bi-film"></i>
+            <h3>No Projects Yet</h3>
+            <p>Be the first to showcase your amazing project!</p>
+        </div>
+    </div>
+
+    <!-- Upload FAB -->
+    <button class="upload-fab" onclick="window.location.href='upload-showcase.html'">
+        <i class="bi bi-plus-circle"></i> Upload Your Project
+    </button>
+
+    <!-- Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-storage.js"></script>
+
+    <script src="showcase.js"></script>
+</body>
+</html>
