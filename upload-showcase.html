@@ -6,7 +6,6 @@
     <title>Upload Project - FASTSync</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
-    <link rel="stylesheet" href="style.css">
     <style>
         body {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -35,55 +34,75 @@
             margin-bottom: 40px;
         }
 
-        .video-methods {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
+        .upload-area {
+            border: 3px dashed #667eea;
+            border-radius: 16px;
+            padding: 60px 20px;
+            text-align: center;
+            background: #f8f9ff;
+            cursor: pointer;
+            transition: all 0.3s;
             margin-bottom: 30px;
         }
 
-        .method-card {
-            padding: 30px 20px;
-            border: 2px solid #e0e0e0;
-            border-radius: 12px;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.3s;
+        .upload-area:hover {
+            border-color: #764ba2;
+            background: #f0f2ff;
         }
 
-        .method-card:hover {
-            border-color: #667eea;
-            background: #f8f9ff;
+        .upload-area.dragover {
+            border-color: #10b981;
+            background: #ecfdf5;
         }
 
-        .method-card.active {
-            border-color: #667eea;
-            background: linear-gradient(135deg, #667eea15, #764ba215);
-        }
-
-        .method-card i {
-            font-size: 40px;
+        .upload-area i {
+            font-size: 60px;
             color: #667eea;
-            margin-bottom: 15px;
+            margin-bottom: 20px;
         }
 
-        .method-card h3 {
+        .upload-area p {
             font-size: 18px;
-            margin-bottom: 8px;
-        }
-
-        .method-card p {
-            font-size: 13px;
             color: #666;
-            margin: 0;
+            margin-bottom: 10px;
         }
 
-        .upload-section {
+        .upload-area .hint {
+            font-size: 14px;
+            color: #999;
+        }
+
+        .video-preview {
             display: none;
+            position: relative;
+            margin-bottom: 30px;
+            border-radius: 16px;
+            overflow: hidden;
+            background: #000;
         }
 
-        .upload-section.active {
-            display: block;
+        .video-preview video {
+            width: 100%;
+            max-height: 500px;
+            border-radius: 16px;
+        }
+
+        .remove-video {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: rgba(239, 68, 68, 0.9);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            z-index: 10;
+        }
+
+        .remove-video:hover {
+            background: rgba(220, 38, 38, 1);
         }
 
         .form-group {
@@ -119,37 +138,6 @@
         .form-group textarea {
             resize: vertical;
             min-height: 100px;
-        }
-
-        .video-preview {
-            margin-bottom: 25px;
-            border-radius: 12px;
-            overflow: hidden;
-            background: #000;
-        }
-
-        .video-preview iframe {
-            width: 100%;
-            height: 400px;
-            border: none;
-        }
-
-        .hint-box {
-            padding: 15px;
-            background: #f0f9ff;
-            border-left: 4px solid #667eea;
-            border-radius: 8px;
-            margin-bottom: 25px;
-        }
-
-        .hint-box p {
-            margin: 0;
-            font-size: 14px;
-            color: #333;
-        }
-
-        .hint-box strong {
-            color: #667eea;
         }
 
         .tags-input-container {
@@ -232,10 +220,45 @@
             cursor: pointer;
         }
 
-        @media (max-width: 768px) {
-            .video-methods {
-                grid-template-columns: 1fr;
-            }
+        .upload-progress {
+            display: none;
+            margin-top: 20px;
+        }
+
+        .progress-bar-container {
+            width: 100%;
+            height: 8px;
+            background: #e0e0e0;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-bottom: 10px;
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            width: 0%;
+            transition: width 0.3s;
+        }
+
+        .progress-text {
+            text-align: center;
+            color: #666;
+            font-size: 14px;
+        }
+
+        .alert-info {
+            background: #dbeafe;
+            border: 1px solid #3b82f6;
+            color: #1e40af;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .alert-info strong {
+            display: block;
+            margin-bottom: 5px;
         }
     </style>
 </head>
@@ -244,70 +267,43 @@
         <h1>🎬 Showcase Your Project</h1>
         <p class="subtitle">Share your amazing work with the community</p>
 
-        <!-- Method Selection -->
-        <div class="video-methods">
-            <div class="method-card active" onclick="selectMethod('youtube')">
-                <i class="bi bi-youtube"></i>
-                <h3>YouTube/Vimeo Link</h3>
-                <p>Recommended • No limits</p>
-            </div>
-            <div class="method-card" onclick="selectMethod('upload')">
-                <i class="bi bi-cloud-upload"></i>
-                <h3>Upload Video</h3>
-                <p>Max 10MB • Short clips</p>
-            </div>
+        <div class="alert-info">
+            <strong>📹 Video Upload Tips:</strong>
+            <p style="margin: 5px 0; font-size: 14px;">• Maximum file size: 50MB</p>
+            <p style="margin: 5px 0; font-size: 14px;">• Recommended: 30-120 seconds demo</p>
+            <p style="margin: 5px 0; font-size: 14px;">• Formats: MP4, WebM, MOV</p>
         </div>
 
         <form id="uploadForm">
-            <!-- YouTube Link Section -->
-            <div class="upload-section active" id="youtubeSection">
-                <div class="hint-box">
-                    <p><strong>💡 How to get YouTube link:</strong></p>
-                    <p>1. Upload your video to YouTube (can be unlisted)</p>
-                    <p>2. Click "Share" button</p>
-                    <p>3. Copy the link (e.g., https://youtube.com/watch?v=...)</p>
-                    <p>4. Paste below!</p>
-                </div>
+            <!-- Video Upload Area -->
+            <div class="upload-area" id="uploadArea">
+                <i class="bi bi-cloud-upload"></i>
+                <p>Click to upload or drag & drop your video</p>
+                <p class="hint">MP4, WebM, or MOV • Max 50MB</p>
+                <input type="file" id="videoInput" accept="video/*" style="display: none;">
+            </div>
 
-                <div class="form-group">
-                    <label>YouTube or Vimeo Link *</label>
-                    <input type="url" id="videoLink" placeholder="https://youtube.com/watch?v=... or https://vimeo.com/...">
-                    <p style="font-size: 13px; color: #666; margin-top: 5px;">Paste your YouTube or Vimeo video link</p>
-                </div>
-
-                <div class="video-preview" id="videoPreviewYT" style="display: none;">
-                    <iframe id="previewIframe" allowfullscreen></iframe>
-                </div>
-
-                <button type="button" class="btn-submit" onclick="previewVideo()" style="margin-bottom: 25px; max-width: 200px;">
-                    Preview Video
+            <!-- Video Preview -->
+            <div class="video-preview" id="videoPreview">
+                <video id="previewVideo" controls></video>
+                <button type="button" class="remove-video" onclick="removeVideo()">
+                    <i class="bi bi-trash"></i> Remove
                 </button>
             </div>
 
-            <!-- Direct Upload Section -->
-            <div class="upload-section" id="uploadSection">
-                <div class="form-group">
-                    <label>Upload Video File (Max 10MB) *</label>
-                    <input type="file" id="videoFile" accept="video/*">
-                    <p style="font-size: 13px; color: #666; margin-top: 5px;">MP4, WebM, MOV • Keep it under 10MB</p>
-                </div>
-
-                <div class="video-preview" id="videoPreviewFile" style="display: none;">
-                    <video id="previewVideoFile" controls style="width: 100%; max-height: 400px;"></video>
-                </div>
-            </div>
-
-            <!-- Common Fields -->
+            <!-- Project Title -->
             <div class="form-group">
                 <label>Project Title *</label>
                 <input type="text" id="projectTitle" placeholder="e.g., AI-Powered Chatbot" required maxlength="100">
             </div>
 
+            <!-- Description -->
             <div class="form-group">
                 <label>Description *</label>
                 <textarea id="projectDescription" placeholder="Tell us about your project, technologies used, and key features..." required maxlength="500"></textarea>
             </div>
 
+            <!-- Course -->
             <div class="form-group">
                 <label>Course/Category *</label>
                 <select id="projectCourse" required>
@@ -323,13 +319,24 @@
                 </select>
             </div>
 
+            <!-- Tags -->
             <div class="form-group">
                 <label>Tags (Press Enter to add)</label>
                 <div class="tags-input-container" id="tagsContainer">
                     <input type="text" class="tag-input" id="tagInput" placeholder="e.g., Python, React, AI...">
                 </div>
+                <p style="font-size: 13px; color: #666; margin-top: 5px;">Add relevant tags to help others find your project</p>
             </div>
 
+            <!-- Upload Progress -->
+            <div class="upload-progress" id="uploadProgress">
+                <div class="progress-bar-container">
+                    <div class="progress-bar-fill" id="progressBarFill"></div>
+                </div>
+                <p class="progress-text" id="progressText">Uploading... 0%</p>
+            </div>
+
+            <!-- Actions -->
             <div class="form-actions">
                 <button type="button" class="btn-cancel" onclick="window.location.href='showcase.html'">
                     Cancel
@@ -341,18 +348,20 @@
         </form>
     </div>
 
+    <!-- Firebase -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
     <script>
+        // Firebase Configuration
         const firebaseConfig = {
-            apiKey: "YOUR_API_KEY",
-            authDomain: "fastsync.firebaseapp.com",
+            apiKey: "AIzaSyDkYIRIrqi8PLJ3kHuV7CE-1uc3ijVcxIo",
+            authDomain: "fastsync-8b20e.firebaseapp.com",
             databaseURL: "https://fastsync-8b20e-default-rtdb.firebaseio.com/",
-            projectId: "fastsync",
-            storageBucket: "fastsync.appspot.com",
-            messagingSenderId: "123456789",
-            appId: "1:123456789:web:abcdef"
+            projectId: "fastsync-8b20e",
+            storageBucket: "fastsync-8b20e.firebasestorage.app",
+            messagingSenderId: "667697644368",
+            appId: "1:667697644368:web:9acba41c0fb23139cc838b"
         };
 
         if (!firebase.apps.length) {
@@ -360,103 +369,104 @@
         }
 
         const database = firebase.database();
+
+        let selectedVideo = null;
         let tags = [];
-        let currentMethod = 'youtube';
-        let selectedVideoFile = null;
 
-        function selectMethod(method) {
-            currentMethod = method;
-            document.querySelectorAll('.method-card').forEach(card => card.classList.remove('active'));
-            document.querySelectorAll('.upload-section').forEach(section => section.classList.remove('active'));
-            
-            if (method === 'youtube') {
-                document.querySelector('.method-card:first-child').classList.add('active');
-                document.getElementById('youtubeSection').classList.add('active');
-            } else {
-                document.querySelector('.method-card:last-child').classList.add('active');
-                document.getElementById('uploadSection').classList.add('active');
-            }
-        }
+        // Upload Area Click
+        document.getElementById('uploadArea').addEventListener('click', () => {
+            document.getElementById('videoInput').click();
+        });
 
-        function previewVideo() {
-            const link = document.getElementById('videoLink').value;
-            if (!link) {
-                alert('❌ Please enter a video link');
-                return;
-            }
-
-            const embedUrl = getEmbedUrl(link);
-            if (!embedUrl) {
-                alert('❌ Invalid YouTube or Vimeo link');
-                return;
-            }
-
-            document.getElementById('previewIframe').src = embedUrl;
-            document.getElementById('videoPreviewYT').style.display = 'block';
-        }
-
-        function getEmbedUrl(url) {
-            // YouTube
-            const youtubeMatch = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&\s]+)/);
-            if (youtubeMatch) {
-                return `https://www.youtube.com/embed/${youtubeMatch[1]}`;
-            }
-
-            // Vimeo
-            const vimeoMatch = url.match(/vimeo\.com\/(\d+)/);
-            if (vimeoMatch) {
-                return `https://player.vimeo.com/video/${vimeoMatch[1]}`;
-            }
-
-            return null;
-        }
-
-        // File upload handling
-        document.getElementById('videoFile')?.addEventListener('change', (e) => {
+        // File Input Change
+        document.getElementById('videoInput').addEventListener('change', (e) => {
             const file = e.target.files[0];
-            if (file) {
-                if (file.size > 10 * 1024 * 1024) {
-                    alert('❌ File too large! Max 10MB');
-                    return;
-                }
-                selectedVideoFile = file;
-                const url = URL.createObjectURL(file);
-                document.getElementById('previewVideoFile').src = url;
-                document.getElementById('videoPreviewFile').style.display = 'block';
+            if (file && file.type.startsWith('video/')) {
+                handleVideo(file);
+            } else {
+                alert('❌ Please select a valid video file');
             }
         });
 
-        // Tags
-        document.getElementById('tagInput').addEventListener('keypress', (e) => {
+        // Drag and Drop
+        const uploadArea = document.getElementById('uploadArea');
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('dragover');
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            const file = e.dataTransfer.files[0];
+            if (file && file.type.startsWith('video/')) {
+                handleVideo(file);
+            }
+        });
+
+        function handleVideo(file) {
+            // Check file size (50MB limit)
+            const maxSize = 50 * 1024 * 1024; // 50MB
+            if (file.size > maxSize) {
+                alert('❌ Video file is too large. Maximum size is 50MB.\n\nTip: Compress your video using online tools or record a shorter demo!');
+                return;
+            }
+
+            selectedVideo = file;
+            
+            // Show preview
+            const preview = document.getElementById('videoPreview');
+            const previewVideo = document.getElementById('previewVideo');
+            const uploadArea = document.getElementById('uploadArea');
+
+            const videoURL = URL.createObjectURL(file);
+            previewVideo.src = videoURL;
+            
+            uploadArea.style.display = 'none';
+            preview.style.display = 'block';
+        }
+
+        function removeVideo() {
+            selectedVideo = null;
+            document.getElementById('uploadArea').style.display = 'block';
+            document.getElementById('videoPreview').style.display = 'none';
+            document.getElementById('videoInput').value = '';
+            
+            // Clean up object URL
+            const previewVideo = document.getElementById('previewVideo');
+            if (previewVideo.src) {
+                URL.revokeObjectURL(previewVideo.src);
+                previewVideo.src = '';
+            }
+        }
+
+        // Tags Input
+        const tagInput = document.getElementById('tagInput');
+        tagInput.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') {
                 e.preventDefault();
-                const tag = e.target.value.trim();
+                const tag = tagInput.value.trim();
                 if (tag && !tags.includes(tag)) {
                     tags.push(tag);
-                    renderTags();
-                    e.target.value = '';
+                    addTagToUI(tag);
+                    tagInput.value = '';
                 }
             }
         });
 
-        function renderTags() {
+        function addTagToUI(tag) {
             const container = document.getElementById('tagsContainer');
-            const input = document.getElementById('tagInput');
-            container.innerHTML = tags.map(tag => `
-                <div class="tag-item">${tag}<button onclick="removeTag('${tag}')">×</button></div>
-            `).join('') + input.outerHTML;
-            
-            const newInput = container.querySelector('#tagInput');
-            newInput.addEventListener('keypress', (e) => {
-                if (e.key === 'Enter') {
-                    e.preventDefault();
-                    const tag = e.target.value.trim();
-                    if (tag && !tags.includes(tag)) {
-                        tags.push(tag);
-                        renderTags();
-                    }
-                }
-            });
+            const tagElement = document.createElement('div');
+            tagElement.className = 'tag-item';
+            tagElement.innerHTML = `
+                ${tag}
+                <button type="button" onclick="removeTag('${tag}')">×</button>
+            `;
+            container.insertBefore(tagElement, tagInput);
         }
 
         window.removeTag = function(tag) {
@@ -464,13 +474,22 @@
             renderTags();
         };
 
-        function emailToId(email) {
-            return email.replace(/[.@]/g, '_');
+        function renderTags() {
+            const container = document.getElementById('tagsContainer');
+            const tagInput = document.getElementById('tagInput');
+            container.innerHTML = '';
+            tags.forEach(tag => addTagToUI(tag));
+            container.appendChild(tagInput);
         }
 
-        // Form submission
+        // Form Submission
         document.getElementById('uploadForm').addEventListener('submit', async (e) => {
             e.preventDefault();
+
+            if (!selectedVideo) {
+                alert('❌ Please select a video file');
+                return;
+            }
 
             const currentUser = JSON.parse(localStorage.getItem('loggedInUser'));
             if (!currentUser) {
@@ -488,39 +507,33 @@
                 return;
             }
 
-            let videoUrl = '';
-
-            if (currentMethod === 'youtube') {
-                const link = document.getElementById('videoLink').value;
-                videoUrl = getEmbedUrl(link);
-                if (!videoUrl) {
-                    alert('❌ Please enter a valid YouTube or Vimeo link');
-                    return;
-                }
-            } else {
-                if (!selectedVideoFile) {
-                    alert('❌ Please select a video file');
-                    return;
-                }
-                // Convert to base64
-                const reader = new FileReader();
-                videoUrl = await new Promise((resolve) => {
-                    reader.onload = (e) => resolve(e.target.result);
-                    reader.readAsDataURL(selectedVideoFile);
-                });
-            }
-
+            // Disable submit button
             const submitBtn = document.getElementById('submitBtn');
             submitBtn.disabled = true;
-            submitBtn.textContent = 'Publishing...';
+            submitBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> Uploading...';
+
+            // Show progress
+            const uploadProgress = document.getElementById('uploadProgress');
+            uploadProgress.style.display = 'block';
 
             try {
+                // Update progress
+                updateProgress(25, 'Reading video file...');
+
+                // Convert video to base64
+                const videoBase64 = await convertToBase64(selectedVideo);
+                
+                updateProgress(50, 'Processing video...');
+
+                // Prepare showcase data
                 const showcaseData = {
                     userId: emailToId(currentUser.email),
                     userName: currentUser.name || currentUser.username,
                     userAvatar: (currentUser.name || currentUser.username).substring(0, 2).toUpperCase(),
-                    videoUrl: videoUrl,
-                    videoType: currentMethod,
+                    videoUrl: videoBase64,
+                    videoType: 'upload',
+                    videoSize: selectedVideo.size,
+                    videoName: selectedVideo.name,
                     title: title,
                     description: description,
                     course: course,
@@ -532,16 +545,45 @@
                     featured: false
                 };
 
+                updateProgress(75, 'Saving to database...');
+
+                // Save to Firebase Realtime Database
                 await database.ref('project_showcases').push(showcaseData);
-                alert('✅ Project published successfully!');
-                window.location.href = 'showcase.html';
+
+                updateProgress(100, 'Upload complete!');
+
+                // Success
+                setTimeout(() => {
+                    alert('✅ Project published successfully!');
+                    window.location.href = 'showcase.html';
+                }, 500);
+
             } catch (error) {
-                console.error('Error:', error);
-                alert('❌ Error: ' + error.message);
+                console.error('Error uploading project:', error);
+                alert('❌ Error uploading project: ' + error.message);
                 submitBtn.disabled = false;
-                submitBtn.textContent = 'Publish Project';
+                submitBtn.innerHTML = '<i class="bi bi-check-circle"></i> Publish Project';
+                uploadProgress.style.display = 'none';
             }
         });
+
+        function convertToBase64(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = error => reject(error);
+                reader.readAsDataURL(file);
+            });
+        }
+
+        function updateProgress(percentage, text) {
+            document.getElementById('progressBarFill').style.width = percentage + '%';
+            document.getElementById('progressText').textContent = text + ' ' + percentage + '%';
+        }
+
+        function emailToId(email) {
+            return email.replace(/[.@]/g, '_');
+        }
     </script>
 </body>
 </html>
