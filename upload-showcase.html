@@ -269,9 +269,10 @@
 
         <div class="alert-info">
             <strong>📹 Video Upload Tips:</strong>
-            <p style="margin: 5px 0; font-size: 14px;">• Maximum file size: 50MB</p>
-            <p style="margin: 5px 0; font-size: 14px;">• Recommended: 30-120 seconds demo</p>
+            <p style="margin: 5px 0; font-size: 14px;">• Maximum file size: 5MB (due to database limits)</p>
+            <p style="margin: 5px 0; font-size: 14px;">• Recommended: 15-60 seconds demo</p>
             <p style="margin: 5px 0; font-size: 14px;">• Formats: MP4, WebM, MOV</p>
+            <p style="margin: 5px 0; font-size: 14px;">• Tip: Compress your video at <a href="https://www.freeconvert.com/video-compressor" target="_blank">freeconvert.com</a></p>
         </div>
 
         <form id="uploadForm">
@@ -279,7 +280,7 @@
             <div class="upload-area" id="uploadArea">
                 <i class="bi bi-cloud-upload"></i>
                 <p>Click to upload or drag & drop your video</p>
-                <p class="hint">MP4, WebM, or MOV • Max 50MB</p>
+                <p class="hint">MP4, WebM, or MOV • Max 5MB • Keep it short!</p>
                 <input type="file" id="videoInput" accept="video/*" style="display: none;">
             </div>
 
@@ -409,10 +410,11 @@
         });
 
         function handleVideo(file) {
-            // Check file size (50MB limit)
-            const maxSize = 50 * 1024 * 1024; // 50MB
+            // Check file size (5MB limit for database storage)
+            const maxSize = 5 * 1024 * 1024; // 5MB
             if (file.size > maxSize) {
-                alert('❌ Video file is too large. Maximum size is 50MB.\n\nTip: Compress your video using online tools or record a shorter demo!');
+                const sizeMB = (file.size / (1024 * 1024)).toFixed(2);
+                alert(`❌ Video file is too large (${sizeMB}MB). Maximum size is 5MB.\n\n💡 Tips to reduce size:\n• Record a shorter demo (15-60 seconds)\n• Compress at freeconvert.com/video-compressor\n• Reduce resolution to 720p or lower\n• Use a lower bitrate`);
                 return;
             }
 
@@ -517,11 +519,31 @@
             uploadProgress.style.display = 'block';
 
             try {
+                // Check file size again before upload
+                if (selectedVideo.size > 5 * 1024 * 1024) {
+                    alert('❌ Video file is too large. Please select a video under 5MB.');
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = '<i class="bi bi-check-circle"></i> Publish Project';
+                    return;
+                }
+
                 // Update progress
                 updateProgress(25, 'Reading video file...');
 
                 // Convert video to base64
                 const videoBase64 = await convertToBase64(selectedVideo);
+                
+                // Check base64 size (should be less than 7MB after encoding)
+                const base64Size = videoBase64.length;
+                const base64SizeMB = base64Size / (1024 * 1024);
+                
+                if (base64SizeMB > 7) {
+                    alert(`❌ Video is too large after encoding (${base64SizeMB.toFixed(2)}MB).\n\nPlease compress your video to under 5MB.`);
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = '<i class="bi bi-check-circle"></i> Publish Project';
+                    uploadProgress.style.display = 'none';
+                    return;
+                }
                 
                 updateProgress(50, 'Processing video...');
 
@@ -560,7 +582,15 @@
 
             } catch (error) {
                 console.error('Error uploading project:', error);
-                alert('❌ Error uploading project: ' + error.message);
+                
+                let errorMessage = 'Error uploading project: ';
+                if (error.message.includes('10485760')) {
+                    errorMessage = 'Video file is too large for database storage.\n\nPlease use a video under 5MB or compress it further.';
+                } else {
+                    errorMessage += error.message;
+                }
+                
+                alert('❌ ' + errorMessage);
                 submitBtn.disabled = false;
                 submitBtn.innerHTML = '<i class="bi bi-check-circle"></i> Publish Project';
                 uploadProgress.style.display = 'none';
