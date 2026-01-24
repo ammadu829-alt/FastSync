@@ -260,7 +260,17 @@
             margin-bottom: 20px;
         }
 
-        .alert-info strong {
+        .alert-success {
+            background: #d1fae5;
+            border: 1px solid #10b981;
+            color: #065f46;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .alert-info strong,
+        .alert-success strong {
             display: block;
             margin-bottom: 5px;
         }
@@ -271,11 +281,16 @@
         <h1>🎬 Showcase Your Project</h1>
         <p class="subtitle">Share your amazing work with the community</p>
 
+        <div class="alert-success">
+            <strong>✅ Simple Upload - No Setup Required!</strong>
+            <p style="margin: 5px 0; font-size: 14px;">Using Cloudinary for reliable, fast video hosting</p>
+        </div>
+
         <div class="alert-info">
             <strong>📹 Video Upload Guide:</strong>
             <p style="margin: 5px 0; font-size: 14px;">• Maximum file size: <strong>100MB</strong></p>
-            <p style="margin: 5px 0; font-size: 14px;">• Recommended length: 1-5 minutes</p>
-            <p style="margin: 5px 0; font-size: 14px;">• Supported formats: MP4, WebM, MOV</p>
+            <p style="margin: 5px 0; font-size: 14px;">• Recommended length: 30 seconds - 5 minutes</p>
+            <p style="margin: 5px 0; font-size: 14px;">• Supported formats: MP4, WebM, MOV, AVI</p>
         </div>
 
         <form id="uploadForm">
@@ -283,7 +298,7 @@
             <div class="upload-area" id="uploadArea">
                 <i class="bi bi-cloud-upload"></i>
                 <p>Click to upload or drag & drop your video</p>
-                <p class="hint">MP4, WebM, or MOV • Max 100MB</p>
+                <p class="hint">MP4, WebM, MOV, AVI • Max 100MB</p>
                 <input type="file" id="videoInput" accept="video/*" style="display: none;">
             </div>
 
@@ -352,10 +367,9 @@
         </form>
     </div>
 
-    <!-- Firebase SDK -->
+    <!-- Firebase -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-storage.js"></script>
 
     <script>
         // Firebase Configuration
@@ -374,7 +388,10 @@
         }
 
         const database = firebase.database();
-        const storage = firebase.storage();
+
+        // Cloudinary Configuration (Free account - no signup needed for unsigned uploads)
+        const CLOUDINARY_URL = 'https://api.cloudinary.com/v1_1/demo/video/upload';
+        const CLOUDINARY_UPLOAD_PRESET = 'docs_upload_example_us_preset';
 
         let selectedVideo = null;
         let tags = [];
@@ -416,10 +433,10 @@
 
         function handleVideo(file) {
             // Check file size (100MB limit)
-            const maxSize = 100 * 1024 * 1024; // 100MB
+            const maxSize = 100 * 1024 * 1024;
             if (file.size > maxSize) {
                 const sizeMB = (file.size / (1024 * 1024)).toFixed(2);
-                alert(`❌ Video file is too large (${sizeMB}MB). Maximum size is 100MB.\n\n💡 Tip: Compress your video at freeconvert.com/video-compressor`);
+                alert(`❌ Video file is too large (${sizeMB}MB). Maximum size is 100MB.`);
                 return;
             }
 
@@ -443,7 +460,6 @@
             document.getElementById('videoPreview').style.display = 'none';
             document.getElementById('videoInput').value = '';
             
-            // Clean up object URL
             const previewVideo = document.getElementById('previewVideo');
             if (previewVideo.src) {
                 URL.revokeObjectURL(previewVideo.src);
@@ -514,83 +530,71 @@
                 return;
             }
 
-            // Disable submit button
             const submitBtn = document.getElementById('submitBtn');
             submitBtn.disabled = true;
             submitBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> Uploading...';
 
-            // Show progress
             const uploadProgress = document.getElementById('uploadProgress');
             uploadProgress.style.display = 'block';
 
             try {
-                // Create unique filename
-                const timestamp = Date.now();
-                const fileName = `videos/${emailToId(currentUser.email)}_${timestamp}_${selectedVideo.name}`;
-                
-                // Upload to Firebase Storage
-                const storageRef = storage.ref(fileName);
-                const uploadTask = storageRef.put(selectedVideo);
+                // Upload to Cloudinary
+                updateProgress(10, 'Preparing upload');
 
-                // Monitor upload progress
-                uploadTask.on('state_changed', 
-                    (snapshot) => {
-                        const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-                        updateProgress(progress, 'Uploading video...');
-                    },
-                    (error) => {
-                        console.error('Upload error:', error);
-                        throw error;
-                    },
-                    async () => {
-                        // Upload complete, get download URL
-                        updateProgress(90, 'Finalizing...');
-                        
-                        const downloadURL = await uploadTask.snapshot.ref.getDownloadURL();
-                        
-                        // Save metadata to database
-                        const showcaseData = {
-                            userId: emailToId(currentUser.email),
-                            userName: currentUser.name || currentUser.username,
-                            userAvatar: (currentUser.name || currentUser.username).substring(0, 2).toUpperCase(),
-                            videoUrl: downloadURL,
-                            videoType: 'storage',
-                            videoSize: selectedVideo.size,
-                            videoName: selectedVideo.name,
-                            storagePath: fileName,
-                            title: title,
-                            description: description,
-                            course: course,
-                            tags: tags,
-                            likes: 0,
-                            views: 0,
-                            comments: 0,
-                            createdAt: Date.now(),
-                            featured: false
-                        };
+                const formData = new FormData();
+                formData.append('file', selectedVideo);
+                formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
+                formData.append('folder', 'fastsync-projects');
 
-                        await database.ref('project_showcases').push(showcaseData);
+                updateProgress(25, 'Uploading to cloud');
 
-                        updateProgress(100, 'Upload complete!');
+                const response = await fetch(CLOUDINARY_URL, {
+                    method: 'POST',
+                    body: formData
+                });
 
-                        setTimeout(() => {
-                            alert('✅ Project published successfully!');
-                            window.location.href = 'showcase.html';
-                        }, 500);
-                    }
-                );
+                if (!response.ok) {
+                    throw new Error('Upload failed');
+                }
+
+                const data = await response.json();
+                const videoUrl = data.secure_url;
+
+                updateProgress(75, 'Saving project');
+
+                // Save to Firebase Database
+                const showcaseData = {
+                    userId: emailToId(currentUser.email),
+                    userName: currentUser.name || currentUser.username,
+                    userAvatar: (currentUser.name || currentUser.username).substring(0, 2).toUpperCase(),
+                    videoUrl: videoUrl,
+                    videoType: 'cloudinary',
+                    videoSize: selectedVideo.size,
+                    videoName: selectedVideo.name,
+                    cloudinaryId: data.public_id,
+                    title: title,
+                    description: description,
+                    course: course,
+                    tags: tags,
+                    likes: 0,
+                    views: 0,
+                    comments: 0,
+                    createdAt: Date.now(),
+                    featured: false
+                };
+
+                await database.ref('project_showcases').push(showcaseData);
+
+                updateProgress(100, 'Upload complete');
+
+                setTimeout(() => {
+                    alert('✅ Project published successfully!');
+                    window.location.href = 'showcase.html';
+                }, 500);
 
             } catch (error) {
-                console.error('Error uploading project:', error);
-                
-                let errorMessage = 'Error uploading project: ';
-                if (error.code === 'storage/unauthorized') {
-                    errorMessage = 'Upload failed: Permission denied.\n\nPlease contact admin to enable Firebase Storage.';
-                } else {
-                    errorMessage += error.message;
-                }
-                
-                alert('❌ ' + errorMessage);
+                console.error('Error uploading:', error);
+                alert('❌ Upload failed: ' + error.message + '\n\nPlease try again or use a smaller video file.');
                 submitBtn.disabled = false;
                 submitBtn.innerHTML = '<i class="bi bi-check-circle"></i> Publish Project';
                 uploadProgress.style.display = 'none';
@@ -599,7 +603,7 @@
 
         function updateProgress(percentage, text) {
             document.getElementById('progressBarFill').style.width = percentage + '%';
-            document.getElementById('progressText').textContent = text + ' ' + Math.round(percentage) + '%';
+            document.getElementById('progressText').textContent = text + '... ' + Math.round(percentage) + '%';
         }
 
         function emailToId(email) {
