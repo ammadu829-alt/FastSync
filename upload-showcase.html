@@ -223,15 +223,18 @@
         .upload-progress {
             display: none;
             margin-top: 20px;
+            padding: 20px;
+            background: #f8f9ff;
+            border-radius: 12px;
         }
 
         .progress-bar-container {
             width: 100%;
-            height: 8px;
+            height: 12px;
             background: #e0e0e0;
-            border-radius: 4px;
+            border-radius: 6px;
             overflow: hidden;
-            margin-bottom: 10px;
+            margin-bottom: 15px;
         }
 
         .progress-bar-fill {
@@ -243,8 +246,9 @@
 
         .progress-text {
             text-align: center;
-            color: #666;
-            font-size: 14px;
+            color: #333;
+            font-size: 15px;
+            font-weight: 600;
         }
 
         .alert-info {
@@ -268,11 +272,10 @@
         <p class="subtitle">Share your amazing work with the community</p>
 
         <div class="alert-info">
-            <strong>📹 Video Upload Tips:</strong>
-            <p style="margin: 5px 0; font-size: 14px;">• Maximum file size: 5MB (due to database limits)</p>
-            <p style="margin: 5px 0; font-size: 14px;">• Recommended: 15-60 seconds demo</p>
-            <p style="margin: 5px 0; font-size: 14px;">• Formats: MP4, WebM, MOV</p>
-            <p style="margin: 5px 0; font-size: 14px;">• Tip: Compress your video at <a href="https://www.freeconvert.com/video-compressor" target="_blank">freeconvert.com</a></p>
+            <strong>📹 Video Upload Guide:</strong>
+            <p style="margin: 5px 0; font-size: 14px;">• Maximum file size: <strong>100MB</strong></p>
+            <p style="margin: 5px 0; font-size: 14px;">• Recommended length: 1-5 minutes</p>
+            <p style="margin: 5px 0; font-size: 14px;">• Supported formats: MP4, WebM, MOV</p>
         </div>
 
         <form id="uploadForm">
@@ -280,7 +283,7 @@
             <div class="upload-area" id="uploadArea">
                 <i class="bi bi-cloud-upload"></i>
                 <p>Click to upload or drag & drop your video</p>
-                <p class="hint">MP4, WebM, or MOV • Max 5MB • Keep it short!</p>
+                <p class="hint">MP4, WebM, or MOV • Max 100MB</p>
                 <input type="file" id="videoInput" accept="video/*" style="display: none;">
             </div>
 
@@ -349,9 +352,10 @@
         </form>
     </div>
 
-    <!-- Firebase -->
+    <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-storage.js"></script>
 
     <script>
         // Firebase Configuration
@@ -370,6 +374,7 @@
         }
 
         const database = firebase.database();
+        const storage = firebase.storage();
 
         let selectedVideo = null;
         let tags = [];
@@ -410,11 +415,11 @@
         });
 
         function handleVideo(file) {
-            // Check file size (5MB limit for database storage)
-            const maxSize = 5 * 1024 * 1024; // 5MB
+            // Check file size (100MB limit)
+            const maxSize = 100 * 1024 * 1024; // 100MB
             if (file.size > maxSize) {
                 const sizeMB = (file.size / (1024 * 1024)).toFixed(2);
-                alert(`❌ Video file is too large (${sizeMB}MB). Maximum size is 5MB.\n\n💡 Tips to reduce size:\n• Record a shorter demo (15-60 seconds)\n• Compress at freeconvert.com/video-compressor\n• Reduce resolution to 720p or lower\n• Use a lower bitrate`);
+                alert(`❌ Video file is too large (${sizeMB}MB). Maximum size is 100MB.\n\n💡 Tip: Compress your video at freeconvert.com/video-compressor`);
                 return;
             }
 
@@ -519,73 +524,68 @@
             uploadProgress.style.display = 'block';
 
             try {
-                // Check file size again before upload
-                if (selectedVideo.size > 5 * 1024 * 1024) {
-                    alert('❌ Video file is too large. Please select a video under 5MB.');
-                    submitBtn.disabled = false;
-                    submitBtn.innerHTML = '<i class="bi bi-check-circle"></i> Publish Project';
-                    return;
-                }
-
-                // Update progress
-                updateProgress(25, 'Reading video file...');
-
-                // Convert video to base64
-                const videoBase64 = await convertToBase64(selectedVideo);
+                // Create unique filename
+                const timestamp = Date.now();
+                const fileName = `videos/${emailToId(currentUser.email)}_${timestamp}_${selectedVideo.name}`;
                 
-                // Check base64 size (should be less than 7MB after encoding)
-                const base64Size = videoBase64.length;
-                const base64SizeMB = base64Size / (1024 * 1024);
-                
-                if (base64SizeMB > 7) {
-                    alert(`❌ Video is too large after encoding (${base64SizeMB.toFixed(2)}MB).\n\nPlease compress your video to under 5MB.`);
-                    submitBtn.disabled = false;
-                    submitBtn.innerHTML = '<i class="bi bi-check-circle"></i> Publish Project';
-                    uploadProgress.style.display = 'none';
-                    return;
-                }
-                
-                updateProgress(50, 'Processing video...');
+                // Upload to Firebase Storage
+                const storageRef = storage.ref(fileName);
+                const uploadTask = storageRef.put(selectedVideo);
 
-                // Prepare showcase data
-                const showcaseData = {
-                    userId: emailToId(currentUser.email),
-                    userName: currentUser.name || currentUser.username,
-                    userAvatar: (currentUser.name || currentUser.username).substring(0, 2).toUpperCase(),
-                    videoUrl: videoBase64,
-                    videoType: 'upload',
-                    videoSize: selectedVideo.size,
-                    videoName: selectedVideo.name,
-                    title: title,
-                    description: description,
-                    course: course,
-                    tags: tags,
-                    likes: 0,
-                    views: 0,
-                    comments: 0,
-                    createdAt: Date.now(),
-                    featured: false
-                };
+                // Monitor upload progress
+                uploadTask.on('state_changed', 
+                    (snapshot) => {
+                        const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+                        updateProgress(progress, 'Uploading video...');
+                    },
+                    (error) => {
+                        console.error('Upload error:', error);
+                        throw error;
+                    },
+                    async () => {
+                        // Upload complete, get download URL
+                        updateProgress(90, 'Finalizing...');
+                        
+                        const downloadURL = await uploadTask.snapshot.ref.getDownloadURL();
+                        
+                        // Save metadata to database
+                        const showcaseData = {
+                            userId: emailToId(currentUser.email),
+                            userName: currentUser.name || currentUser.username,
+                            userAvatar: (currentUser.name || currentUser.username).substring(0, 2).toUpperCase(),
+                            videoUrl: downloadURL,
+                            videoType: 'storage',
+                            videoSize: selectedVideo.size,
+                            videoName: selectedVideo.name,
+                            storagePath: fileName,
+                            title: title,
+                            description: description,
+                            course: course,
+                            tags: tags,
+                            likes: 0,
+                            views: 0,
+                            comments: 0,
+                            createdAt: Date.now(),
+                            featured: false
+                        };
 
-                updateProgress(75, 'Saving to database...');
+                        await database.ref('project_showcases').push(showcaseData);
 
-                // Save to Firebase Realtime Database
-                await database.ref('project_showcases').push(showcaseData);
+                        updateProgress(100, 'Upload complete!');
 
-                updateProgress(100, 'Upload complete!');
-
-                // Success
-                setTimeout(() => {
-                    alert('✅ Project published successfully!');
-                    window.location.href = 'showcase.html';
-                }, 500);
+                        setTimeout(() => {
+                            alert('✅ Project published successfully!');
+                            window.location.href = 'showcase.html';
+                        }, 500);
+                    }
+                );
 
             } catch (error) {
                 console.error('Error uploading project:', error);
                 
                 let errorMessage = 'Error uploading project: ';
-                if (error.message.includes('10485760')) {
-                    errorMessage = 'Video file is too large for database storage.\n\nPlease use a video under 5MB or compress it further.';
+                if (error.code === 'storage/unauthorized') {
+                    errorMessage = 'Upload failed: Permission denied.\n\nPlease contact admin to enable Firebase Storage.';
                 } else {
                     errorMessage += error.message;
                 }
@@ -597,18 +597,9 @@
             }
         });
 
-        function convertToBase64(file) {
-            return new Promise((resolve, reject) => {
-                const reader = new FileReader();
-                reader.onload = () => resolve(reader.result);
-                reader.onerror = error => reject(error);
-                reader.readAsDataURL(file);
-            });
-        }
-
         function updateProgress(percentage, text) {
             document.getElementById('progressBarFill').style.width = percentage + '%';
-            document.getElementById('progressText').textContent = text + ' ' + percentage + '%';
+            document.getElementById('progressText').textContent = text + ' ' + Math.round(percentage) + '%';
         }
 
         function emailToId(email) {
