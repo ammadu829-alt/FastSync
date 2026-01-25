@@ -4,142 +4,19 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>FASTSync - Find Your Perfect Project Partner</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="chatbot.css">
     <link rel="stylesheet" href="responsive.css">
     <link rel="stylesheet" href="scroll-mobile.css">
-    <style>
-        /* DROPDOWN NAVIGATION STYLES */
-        .navbar {
-            position: relative;
-        }
-
-        .nav-links {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        /* Dropdown Container */
-        .nav-dropdown {
-            position: relative;
-            display: inline-block;
-        }
-
-        .dropdown-toggle {
-            display: flex;
-            align-items: center;
-            gap: 0.3rem;
-            cursor: pointer;
-            padding: 0.5rem 1rem;
-            border-radius: 8px;
-            transition: all 0.3s;
-        }
-
-        .dropdown-toggle:hover {
-            background: rgba(138, 43, 226, 0.1);
-        }
-
-        .dropdown-toggle::after {
-            content: '▼';
-            font-size: 10px;
-            margin-left: 5px;
-            transition: transform 0.3s;
-        }
-
-        .nav-dropdown.active .dropdown-toggle::after {
-            transform: rotate(180deg);
-        }
-
-        /* Dropdown Menu */
-        .dropdown-menu {
-            position: absolute;
-            top: 100%;
-            left: 0;
-            background: white;
-            border-radius: 12px;
-            padding: 0.5rem;
-            min-width: 220px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-            opacity: 0;
-            visibility: hidden;
-            transform: translateY(-10px);
-            transition: all 0.3s;
-            margin-top: 0.5rem;
-            z-index: 1000;
-        }
-
-        .nav-dropdown.active .dropdown-menu {
-            opacity: 1;
-            visibility: visible;
-            transform: translateY(0);
-        }
-
-        .dropdown-menu a {
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-            padding: 0.75rem 1rem;
-            color: #333;
-            text-decoration: none;
-            border-radius: 8px;
-            transition: all 0.3s;
-            font-weight: 500;
-        }
-
-        .dropdown-menu a:hover {
-            background: rgba(138, 43, 226, 0.1);
-            color: #8a2be2;
-        }
-
-        .dropdown-menu .icon {
-            font-size: 18px;
-        }
-
-        /* Mobile responsive */
-        @media (max-width: 768px) {
-            .dropdown-menu {
-                position: fixed;
-                left: 50%;
-                transform: translateX(-50%) translateY(-10px);
-                width: 90%;
-                max-width: 300px;
-            }
-
-            .nav-dropdown.active .dropdown-menu {
-                transform: translateX(-50%) translateY(0);
-            }
-        }
-    </style>
+ google-site-verification=Zl4e0XV5EA5XcvyqFJjYA6gGR2U3f5IH5qH5HUczep8
 </head>
 <body>
     <nav class="navbar">
         <div class="logo">FASTSync</div>
         <div class="nav-links">
             <a href="#features">Features</a>
-            
-            <!-- DROPDOWN FOR FIND PARTNER -->
-            <div class="nav-dropdown" id="findPartnerDropdown">
-                <a href="javascript:void(0)" class="dropdown-toggle" onclick="toggleDropdown(event)">
-                    Find Partner
-                </a>
-                <div class="dropdown-menu">
-                    <a href="find-partner.html">
-                        <span class="icon">👤</span>
-                        <span>Find Partner Profile</span>
-                    </a>
-                    <a href="my-groups.html">
-                        <span class="icon">👥</span>
-                        <span>My Groups</span>
-                    </a>
-                    <a href="my-projects.html">
-                        <span class="icon">📁</span>
-                        <span>My Projects</span>
-                    </a>
-                </div>
-            </div>
-
+            <a href="find-partner.html">Find Partner</a>
             <a href="personal-projects.html">🚀 Personal Projects</a>
             <a href="contact.html">Contact</a>
             <a href="owner.html">Owner</a>
@@ -227,10 +104,10 @@
         <p style="margin-top: 10px; font-size: 12px;">
             <a href="owner.html" style="color: #8a2be2; text-decoration: none; margin-right: 15px;">About Owner</a> | 
             <a href="admin.html" style="color: #8a2be2; text-decoration: none; margin-right: 15px;">Admin Dashboard</a> |
-            <a href="admin-reports.html" style="color: #ef4444; text-decoration: none;">View Reports</a>
+            <a href="admin-reports.html" style="color: #ef4444; text-decoration: none;">View Reports</a>  |
+            
         </p>
     </footer>
-
     <!-- CHATBOT START -->
     <div class="chat-button" onclick="toggleChat()">
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -283,28 +160,6 @@
     <script src="script.js"></script>
     <script src="chatbot.js"></script> 
     <script src="scroll-mobile.js"></script>
-
-    <!-- DROPDOWN TOGGLE SCRIPT -->
-    <script>
-        function toggleDropdown(event) {
-            event.preventDefault();
-            event.stopPropagation();
-            const dropdown = document.getElementById('findPartnerDropdown');
-            dropdown.classList.toggle('active');
-        }
-
-        // Close dropdown when clicking outside
-        document.addEventListener('click', function(event) {
-            const dropdown = document.getElementById('findPartnerDropdown');
-            if (!dropdown.contains(event.target)) {
-                dropdown.classList.remove('active');
-            }
-        });
-
-        // Prevent dropdown from closing when clicking inside
-        document.querySelector('.dropdown-menu')?.addEventListener('click', function(event) {
-            event.stopPropagation();
-        });
-    </script>
 </body>
 </html>
+
